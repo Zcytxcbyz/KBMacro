@@ -1,4 +1,4 @@
-﻿cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 4.0)
 project(KBMacro VERSION 1.0.0 LANGUAGES CXX)
 
 # ============================================================
@@ -18,14 +18,15 @@ endif()
 # ============================================================
 # 3. 查找 Conan 管理的依赖（由 CMakeDeps 生成）
 # ============================================================
-find_package(wxWidgets REQUIRED COMPONENTS core base)
-find_package(nlohmann_json REQUIRED)
-find_package(GTest)   # 可选
+find_package(wxWidgets)
+find_package(nlohmann_json)
+find_package(GTest) # (可选)
 
 # ============================================================
 # 4. 收集项目源码（后续再填）
 # ============================================================
 set(SOURCES
+    src/main.cpp
     # 在这里添加 .cpp 文件
 )
 
@@ -43,7 +44,7 @@ add_executable(KBMacro WIN32 ${SOURCES} ${HEADERS})
 # ============================================================
 target_link_libraries(KBMacro
     PRIVATE
-    wx::wxwidgets
+    wxWidgets::wxWidgets
     nlohmann_json::nlohmann_json
 )
 
@@ -71,7 +72,12 @@ target_compile_definitions(KBMacro PRIVATE
 )
 
 # ============================================================
-# 10. 输出文件名和目录（单 EXE）
+# 10. 编译选项
+# ==========
+target_compile_options(KBMacro PRIVATE /utf-8)
+
+# ============================================================
+# 11. 输出文件名和目录（单 EXE）
 # ============================================================
 set_target_properties(KBMacro PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -79,7 +85,7 @@ set_target_properties(KBMacro PROPERTIES
 )
 
 # ============================================================
-# 11. 静态链接 CRT 已由 Conan toolchain 控制，无需手动设置
+# 12. 静态链接 CRT 已由 Conan toolchain 控制，无需手动设置
 # ============================================================
 
 # ============================================================
