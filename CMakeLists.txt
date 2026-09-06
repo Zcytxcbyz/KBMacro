@@ -18,8 +18,8 @@ endif()
 # ============================================================
 # 3. 查找 Conan 管理的依赖（由 CMakeDeps 生成）
 # ============================================================
-find_package(wxWidgets)
-find_package(nlohmann_json)
+find_package(wxWidgets REQUIRED COMPONENTS base core)
+find_package(nlohmann_json REQUIRED)
 find_package(GTest) # (可选)
 
 # ============================================================
