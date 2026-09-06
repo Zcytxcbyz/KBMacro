@@ -45,3 +45,23 @@ indent_style = tab
 end_of_line = lf
 indent_style = space
 indent_size = 4
+
+[profile_*]
+end_of_line = lf
+indent_style = space
+indent_size = 4
+
+[conanfile.txt]
+end_of_line = lf
+indent_style = space
+indent_size = 4
+
+[.gitignore]
+end_of_line = lf
+indent_style = space
+indent_size = 4
+
+[.editorconfig]
+end_of_line = lf
+indent_style = space
+indent_size = 4
