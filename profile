@@ -1,0 +1,13 @@
+[settings]
+arch=x86_64
+build_type=Release
+compiler=msvc
+compiler.cppstd=20
+compiler.runtime=static
+compiler.runtime_type=Release
+compiler.version=195
+os=Windows
+
+[conf]
+tools.build:jobs=8
+tools.cmake.cmaketoolchain:generator="Ninja"
