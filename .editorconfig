@@ -46,7 +46,7 @@ end_of_line = lf
 indent_style = space
 indent_size = 4
 
-[profile_*]
+[profiles/*]
 end_of_line = lf
 indent_style = space
 indent_size = 4
