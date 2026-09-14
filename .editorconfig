@@ -11,20 +11,24 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{c,cpp,h,hpp,cc,cxx}]
+end_of_line = lf
 indent_style = space
 indent_size = 4
 tab_width = 4
 max_line_length = 120
 
 [CMakeLists.txt]
+end_of_line = lf
 indent_style = space
 indent_size = 4
 
 [*.cmake]
+end_of_line = lf
 indent_style = space
 indent_size = 4
 
 [*.{py,json,yml,yaml}]
+end_of_line = lf
 indent_style = space
 indent_size = 4
 
@@ -34,6 +38,7 @@ indent_style = space
 indent_size = 2
 
 [*.{txt,log}]
+end_of_line = lf
 trim_trailing_whitespace = false
 insert_final_newline = false
 
@@ -63,5 +68,11 @@ indent_size = 4
 
 [.editorconfig]
 end_of_line = lf
+indent_style = space
+indent_size = 4
+
+[*.rc]
+charset = utf-8-bom
+end_of_line = crlf
 indent_style = space
 indent_size = 4

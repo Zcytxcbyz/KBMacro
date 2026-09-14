@@ -1,0 +1,21 @@
+﻿#include "../resource.h"
+#include "../lang.h"
+
+#define L(id) (LANG_ZH_CN_BASE + id)
+
+STRINGTABLE
+BEGIN
+    L(IDS_APP_TITLE)            "KBMacro"
+    L(IDS_TAB_CLICKER)          "鼠标连点器"
+    L(IDS_TAB_KEYBOARD)         "键盘模拟器"
+    L(IDS_TAB_RECORDER)         "录制与编排"
+    L(IDS_TAB_SETTINGS)         "设置"
+    L(IDS_TAB_ABOUT)            "关于"
+    L(IDS_CLICKER_PLACEHOLDER)  "鼠标连点器功能将在此实现"
+    L(IDS_KEYBOARD_PLACEHOLDER) "键盘模拟器功能将在此实现"
+    L(IDS_RECORDER_PLACEHOLDER) "录制、编排、回放功能将在此实现"
+    L(IDS_SETTINGS_PLACEHOLDER) "语言切换、热键配置、配置文件等设置将在此实现"
+    L(IDS_ABOUT_PLACEHOLDER)    "关于和许可证显示将在此实现"
+END
+
+#undef L

@@ -1,0 +1,35 @@
+#pragma once
+
+#define LANG_ZH_CN_BASE  10000
+#define LANG_EN_US_BASE  20000
+
+#ifndef RC_INVOKED
+
+#include <iterator>
+
+#define LANG_DEFAULT_BASE LANG_ZH_CN_BASE
+#define LANG_DEFAULT Lang::ZH_CN
+#define LANG_DEFAULT_CODE L"zh-CN"
+
+enum class Lang {
+    ZH_CN,
+    EN_US,
+    COUNT
+};
+
+struct LangInfo {
+    Lang           id;
+    int            baseResId;
+    const wchar_t* code;
+    const wchar_t* displayName;
+};
+
+inline constexpr LangInfo kLangs[] = {
+    { .id = Lang::ZH_CN, .baseResId = LANG_ZH_CN_BASE, .code = L"zh-CN", .displayName = L"简体中文" },
+    { .id = Lang::EN_US, .baseResId = LANG_EN_US_BASE, .code = L"en-US", .displayName = L"English" },
+};
+
+static_assert(std::size(kLangs) == static_cast<std::size_t>(Lang::COUNT),
+    "kLangs 与 Lang 枚举数量不一致");
+
+#endif // RC_INVOKED

@@ -1,0 +1,21 @@
+﻿#include "../resource.h"
+#include "../lang.h"
+
+#define L(id) (LANG_EN_US_BASE + id)
+
+STRINGTABLE
+BEGIN
+    L(IDS_APP_TITLE)            "KBMacro"
+    L(IDS_TAB_CLICKER)          "Mouse Clicker"
+    L(IDS_TAB_KEYBOARD)         "Keyboard Simulator"
+    L(IDS_TAB_RECORDER)         "Record & Arrange"
+    L(IDS_TAB_SETTINGS)         "Settings"
+    L(IDS_TAB_ABOUT)            "About"
+    L(IDS_CLICKER_PLACEHOLDER)  "Mouse clicker will be implemented here"
+    L(IDS_KEYBOARD_PLACEHOLDER) "Keyboard simulator will be implemented here"
+    L(IDS_RECORDER_PLACEHOLDER) "Record, arrange, replay will be implemented here"
+    L(IDS_SETTINGS_PLACEHOLDER) "Language, hotkeys, config will be implemented here"
+    L(IDS_ABOUT_PLACEHOLDER)    "About and license will be implemented here"
+END
+
+#undef L
