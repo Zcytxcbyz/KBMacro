@@ -3,28 +3,28 @@
 #include <iterator>
 #include <windows.h>
 
-LanguageManager& LanguageManager::instance() {
+LanguageManager &LanguageManager::instance() {
     static LanguageManager inst;
     return inst;
 }
 
 void LanguageManager::setLanguage(Lang lang) {
-    for (const auto& info : kLangs) {
+    for (const auto &info: kLangs) {
         if (info.id == lang) {
-            m_lang   = lang;
+            m_lang = lang;
             m_baseId = info.baseResId;
             return;
         }
     }
-    m_lang   = LANG_DEFAULT;
+    m_lang = LANG_DEFAULT;
     m_baseId = LANG_DEFAULT_BASE;
 }
 
 // ReSharper disable once CppParameterMayBeConst
 bool LanguageManager::setLanguageByCode(std::wstring_view code) {
-    for (const auto& info : kLangs) { // NOLINT(*-use-anyofallof)
+    for (const auto &info: kLangs) { // NOLINT(*-use-anyofallof)
         if (code == info.code) {
-            m_lang   = info.id;
+            m_lang = info.id;
             m_baseId = info.baseResId;
             return true;
         }
@@ -43,8 +43,8 @@ void LanguageManager::setLanguageFromSystem() {
     }
 }
 
-const wchar_t* LanguageManager::currentCode() const noexcept {
-    for (const auto& info : kLangs) {
+const wchar_t *LanguageManager::currentCode() const noexcept {
+    for (const auto &info: kLangs) {
         if (info.id == m_lang) return info.code;
     }
     return LANG_DEFAULT_CODE;
@@ -55,7 +55,8 @@ std::wstring LanguageManager::tr(const int id) const {
     const int len = ::LoadStringW(::GetModuleHandleW(nullptr),
                                   m_baseId + id,
                                   buf,
+                                  // ReSharper disable once CppRedundantCastExpression
                                   static_cast<int>(std::size(buf)));
     if (len <= 0) return L"";
-    return { std::wstring(buf, static_cast<std::size_t>(len)) };
+    return {std::wstring(buf, static_cast<std::size_t>(len))};
 }
