@@ -18,18 +18,18 @@ enum class Lang {
 };
 
 struct LangInfo {
-    Lang           id;
-    int            baseResId;
-    const wchar_t* code;
-    const wchar_t* displayName;
+    Lang id;
+    int baseResId;
+    const wchar_t *code;
+    const wchar_t *displayName;
 };
 
 inline constexpr LangInfo kLangs[] = {
-    { .id = Lang::ZH_CN, .baseResId = LANG_ZH_CN_BASE, .code = L"zh-CN", .displayName = L"简体中文" },
-    { .id = Lang::EN_US, .baseResId = LANG_EN_US_BASE, .code = L"en-US", .displayName = L"English" },
+    {.id = Lang::ZH_CN, .baseResId = LANG_ZH_CN_BASE, .code = L"zh-CN", .displayName = L"简体中文"},
+    {.id = Lang::EN_US, .baseResId = LANG_EN_US_BASE, .code = L"en-US", .displayName = L"English"},
 };
 
 static_assert(std::size(kLangs) == static_cast<std::size_t>(Lang::COUNT),
-    "kLangs 与 Lang 枚举数量不一致");
+              "kLangs 与 Lang 枚举数量不一致");
 
 #endif // RC_INVOKED

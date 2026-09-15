@@ -20,8 +20,9 @@ void LanguageManager::setLanguage(Lang lang) {
     m_baseId = LANG_DEFAULT_BASE;
 }
 
+// ReSharper disable once CppParameterMayBeConst
 bool LanguageManager::setLanguageByCode(std::wstring_view code) {
-    for (const auto& info : kLangs) {
+    for (const auto& info : kLangs) { // NOLINT(*-use-anyofallof)
         if (code == info.code) {
             m_lang   = info.id;
             m_baseId = info.baseResId;

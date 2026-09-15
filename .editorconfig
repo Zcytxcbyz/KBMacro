@@ -7,38 +7,20 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
+indent_style = space
+indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.{c,cpp,h,hpp,cc,cxx}]
-end_of_line = lf
-indent_style = space
-indent_size = 4
 tab_width = 4
 max_line_length = 120
 
-[CMakeLists.txt]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[*.cmake]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[*.{py,json,yml,yaml}]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
 [*.md]
 trim_trailing_whitespace = false
-indent_style = space
 indent_size = 2
 
 [*.{txt,log}]
-end_of_line = lf
 trim_trailing_whitespace = false
 insert_final_newline = false
 
@@ -46,33 +28,7 @@ insert_final_newline = false
 end_of_line = crlf
 indent_style = tab
 
-[*.ps1]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[profiles/*]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[conanfile.txt]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[.gitignore]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
-[.editorconfig]
-end_of_line = lf
-indent_style = space
-indent_size = 4
-
 [*.rc]
 charset = utf-8-bom
 end_of_line = crlf
-indent_style = space
-indent_size = 4
+
