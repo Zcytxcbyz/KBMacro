@@ -1,5 +1,8 @@
 #include <wx/wx.h>
 #include <wx/notebook.h>
+
+#include "common/Log.hpp"
+#include "common/Utils.hpp"
 #include "managers/LanguageManager.hpp"
 
 // ReSharper disable once CppUseInternalLinkage
@@ -52,10 +55,21 @@ public:
 class KBMacroApp : public wxApp {
 public:
     bool OnInit() override {
+        Log::Init();
+        LOG_INFO("KBMacro starting");
+
         LanguageManager::instance().setLanguageFromSystem();
+        LOG_INFO("UI language initialized from system");
+
         auto *frame = new MainFrame();
         frame->Show(true);
         return true;
+    }
+
+    int OnExit() override {
+        LOG_INFO("KBMacro exiting");
+        Log::Shutdown();
+        return wxApp::OnExit();
     }
 };
 

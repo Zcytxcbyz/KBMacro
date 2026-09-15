@@ -50,13 +50,17 @@ endif()
 set(SOURCES
         src/main.cpp
         src/managers/LanguageManager.cpp
+        src/common/Log.cpp
+        src/common/Utils.cpp
         # 在这里添加 .cpp 文件
 )
 
 set(HEADERS 
         res/resource.h 
         res/lang.h 
-        src/managers/LanguageManager.hpp 
+        src/managers/LanguageManager.hpp
+        src/common/Log.hpp
+        src/common/Utils.hpp
         # 在这里添加 .h 文件
 )
 
