@@ -17,8 +17,8 @@
 #include "common/Utils.hpp"
 
 namespace {
-    constexpr const char *kLoggerName = "KBMacro";
-    constexpr const char *kLogPattern = "[%Y-%m-%d %H:%M:%S.%e] [%t] [%s:%#] [%l] %v";
+    constexpr auto kLoggerName = "KBMacro";
+    constexpr auto kLogPattern = "[%Y-%m-%d %H:%M:%S.%e] [%t] [%s:%#] [%l] %v";
     constexpr std::size_t kAsyncQueueSize = 8192;
     constexpr std::size_t kMaxLogFiles = 30;
 
@@ -31,8 +31,10 @@ namespace {
         std::vector<std::filesystem::path> logFiles;
 
         std::error_code ec;
-        for (const auto &entry : std::filesystem::directory_iterator(logDir, ec)) {
-            if (ec) break;
+        const auto it = std::filesystem::directory_iterator(logDir, ec);
+        if (ec) return;
+
+        for (const auto &entry : it) {
             if (entry.is_regular_file() && entry.path().extension() == L".log") {
                 logFiles.push_back(entry.path());
             }
@@ -42,7 +44,7 @@ namespace {
 
         // 文件名格式 KBMacro_YYYY-MM-DD_HH-MM-SS.log
         // 字典序 == 时间序，直接按路径排
-        std::sort(logFiles.begin(), logFiles.end());
+        std::ranges::sort(logFiles);
 
         const std::size_t deleteCount = logFiles.size() - keepCount;
         for (std::size_t i = 0; i < deleteCount; ++i) {
