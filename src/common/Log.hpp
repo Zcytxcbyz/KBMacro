@@ -33,7 +33,7 @@ public:
 #else  // ENABLE_LOGGING
 
 // ReSharper disable once CppUseInternalLinkage
-class [[maybe_unused]] Log {
+class Log {
 public:
     Log() = delete;
 

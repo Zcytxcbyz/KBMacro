@@ -2,7 +2,6 @@
 #include <wx/notebook.h>
 
 #include "common/Log.hpp"
-#include "common/Utils.hpp"
 #include "managers/LanguageManager.hpp"
 
 // ReSharper disable once CppUseInternalLinkage

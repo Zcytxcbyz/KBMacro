@@ -57,6 +57,6 @@ std::wstring LanguageManager::tr(const int id) const {
                                   buf,
                                   // ReSharper disable once CppRedundantCastExpression
                                   static_cast<int>(std::size(buf)));
-    if (len <= 0) return L"";
-    return {std::wstring(buf, static_cast<std::size_t>(len))};
+    if (len <= 0) return {};
+    return {buf, static_cast<std::size_t>(len)};
 }

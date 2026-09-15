@@ -8,7 +8,7 @@
 
 namespace utils {
     std::filesystem::path GetExecutablePath() {
-        return {std::filesystem::path(wil::GetModuleFileNameW().get())};
+        return {wil::GetModuleFileNameW().get()};
     }
 
     std::filesystem::path GetExecutableDirectory() {
