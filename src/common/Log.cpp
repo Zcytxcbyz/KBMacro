@@ -27,7 +27,7 @@ namespace {
     }
 
     // 保留最近 keepCount 个日志文件，删掉更旧的
-    void CleanOldLogs(const std::filesystem::path &logDir, std::size_t keepCount) {
+    void CleanOldLogs(const std::filesystem::path &logDir, const std::size_t keepCount) {
         std::vector<std::filesystem::path> logFiles;
 
         std::error_code ec;
@@ -35,7 +35,8 @@ namespace {
         if (ec) return;
 
         for (const auto &entry : it) {
-            if (entry.is_regular_file() && entry.path().extension() == L".log") {
+            if (std::error_code entryEc;
+                entry.is_regular_file(entryEc) && entry.path().extension() == L".log") {
                 logFiles.push_back(entry.path());
             }
         }
