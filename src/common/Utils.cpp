@@ -16,7 +16,7 @@ namespace utils {
         return path.empty() ? std::filesystem::current_path() : path.parent_path();
     }
 
-    std::string ToUtf8(std::wstring_view wstr) {
+    std::string ToUtf8(const std::wstring_view wstr) {
         if (wstr.empty()) return {};
         const int size = ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(),
                                                static_cast<int>(wstr.size()),
@@ -26,6 +26,19 @@ namespace utils {
         ::WideCharToMultiByte(CP_UTF8, 0, wstr.data(),
                               static_cast<int>(wstr.size()),
                               result.data(), size, nullptr, nullptr);
+        return result;
+    }
+
+    std::wstring ToWide(const std::string_view str) {
+        if (str.empty()) return {};
+        const int size = ::MultiByteToWideChar(CP_UTF8, 0, str.data(),
+                                               static_cast<int>(str.size()),
+                                               nullptr, 0);
+        if (size <= 0) return {};
+        std::wstring result(static_cast<std::size_t>(size), L'\0');
+        ::MultiByteToWideChar(CP_UTF8, 0, str.data(),
+                              static_cast<int>(str.size()),
+                              result.data(), size);
         return result;
     }
 

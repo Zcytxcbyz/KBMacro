@@ -14,6 +14,9 @@ namespace utils {
     // 宽字符 → UTF-8
     std::string ToUtf8(std::wstring_view wstr);
 
+    // UTF-8 → 宽字符
+    std::wstring ToWide(std::string_view str);
+
     // 文件名友好的时间戳：2026-09-15_22-30-15
     std::wstring GetTimestampForFilename();
 
