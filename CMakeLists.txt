@@ -7,6 +7,7 @@ project(KBMacro VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ============================================================
 # Cmake 选项
@@ -61,6 +62,7 @@ set(HEADERS
         src/managers/LanguageManager.hpp
         src/common/Log.hpp
         src/common/Utils.hpp
+        src/common/Types.hpp
         # 在这里添加 .h 文件
 )
 
@@ -114,6 +116,19 @@ target_compile_definitions(KBMacro PRIVATE
         NOMINMAX 
         WIN32_LEAN_AND_MEAN
 )
+
+# ============================================================
+# 修复 MSVC + Ninja 依赖扫描模式下缺少目标架构宏的问题
+# （cl.exe -scanDependencies 不注入 _AMD64_ / _X86_，
+#   winnt.h 会 #error "No Target Architecture"）
+# ============================================================
+if(MSVC)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        target_compile_definitions(KBMacro PRIVATE _AMD64_)
+    else()
+        target_compile_definitions(KBMacro PRIVATE _X86_)
+    endif()
+endif()
 
 # ============================================================
 # 编译选项

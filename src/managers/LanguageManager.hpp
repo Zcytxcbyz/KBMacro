@@ -12,13 +12,13 @@ public:
 
     void setLanguage(Lang lang);
 
-    bool setLanguageByCode(std::wstring_view code);
+    bool setLanguageByCode(std::string_view code);
 
     void setLanguageFromSystem();
 
     [[nodiscard]] Lang currentLang() const noexcept { return m_lang; }
 
-    [[nodiscard]] const wchar_t *currentCode() const noexcept;
+    [[nodiscard]] const char *currentCode() const noexcept;
 
     [[nodiscard]] std::wstring tr(int id) const;
 

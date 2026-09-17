@@ -1,4 +1,5 @@
 #include "managers/LanguageManager.hpp"
+#include "common/Utils.hpp"
 
 #include <iterator>
 #include <windows.h>
@@ -21,7 +22,7 @@ void LanguageManager::setLanguage(Lang lang) {
 }
 
 // ReSharper disable once CppParameterMayBeConst
-bool LanguageManager::setLanguageByCode(std::wstring_view code) {
+bool LanguageManager::setLanguageByCode(std::string_view code) {
     for (const auto &info: kLangs) { // NOLINT(*-use-anyofallof)
         if (code == info.code) {
             m_lang = info.id;
@@ -38,12 +39,12 @@ void LanguageManager::setLanguageFromSystem() {
         setLanguage(LANG_DEFAULT);
         return;
     }
-    if (!setLanguageByCode(buf)) {
+    if (!setLanguageByCode(utils::ToUtf8(buf))) {
         setLanguage(LANG_DEFAULT);
     }
 }
 
-const wchar_t *LanguageManager::currentCode() const noexcept {
+const char *LanguageManager::currentCode() const noexcept {
     for (const auto &info: kLangs) {
         if (info.id == m_lang) return info.code;
     }
