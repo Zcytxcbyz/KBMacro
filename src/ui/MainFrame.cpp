@@ -9,6 +9,7 @@
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/panels/RecorderPanel.hpp"
 #include "ui/panels/SettingsPanel.hpp"
+#include "ui/panels/AboutPanel.hpp"
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
@@ -32,12 +33,8 @@ MainFrame::MainFrame()
     notebook->AddPage(settingsPanel, TR(IDS_TAB_SETTINGS));
 
     // ---- 标签页5：关于 ----
-    // TODO: 替换为 ui/panels/AboutPanel
-    auto *page5 = new wxPanel(notebook, wxID_ANY);
-    new wxStaticText(page5, wxID_ANY,
-                     TR(IDS_ABOUT_PLACEHOLDER),
-                     wxPoint(20, 20));
-    notebook->AddPage(page5, TR(IDS_TAB_ABOUT));
+    auto *aboutPanel = new AboutPanel(notebook);
+    notebook->AddPage(aboutPanel, TR(IDS_TAB_ABOUT));
 
     wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
 

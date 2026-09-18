@@ -30,3 +30,10 @@ END
 #include "langs/zh-CN.rc"
 #include "langs/en-US.rc"
 
+IDR_LICENSE_KBMACRO             RCDATA "licenses/KBMacro.txt"
+IDR_LICENSE_WXWIDGETS           RCDATA "licenses/wxWidgets.txt"
+IDR_LICENSE_SPDLOG              RCDATA "licenses/spdlog.txt"
+IDR_LICENSE_NLOHMANN_JSON       RCDATA "licenses/nlohmann-json.txt"
+IDR_LICENSE_WIL                 RCDATA "licenses/WIL.txt"
+IDR_LICENSE_CONCURRENTQUEUE     RCDATA "licenses/ConcurrentQueue.txt"
+IDR_LICENSE_GTEST               RCDATA "licenses/GoogleTest.txt"

@@ -11,7 +11,6 @@ BEGIN
     L(IDS_TAB_RECORDER)         "Record & Arrange"
     L(IDS_TAB_SETTINGS)         "Settings"
     L(IDS_TAB_ABOUT)            "About"
-    L(IDS_ABOUT_PLACEHOLDER)    "About and license will be implemented here"
 
     // ---- Common ----
     L(IDS_COMMON_BTN_START)          "Start"
@@ -120,6 +119,17 @@ BEGIN
     L(IDS_SETTINGS_MSG_DELETE_CONFIRM)     "The portable config file will be deleted. The next launch will fall back to APPDATA. Continue?"
     L(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM)"All screen adaptation records will be cleared. Continue?"
     L(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM) "The spin-mode confirmation will be cleared, and you'll be prompted again next time. Continue?"
+
+    // ---- About panel ----
+    L(IDS_ABOUT_GROUP_APP)          "Application"
+    L(IDS_ABOUT_LABEL_NAME)         "Name:"
+    L(IDS_ABOUT_LABEL_VERSION)      "Version:"
+    L(IDS_ABOUT_LABEL_HOMEPAGE)     "Homepage:"
+    L(IDS_ABOUT_GROUP_LIBS)         "Third-party Libraries"
+    L(IDS_ABOUT_LIST_COL_NAME)      "Library"
+    L(IDS_ABOUT_LIST_COL_VERSION)   "Version"
+    L(IDS_ABOUT_LIST_COL_LICENSE)   "License"
+    L(IDS_ABOUT_GROUP_LICENSE)      "License Text"
 END
 
 #undef L

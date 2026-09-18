@@ -59,6 +59,7 @@ set(SOURCES
         src/ui/panels/KeyboardPanel.cpp
         src/ui/panels/RecorderPanel.cpp
         src/ui/panels/SettingsPanel.cpp
+        src/ui/panels/AboutPanel.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -75,6 +76,7 @@ set(HEADERS
         src/ui/panels/KeyboardPanel.hpp
         src/ui/panels/RecorderPanel.hpp
         src/ui/panels/SettingsPanel.hpp
+        src/ui/panels/AboutPanel.hpp
         # 在这里添加 .h 文件
 )
 
@@ -127,6 +129,8 @@ target_compile_definitions(KBMacro PRIVATE
         _USE_MATH_DEFINES 
         NOMINMAX 
         WIN32_LEAN_AND_MEAN
+        KBMACRO_VERSION="${PROJECT_VERSION}"
+        KBMACRO_HOMEPAGE="https://example.com/kbmacro"
 )
 
 # ============================================================

@@ -9,7 +9,15 @@
 #define IDS_TAB_RECORDER                1012
 #define IDS_TAB_SETTINGS                1013
 #define IDS_TAB_ABOUT                   1014
-#define IDS_ABOUT_PLACEHOLDER           1024
+
+// ---- RC 数据资源 ----
+#define IDR_LICENSE_KBMACRO             201
+#define IDR_LICENSE_WXWIDGETS           202
+#define IDR_LICENSE_SPDLOG              203
+#define IDR_LICENSE_NLOHMANN_JSON       204
+#define IDR_LICENSE_WIL                 205
+#define IDR_LICENSE_CONCURRENTQUEUE     206
+#define IDR_LICENSE_GTEST               207
 
 // ---- 通用（跨面板共用）----
 #define IDS_COMMON_BTN_START             1101
@@ -118,6 +126,17 @@
 #define IDS_SETTINGS_MSG_DELETE_CONFIRM       5064
 #define IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM  5065
 #define IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM   5066
+
+// ---- About 面板 ----
+#define IDS_ABOUT_GROUP_APP            6001
+#define IDS_ABOUT_LABEL_NAME           6002
+#define IDS_ABOUT_LABEL_VERSION        6003
+#define IDS_ABOUT_LABEL_HOMEPAGE       6004
+#define IDS_ABOUT_GROUP_LIBS           6010
+#define IDS_ABOUT_LIST_COL_NAME        6011
+#define IDS_ABOUT_LIST_COL_VERSION     6012
+#define IDS_ABOUT_LIST_COL_LICENSE     6013
+#define IDS_ABOUT_GROUP_LICENSE        6020
 
 // Next default values for new objects
 //

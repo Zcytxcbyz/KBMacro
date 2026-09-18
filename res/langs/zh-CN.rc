@@ -11,7 +11,6 @@ BEGIN
     L(IDS_TAB_RECORDER)         "录制与编排"
     L(IDS_TAB_SETTINGS)         "设置"
     L(IDS_TAB_ABOUT)            "关于"
-    L(IDS_ABOUT_PLACEHOLDER)    "关于和许可证显示将在此实现"
 
     // ---- 通用 ----
     L(IDS_COMMON_BTN_START)          "开始"
@@ -120,6 +119,17 @@ BEGIN
     L(IDS_SETTINGS_MSG_DELETE_CONFIRM)     "将删除便携配置文件，删除后下次启动将回退到 APPDATA 配置。是否继续？"
     L(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM)"将清除所有屏幕适配记忆，是否继续？"
     L(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM) "将清除高精度模式的确认状态，下次切换时会再次提醒。是否继续？"
+
+    // ---- About 面板 ----
+    L(IDS_ABOUT_GROUP_APP)          "程序信息"
+    L(IDS_ABOUT_LABEL_NAME)         "名称："
+    L(IDS_ABOUT_LABEL_VERSION)      "版本："
+    L(IDS_ABOUT_LABEL_HOMEPAGE)     "主页："
+    L(IDS_ABOUT_GROUP_LIBS)         "第三方库"
+    L(IDS_ABOUT_LIST_COL_NAME)      "库名"
+    L(IDS_ABOUT_LIST_COL_VERSION)   "版本"
+    L(IDS_ABOUT_LIST_COL_LICENSE)   "许可"
+    L(IDS_ABOUT_GROUP_LICENSE)      "许可证"
 END
 
 #undef L
