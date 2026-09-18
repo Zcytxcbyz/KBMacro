@@ -60,6 +60,7 @@ set(SOURCES
         src/ui/panels/RecorderPanel.cpp
         src/ui/panels/SettingsPanel.cpp
         src/ui/panels/AboutPanel.cpp
+        src/common/Hotkey.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -77,6 +78,7 @@ set(HEADERS
         src/ui/panels/RecorderPanel.hpp
         src/ui/panels/SettingsPanel.hpp
         src/ui/panels/AboutPanel.hpp
+        src/common/Hotkey.hpp
         # 在这里添加 .h 文件
 )
 
