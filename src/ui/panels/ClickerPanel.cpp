@@ -1,10 +1,10 @@
-#include "ui/panels/ClickerPanel.hpp"
-
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
+#include "ui/panels/ClickerPanel.hpp"
+#include "ui/ScreenCaptureOverlay.hpp"
 
 ClickerPanel::ClickerPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
@@ -169,9 +169,23 @@ void ClickerPanel::buildUi() {
 // 事件处理（纯 UI 阶段：只记录日志，不接实际逻辑）
 // ============================================================
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onCapturePos(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: capture position clicked");
+void ClickerPanel::onCapturePos(wxCommandEvent &) {
+    LOG_DEBUG("clicker: capture position started");
+
+    // 新建一个全屏覆盖层，用户点击后回填坐标并自动销毁
+    // 捕获期间用户仍能看见屏幕内容（半透明），点击/右键/Esc 结束
+    // 注意：回调 lambda 捕获 this，overlay 生命周期短（一次点击内），
+    //       只要 panel 在 overlay 存活期间不析构就安全
+    new ScreenCaptureOverlay(this,
+        [this](const bool captured, const wxPoint pos) {
+            if (!captured) {
+                LOG_DEBUG("clicker: capture position cancelled");
+                return;
+            }
+            LOG_DEBUG("clicker: captured position ({}, {})", pos.x, pos.y);
+            m_x->SetValue(wxString::Format("%d", pos.x));
+            m_y->SetValue(wxString::Format("%d", pos.y));
+        });
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic

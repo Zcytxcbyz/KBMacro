@@ -143,6 +143,9 @@
 #define IDS_HOTKEY_DIALOG_BTN_CLEAR     7002
 #define IDS_HOTKEY_DIALOG_MSG_INVALID   7003
 
+// ---- 坐标捕获覆盖层 ----
+#define IDS_CAPTURE_HINT                8001
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

@@ -135,6 +135,9 @@ BEGIN
     L(IDS_HOTKEY_DIALOG_HINT)        "请按下按键组合"
     L(IDS_HOTKEY_DIALOG_BTN_CLEAR)   "清除"
     L(IDS_HOTKEY_DIALOG_MSG_INVALID) "请按下有效的按键组合。"
+
+    // ---- 坐标捕获覆盖层 ----
+    L(IDS_CAPTURE_HINT)              "点击任意位置以捕获坐标\n按 Esc 或鼠标右键取消"
 END
 
 #undef L
