@@ -58,6 +58,7 @@ set(SOURCES
         src/ui/panels/ClickerPanel.cpp
         src/ui/panels/KeyboardPanel.cpp
         src/ui/panels/RecorderPanel.cpp
+        src/ui/panels/SettingsPanel.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -73,6 +74,7 @@ set(HEADERS
         src/ui/panels/ClickerPanel.hpp
         src/ui/panels/KeyboardPanel.hpp
         src/ui/panels/RecorderPanel.hpp
+        src/ui/panels/SettingsPanel.hpp
         # 在这里添加 .h 文件
 )
 

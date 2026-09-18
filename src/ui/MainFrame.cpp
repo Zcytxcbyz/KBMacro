@@ -8,10 +8,11 @@
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/panels/RecorderPanel.hpp"
+#include "ui/panels/SettingsPanel.hpp"
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              wxDefaultPosition, wxSize(550, 700)) {
+              wxDefaultPosition, wxSize(550, 710)) {
     auto *notebook = new wxNotebook(this, wxID_ANY);
 
     // ---- 标签页1：鼠标连点器 ----
@@ -27,12 +28,8 @@ MainFrame::MainFrame()
     notebook->AddPage(recorderPanel, TR(IDS_TAB_RECORDER));
 
     // ---- 标签页4：设置 ----
-    // TODO: 替换为 ui/panels/SettingsPanel
-    auto *page4 = new wxPanel(notebook, wxID_ANY);
-    new wxStaticText(page4, wxID_ANY,
-                     TR(IDS_SETTINGS_PLACEHOLDER),
-                     wxPoint(20, 20));
-    notebook->AddPage(page4, TR(IDS_TAB_SETTINGS));
+    auto *settingsPanel = new SettingsPanel(notebook);
+    notebook->AddPage(settingsPanel, TR(IDS_TAB_SETTINGS));
 
     // ---- 标签页5：关于 ----
     // TODO: 替换为 ui/panels/AboutPanel
