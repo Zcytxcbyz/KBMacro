@@ -11,7 +11,6 @@ BEGIN
     L(IDS_TAB_RECORDER)         "录制与编排"
     L(IDS_TAB_SETTINGS)         "设置"
     L(IDS_TAB_ABOUT)            "关于"
-    L(IDS_RECORDER_PLACEHOLDER) "录制、编排、回放功能将在此实现"
     L(IDS_SETTINGS_PLACEHOLDER) "语言切换、热键配置、配置文件等设置将在此实现"
     L(IDS_ABOUT_PLACEHOLDER)    "关于和许可证显示将在此实现"
 
@@ -60,6 +59,27 @@ BEGIN
     L(IDS_KEYBOARD_LABEL_INTERVAL)   "重复间隔 (ms)："
     L(IDS_KEYBOARD_LABEL_HOLD)       "按键保持时间 (ms)："
     L(IDS_KEYBOARD_BTN_SEND_ONCE)    "发送一次"
+
+    // ---- Recorder 面板 ----
+    L(IDS_RECORDER_GROUP_RECORD)         "录制"
+    L(IDS_RECORDER_BTN_START_RECORD)     "开始录制"
+    L(IDS_RECORDER_BTN_STOP_RECORD)      "停止录制"
+    L(IDS_RECORDER_GROUP_ACTION_LIST)    "动作列表"
+    L(IDS_RECORDER_BTN_EDIT)             "编辑"
+    L(IDS_RECORDER_BTN_DELETE)           "删除"
+    L(IDS_RECORDER_BTN_MOVE_UP)          "上移"
+    L(IDS_RECORDER_BTN_MOVE_DOWN)        "下移"
+    L(IDS_RECORDER_BTN_CLEAR)            "清空"
+    L(IDS_RECORDER_GROUP_PLAYBACK)       "回放"
+    L(IDS_RECORDER_BTN_START_PLAYBACK)   "开始回放"
+    L(IDS_RECORDER_BTN_STOP_PLAYBACK)    "停止回放"
+    L(IDS_RECORDER_BTN_IMPORT_SCRIPT)    "导入脚本"
+    L(IDS_RECORDER_BTN_EXPORT_SCRIPT)    "导出脚本"
+    L(IDS_RECORDER_LIST_COL_INDEX)       "#"
+    L(IDS_RECORDER_LIST_COL_ACTION)      "动作"
+    L(IDS_RECORDER_LIST_COL_PARAM)       "参数"
+    L(IDS_RECORDER_LIST_COL_DELAY)       "延时 (ms)"
+    L(IDS_RECORDER_LIST_COL_HOLD)        "保持 (ms)"
 END
 
 #undef L

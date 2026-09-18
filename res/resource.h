@@ -9,7 +9,6 @@
 #define IDS_TAB_RECORDER                1012
 #define IDS_TAB_SETTINGS                1013
 #define IDS_TAB_ABOUT                   1014
-#define IDS_RECORDER_PLACEHOLDER        1022
 #define IDS_SETTINGS_PLACEHOLDER        1023
 #define IDS_ABOUT_PLACEHOLDER           1024
 
@@ -58,6 +57,27 @@
 #define IDS_KEYBOARD_LABEL_INTERVAL      3006
 #define IDS_KEYBOARD_LABEL_HOLD          3007
 #define IDS_KEYBOARD_BTN_SEND_ONCE       3008
+
+// ---- Recorder 面板 ----
+#define IDS_RECORDER_GROUP_RECORD           4001
+#define IDS_RECORDER_BTN_START_RECORD       4002
+#define IDS_RECORDER_BTN_STOP_RECORD        4003
+#define IDS_RECORDER_GROUP_ACTION_LIST      4004
+#define IDS_RECORDER_BTN_EDIT               4005
+#define IDS_RECORDER_BTN_DELETE             4006
+#define IDS_RECORDER_BTN_MOVE_UP            4007
+#define IDS_RECORDER_BTN_MOVE_DOWN          4008
+#define IDS_RECORDER_BTN_CLEAR              4009
+#define IDS_RECORDER_GROUP_PLAYBACK         4010
+#define IDS_RECORDER_BTN_START_PLAYBACK     4011
+#define IDS_RECORDER_BTN_STOP_PLAYBACK      4012
+#define IDS_RECORDER_BTN_IMPORT_SCRIPT      4013
+#define IDS_RECORDER_BTN_EXPORT_SCRIPT      4014
+#define IDS_RECORDER_LIST_COL_INDEX         4020
+#define IDS_RECORDER_LIST_COL_ACTION        4021
+#define IDS_RECORDER_LIST_COL_PARAM         4022
+#define IDS_RECORDER_LIST_COL_DELAY         4023
+#define IDS_RECORDER_LIST_COL_HOLD          4024
 
 // Next default values for new objects
 //

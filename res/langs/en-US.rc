@@ -11,7 +11,6 @@ BEGIN
     L(IDS_TAB_RECORDER)         "Record & Arrange"
     L(IDS_TAB_SETTINGS)         "Settings"
     L(IDS_TAB_ABOUT)            "About"
-    L(IDS_RECORDER_PLACEHOLDER) "Record, arrange, replay will be implemented here"
     L(IDS_SETTINGS_PLACEHOLDER) "Language, hotkeys, config will be implemented here"
     L(IDS_ABOUT_PLACEHOLDER)    "About and license will be implemented here"
 
@@ -60,6 +59,27 @@ BEGIN
     L(IDS_KEYBOARD_LABEL_INTERVAL)   "Repeat interval (ms):"
     L(IDS_KEYBOARD_LABEL_HOLD)       "Key hold time (ms):"
     L(IDS_KEYBOARD_BTN_SEND_ONCE)    "Send once"
+
+    // ---- Recorder panel ----
+    L(IDS_RECORDER_GROUP_RECORD)         "Record"
+    L(IDS_RECORDER_BTN_START_RECORD)     "Start Recording"
+    L(IDS_RECORDER_BTN_STOP_RECORD)      "Stop Recording"
+    L(IDS_RECORDER_GROUP_ACTION_LIST)    "Action List"
+    L(IDS_RECORDER_BTN_EDIT)             "Edit"
+    L(IDS_RECORDER_BTN_DELETE)           "Delete"
+    L(IDS_RECORDER_BTN_MOVE_UP)          "Move Up"
+    L(IDS_RECORDER_BTN_MOVE_DOWN)        "Move Down"
+    L(IDS_RECORDER_BTN_CLEAR)            "Clear"
+    L(IDS_RECORDER_GROUP_PLAYBACK)       "Playback"
+    L(IDS_RECORDER_BTN_START_PLAYBACK)   "Start Playback"
+    L(IDS_RECORDER_BTN_STOP_PLAYBACK)    "Stop Playback"
+    L(IDS_RECORDER_BTN_IMPORT_SCRIPT)    "Import Script"
+    L(IDS_RECORDER_BTN_EXPORT_SCRIPT)    "Export Script"
+    L(IDS_RECORDER_LIST_COL_INDEX)       "#"
+    L(IDS_RECORDER_LIST_COL_ACTION)      "Action"
+    L(IDS_RECORDER_LIST_COL_PARAM)       "Parameter"
+    L(IDS_RECORDER_LIST_COL_DELAY)       "Delay (ms)"
+    L(IDS_RECORDER_LIST_COL_HOLD)        "Hold (ms)"
 END
 
 #undef L

@@ -1,16 +1,17 @@
-#include "ui/MainFrame.hpp"
-
 #include <wx/notebook.h>
 
-#include "ui/KBMacroStatusBar.hpp"
 #include "managers/LanguageManager.hpp"
+
+#include "ui/MainFrame.hpp"
+#include "ui/KBMacroStatusBar.hpp"
 
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
+#include "ui/panels/RecorderPanel.hpp"
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              wxDefaultPosition, wxSize(500, 700)) {
+              wxDefaultPosition, wxSize(550, 700)) {
     auto *notebook = new wxNotebook(this, wxID_ANY);
 
     // ---- 标签页1：鼠标连点器 ----
@@ -22,12 +23,8 @@ MainFrame::MainFrame()
     notebook->AddPage(keyboardPanel, TR(IDS_TAB_KEYBOARD));
 
     // ---- 标签页3：录制与编排 ----
-    // TODO: 替换为 ui/panels/RecorderPanel
-    auto *page3 = new wxPanel(notebook, wxID_ANY);
-    new wxStaticText(page3, wxID_ANY,
-                     TR(IDS_RECORDER_PLACEHOLDER),
-                     wxPoint(20, 20));
-    notebook->AddPage(page3, TR(IDS_TAB_RECORDER));
+    auto *recorderPanel = new RecorderPanel(notebook);
+    notebook->AddPage(recorderPanel, TR(IDS_TAB_RECORDER));
 
     // ---- 标签页4：设置 ----
     // TODO: 替换为 ui/panels/SettingsPanel

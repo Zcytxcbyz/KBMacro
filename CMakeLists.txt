@@ -57,6 +57,7 @@ set(SOURCES
         src/ui/KBMacroStatusBar.cpp
         src/ui/panels/ClickerPanel.cpp
         src/ui/panels/KeyboardPanel.cpp
+        src/ui/panels/RecorderPanel.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -71,6 +72,7 @@ set(HEADERS
         src/ui/KBMacroStatusBar.hpp
         src/ui/panels/ClickerPanel.hpp
         src/ui/panels/KeyboardPanel.hpp
+        src/ui/panels/RecorderPanel.hpp
         # 在这里添加 .h 文件
 )
 
