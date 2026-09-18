@@ -2,6 +2,7 @@
 
 #include <wx/notebook.h>
 
+#include "KBMacroStatusBar.hpp"
 #include "managers/LanguageManager.hpp"
 
 MainFrame::MainFrame()
@@ -50,4 +51,6 @@ MainFrame::MainFrame()
     notebook->AddPage(page5, TR(IDS_TAB_ABOUT));
 
     wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
+
+    wxFrameBase::SetStatusBar(new KBMacroStatusBar(this));
 }

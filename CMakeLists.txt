@@ -54,6 +54,7 @@ set(SOURCES
         src/common/Log.cpp
         src/common/Utils.cpp
         src/ui/MainFrame.cpp
+        src/ui/KBMacroStatusBar.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -65,6 +66,7 @@ set(HEADERS
         src/common/Utils.hpp
         src/common/Types.hpp
         src/ui/MainFrame.hpp
+        src/ui/KBMacroStatusBar.hpp
         # 在这里添加 .h 文件
 )
 
