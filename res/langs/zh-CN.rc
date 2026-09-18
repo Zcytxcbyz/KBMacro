@@ -130,6 +130,11 @@ BEGIN
     L(IDS_ABOUT_LIST_COL_VERSION)   "版本"
     L(IDS_ABOUT_LIST_COL_LICENSE)   "许可"
     L(IDS_ABOUT_GROUP_LICENSE)      "许可证"
+
+    // ---- 热键捕获对话框 ----
+    L(IDS_HOTKEY_DIALOG_HINT)        "请按下按键组合"
+    L(IDS_HOTKEY_DIALOG_BTN_CLEAR)   "清除"
+    L(IDS_HOTKEY_DIALOG_MSG_INVALID) "请按下有效的按键组合。"
 END
 
 #undef L

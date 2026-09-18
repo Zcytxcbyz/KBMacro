@@ -1,5 +1,3 @@
-#include "ui/panels/SettingsPanel.hpp"
-
 #include <filesystem>
 #include <iterator>
 
@@ -7,7 +5,10 @@
 
 #include "common/Log.hpp"
 #include "common/Utils.hpp"
+#include "common/Hotkey.hpp"
 #include "managers/LanguageManager.hpp"
+#include "ui/panels/SettingsPanel.hpp"
+#include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
     // 计时器模式下拉框的索引
@@ -117,7 +118,10 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     for (std::size_t i = 0; i < std::size(kHotkeyActionResIds); ++i) {
         const long row = m_hotkeyList->InsertItem(static_cast<long>(i),
                                                   TR(kHotkeyActionResIds[i]));
-        m_hotkeyList->SetItem(row, 1, TR(IDS_SETTINGS_HOTKEY_UNSET));
+        const std::wstring s = utils::hotkeyToString(m_hotkeys[i]);
+        m_hotkeyList->SetItem(row, 1,
+                              s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
+                                        : wxString(s));
         m_hotkeyList->CheckItem(row, true);
     }
 
@@ -131,6 +135,14 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     box->Add(btnRow, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 4);
 
     parent->Add(box, 0, wxEXPAND | wxALL, 8);
+
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_SELECTED,
+                   &SettingsPanel::onHotkeySelectionChanged, this);
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED,
+                       &SettingsPanel::onHotkeySelectionChanged, this);
+
+    // 初始无选中 → 按钮禁用
+    m_btnModifyHotkey->Enable(false);
 }
 
 // ============================================================
@@ -215,8 +227,29 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) { // NOLINT(*-co
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void SettingsPanel::onModifyHotkey(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("settings: modify hotkey clicked");
+void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
+    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
+                                               wxLIST_STATE_SELECTED);
+    if (row < 0) {
+        LOG_DEBUG("settings: modify hotkey clicked, but no row selected");
+        return;
+    }
+
+    HotkeyCaptureDialog dlg(this,
+                            TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
+                            m_hotkeys[static_cast<std::size_t>(row)],
+                            /*requireMainKey=*/true);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    m_hotkeys[static_cast<std::size_t>(row)] = dlg.getHotkey();
+
+    const std::wstring s = utils::hotkeyToString(m_hotkeys[static_cast<std::size_t>(row)]);
+    m_hotkeyList->SetItem(row, 1,
+                          s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
+                                    : wxString(s));
+
+    LOG_DEBUG("settings: hotkey row {} set to {}",
+              row, utils::ToUtf8(s));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -276,4 +309,12 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     if (ret == wxOK) {
         LOG_DEBUG("settings: delete portable config confirmed (not implemented)");
     }
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onHotkeySelectionChanged(wxListEvent &event) {
+    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
+                                               wxLIST_STATE_SELECTED);
+    m_btnModifyHotkey->Enable(row >= 0);
+    event.Skip();
 }

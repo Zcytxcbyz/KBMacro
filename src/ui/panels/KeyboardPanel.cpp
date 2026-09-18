@@ -1,10 +1,11 @@
-#include "ui/panels/KeyboardPanel.hpp"
-
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 
 #include "common/Log.hpp"
+#include "common/Hotkey.hpp"
 #include "managers/LanguageManager.hpp"
+#include "ui/panels/KeyboardPanel.hpp"
+#include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 KeyboardPanel::KeyboardPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
@@ -143,8 +144,23 @@ void KeyboardPanel::buildUi() {
 // ============================================================
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onSetKey(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: set key clicked");
+void KeyboardPanel::onSetKey(wxCommandEvent &) {
+    HotkeyCaptureDialog dlg(this,
+                            TR(IDS_KEYBOARD_BTN_SET_KEY),
+                            m_hotkey,
+                            /*requireMainKey=*/false);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    m_hotkey = dlg.getHotkey();
+
+    const std::wstring s = utils::hotkeyToString(m_hotkey);
+    if (s.empty()) {
+        m_keyDisplay->SetValue(TR(IDS_KEYBOARD_KEY_UNSET));
+    } else {
+        m_keyDisplay->SetValue(s);
+    }
+
+    LOG_DEBUG("keyboard: hotkey set to {}", utils::ToUtf8(s));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic

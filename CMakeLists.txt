@@ -61,6 +61,7 @@ set(SOURCES
         src/ui/panels/SettingsPanel.cpp
         src/ui/panels/AboutPanel.cpp
         src/common/Hotkey.cpp
+        src/ui/dialogs/HotkeyCaptureDialog.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -79,6 +80,7 @@ set(HEADERS
         src/ui/panels/SettingsPanel.hpp
         src/ui/panels/AboutPanel.hpp
         src/common/Hotkey.hpp
+        src/ui/dialogs/HotkeyCaptureDialog.hpp
         # 在这里添加 .h 文件
 )
 

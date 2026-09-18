@@ -1,7 +1,10 @@
 #pragma once
 
+#include <array>
 #include <wx/wx.h>
 #include <wx/listctrl.h>
+
+#include "common/Types.hpp"
 
 // 设置面板。
 //
@@ -28,6 +31,7 @@ private:
     void onClearSpinConfirm(wxCommandEvent &event);
     void onResetDefaults(wxCommandEvent &event);
     void onDeletePortableConfig(wxCommandEvent &event);
+    void onHotkeySelectionChanged(wxListEvent &event);
 
     // ---- 通用 ----
     wxChoice *m_choiceLanguage{};
@@ -35,6 +39,8 @@ private:
     wxCheckBox *m_chkAlwaysOnTop{};
 
     // ---- 热键 ----
+    static constexpr int kHotkeyCount = 10;
+    std::array<Hotkey, kHotkeyCount> m_hotkeys{};
     wxListCtrl *m_hotkeyList{};
     wxButton *m_btnModifyHotkey{};
 

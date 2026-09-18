@@ -138,6 +138,11 @@
 #define IDS_ABOUT_LIST_COL_LICENSE     6013
 #define IDS_ABOUT_GROUP_LICENSE        6020
 
+// ---- 热键捕获对话框 ----
+#define IDS_HOTKEY_DIALOG_HINT          7001
+#define IDS_HOTKEY_DIALOG_BTN_CLEAR     7002
+#define IDS_HOTKEY_DIALOG_MSG_INVALID   7003
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

@@ -2,6 +2,8 @@
 
 #include <wx/wx.h>
 
+#include "common/Types.hpp"
+
 // 键盘模拟器面板。
 //
 // 当前为纯 UI 阶段：控件已布局，按钮事件只记录日志，不接实际逻辑。
@@ -26,6 +28,7 @@ private:
     void onExport(wxCommandEvent &event);
 
     // ---- 按键 ----
+    Hotkey m_hotkey;
     wxTextCtrl *m_keyDisplay{};
     wxButton *m_btnSetKey{};
 

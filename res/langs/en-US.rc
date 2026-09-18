@@ -130,6 +130,11 @@ BEGIN
     L(IDS_ABOUT_LIST_COL_VERSION)   "Version"
     L(IDS_ABOUT_LIST_COL_LICENSE)   "License"
     L(IDS_ABOUT_GROUP_LICENSE)      "License Text"
+
+    // ---- Hotkey capture dialog ----
+    L(IDS_HOTKEY_DIALOG_HINT)        "Press a key combination"
+    L(IDS_HOTKEY_DIALOG_BTN_CLEAR)   "Clear"
+    L(IDS_HOTKEY_DIALOG_MSG_INVALID) "Please press a valid key combination."
 END
 
 #undef L
