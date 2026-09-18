@@ -2,29 +2,24 @@
 
 #include <wx/notebook.h>
 
-#include "KBMacroStatusBar.hpp"
+#include "ui/KBMacroStatusBar.hpp"
 #include "managers/LanguageManager.hpp"
+
+#include "ui/panels/ClickerPanel.hpp"
+#include "ui/panels/KeyboardPanel.hpp"
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              wxDefaultPosition, wxSize(500, 600)) {
+              wxDefaultPosition, wxSize(500, 700)) {
     auto *notebook = new wxNotebook(this, wxID_ANY);
 
     // ---- 标签页1：鼠标连点器 ----
-    // TODO: 替换为 ui/panels/ClickerPanel
-    auto *page1 = new wxPanel(notebook, wxID_ANY);
-    new wxStaticText(page1, wxID_ANY,
-                     TR(IDS_CLICKER_PLACEHOLDER),
-                     wxPoint(20, 20));
-    notebook->AddPage(page1, TR(IDS_TAB_CLICKER));
+    auto *clickerPanel = new ClickerPanel(notebook);
+    notebook->AddPage(clickerPanel, TR(IDS_TAB_CLICKER));
 
     // ---- 标签页2：键盘模拟器 ----
-    // TODO: 替换为 ui/panels/KeyboardPanel
-    auto *page2 = new wxPanel(notebook, wxID_ANY);
-    new wxStaticText(page2, wxID_ANY,
-                     TR(IDS_KEYBOARD_PLACEHOLDER),
-                     wxPoint(20, 20));
-    notebook->AddPage(page2, TR(IDS_TAB_KEYBOARD));
+    auto *keyboardPanel = new KeyboardPanel(notebook);
+    notebook->AddPage(keyboardPanel, TR(IDS_TAB_KEYBOARD));
 
     // ---- 标签页3：录制与编排 ----
     // TODO: 替换为 ui/panels/RecorderPanel

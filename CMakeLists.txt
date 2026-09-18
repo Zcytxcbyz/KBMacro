@@ -55,6 +55,8 @@ set(SOURCES
         src/common/Utils.cpp
         src/ui/MainFrame.cpp
         src/ui/KBMacroStatusBar.cpp
+        src/ui/panels/ClickerPanel.cpp
+        src/ui/panels/KeyboardPanel.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -67,6 +69,8 @@ set(HEADERS
         src/common/Types.hpp
         src/ui/MainFrame.hpp
         src/ui/KBMacroStatusBar.hpp
+        src/ui/panels/ClickerPanel.hpp
+        src/ui/panels/KeyboardPanel.hpp
         # 在这里添加 .h 文件
 )
 
