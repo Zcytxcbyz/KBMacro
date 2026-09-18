@@ -22,23 +22,24 @@ namespace {
 
     // 第三方库信息与对应的许可资源 ID。
     // 顺序即列表顺序，也是许可全文拼接顺序。
+    // 所有字段均为 ASCII 语义（库名 / 版本号 / 许可名），用窄字符存储。
     struct LibInfo {
-        const wchar_t *name;
-        const wchar_t *version;
-        const wchar_t *license;
+        const char *name;
+        const char *version;
+        const char *license;
         int licenseResId;
     };
 
     constexpr LibInfo kLibs[] = {
-        {.name = L"KBMacro", .version = L"1.0.0", .license = L"GPL-3.0", .licenseResId = IDR_LICENSE_KBMACRO},
-        {.name = L"wxWidgets", .version = L"3.2.11", .license = L"wxWindows Library Licence", .licenseResId = IDR_LICENSE_WXWIDGETS},
-        {.name = L"spdlog", .version = L"1.17.0", .license = L"MIT", .licenseResId = IDR_LICENSE_SPDLOG},
-        {.name = L"nlohmann-json", .version = L"3.12.0", .license = L"MIT", .licenseResId = IDR_LICENSE_NLOHMANN_JSON},
-        {.name = L"moodycamel::ConcurrentQueue", .version = L"1.0.5", .license = L"BSD 2-Clause",
+        {.name = "KBMacro", .version = KBMACRO_VERSION, .license = "GPL-3.0", .licenseResId = IDR_LICENSE_KBMACRO},
+        {.name = "wxWidgets", .version = "3.2.11", .license = "wxWindows Library Licence", .licenseResId = IDR_LICENSE_WXWIDGETS},
+        {.name = "spdlog", .version = "1.17.0", .license = "MIT", .licenseResId = IDR_LICENSE_SPDLOG},
+        {.name = "nlohmann-json", .version = "3.12.0", .license = "MIT", .licenseResId = IDR_LICENSE_NLOHMANN_JSON},
+        {.name = "moodycamel::ConcurrentQueue", .version = "1.0.5", .license = "BSD 2-Clause",
             .licenseResId = IDR_LICENSE_CONCURRENTQUEUE
         },
-        {.name = L"WIL", .version = L"1.0.260126.7", .license = L"MIT", .licenseResId = IDR_LICENSE_WIL},
-        {.name = L"GoogleTest", .version = L"1.18.0", .license = L"BSD 3-Clause", .licenseResId = IDR_LICENSE_GTEST},
+        {.name = "WIL", .version = "1.0.260126.7", .license = "MIT", .licenseResId = IDR_LICENSE_WIL},
+        {.name = "GoogleTest", .version = "1.18.0", .license = "BSD 3-Clause", .licenseResId = IDR_LICENSE_GTEST},
     };
 
     constexpr auto kSeparator =
@@ -61,11 +62,11 @@ namespace {
     wxString BuildLicenseText() {
         wxString text;
         for (const auto &[name, version, license, licenseResId]: kLibs) {
-            text += name;
+            text += wxString::FromAscii(name);
             text += L"\n";
-            text += version;
+            text += wxString::FromAscii(version);
             text += L"  |  ";
-            text += license;
+            text += wxString::FromAscii(license);
             text += kSeparator;
 
             const std::string raw = LoadRcText(licenseResId);
@@ -129,9 +130,9 @@ void AboutPanel::buildUi() {
 
         long row = 0;
         for (const auto &lib: kLibs) {
-            m_libList->InsertItem(row, lib.name);
-            m_libList->SetItem(row, 1, lib.version);
-            m_libList->SetItem(row, 2, lib.license);
+            m_libList->InsertItem(row, wxString::FromAscii(lib.name));
+            m_libList->SetItem(row, 1, wxString::FromAscii(lib.version));
+            m_libList->SetItem(row, 2, wxString::FromAscii(lib.license));
             ++row;
         }
 
