@@ -7,6 +7,13 @@
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
+namespace {
+    // ReSharper disable once CppDeclaratorNeverUsed
+    constexpr int kRunModeInfinite = 0;
+    constexpr int kRunModeTimed    = 1;
+    constexpr int kRunModeCounted  = 2;
+}
+
 KeyboardPanel::KeyboardPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
     buildUi();
@@ -137,6 +144,9 @@ void KeyboardPanel::buildUi() {
     m_btnStop->Bind(wxEVT_BUTTON, &KeyboardPanel::onStop, this);
     m_btnImport->Bind(wxEVT_BUTTON, &KeyboardPanel::onImport, this);
     m_btnExport->Bind(wxEVT_BUTTON, &KeyboardPanel::onExport, this);
+    m_choiceRunMode->Bind(wxEVT_CHOICE, &KeyboardPanel::onRunModeChanged, this);
+
+    refreshEnableStates();
 }
 
 // ============================================================
@@ -186,4 +196,15 @@ void KeyboardPanel::onImport(wxCommandEvent &) { // NOLINT(*-convert-member-func
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void KeyboardPanel::onExport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("keyboard: export clicked");
+}
+
+void KeyboardPanel::onRunModeChanged(wxCommandEvent &) {
+    refreshEnableStates();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void KeyboardPanel::refreshEnableStates() {
+    const int runMode = m_choiceRunMode->GetSelection();
+    m_spinDuration->Enable(runMode == kRunModeTimed);
+    m_spinCount->Enable(runMode == kRunModeCounted);
 }

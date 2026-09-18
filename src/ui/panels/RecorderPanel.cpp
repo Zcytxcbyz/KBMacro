@@ -2,6 +2,7 @@
 
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
+#include <wx/listctrl.h>
 
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
@@ -150,6 +151,11 @@ void RecorderPanel::buildUi() {
     m_btnStopPlayback->Bind(wxEVT_BUTTON, &RecorderPanel::onStopPlayback, this);
     m_btnImportScript->Bind(wxEVT_BUTTON, &RecorderPanel::onImportScript, this);
     m_btnExportScript->Bind(wxEVT_BUTTON, &RecorderPanel::onExportScript, this);
+    m_listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED, &RecorderPanel::onListSelectionChanged, this);
+    m_listCtrl->Bind(wxEVT_LIST_ITEM_DESELECTED, &RecorderPanel::onListSelectionChanged, this);
+
+    // 初始状态
+    refreshButtonStates();
 }
 
 // ============================================================
@@ -174,21 +180,32 @@ void RecorderPanel::onEdit(wxCommandEvent &) { // NOLINT(*-convert-member-functi
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onDelete(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: delete clicked");
+    // TODO: 真实删除逻辑
+    // renumberRows();
+    // refreshButtonStates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onMoveUp(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: move up clicked");
+    // TODO: 真实上移逻辑
+    // renumberRows();
+    // refreshButtonStates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onMoveDown(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: move down clicked");
+    // TODO: 真实下移逻辑
+    // renumberRows();
+    // refreshButtonStates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onClear(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: clear clicked");
+    // TODO: 真实清空逻辑
+    // refreshButtonStates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -209,4 +226,40 @@ void RecorderPanel::onImportScript(wxCommandEvent &) { // NOLINT(*-convert-membe
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onExportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: export script clicked");
+}
+
+void RecorderPanel::onListSelectionChanged(wxListEvent &event) {
+    refreshButtonStates();
+    event.Skip();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::refreshButtonStates() {
+    const long row = m_listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL,
+                                             wxLIST_STATE_SELECTED);
+    const long total = m_listCtrl->GetItemCount();
+
+    const bool hasSelection = (row >= 0);
+    const bool hasItems = (total > 0);
+
+    // 编辑、删除：有选中即可
+    m_btnEdit->Enable(hasSelection);
+    m_btnDelete->Enable(hasSelection);
+
+    // 上移：有选中且不是第一行
+    m_btnMoveUp->Enable(hasSelection && row > 0);
+
+    // 下移：有选中且不是最后一行
+    m_btnMoveDown->Enable(hasSelection && row < total - 1);
+
+    // 清空：列表非空
+    m_btnClear->Enable(hasItems);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::renumberRows() {
+    const long total = m_listCtrl->GetItemCount();
+    for (long i = 0; i < total; ++i) {
+        m_listCtrl->SetItem(i, 0, wxString::Format("%ld", i + 1));
+    }
 }

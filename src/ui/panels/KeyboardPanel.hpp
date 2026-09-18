@@ -27,6 +27,9 @@ private:
 
     void onExport(wxCommandEvent &event);
 
+    void refreshEnableStates();
+    void onRunModeChanged(wxCommandEvent &event);
+
     // ---- 按键 ----
     Hotkey m_hotkey;
     wxTextCtrl *m_keyDisplay{};

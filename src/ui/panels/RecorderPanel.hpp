@@ -37,6 +37,14 @@ private:
 
     void onExportScript(wxCommandEvent &event);
 
+    void onListSelectionChanged(wxListEvent &event);
+
+    // 根据列表状态刷新按钮启用
+    void refreshButtonStates();
+
+    // 重编号"序号"列（删除/上移/下移后调用）
+    void renumberRows();
+
     // ---- 录制 ----
     wxButton *m_btnStartRecord{};
     wxButton *m_btnStopRecord{};
