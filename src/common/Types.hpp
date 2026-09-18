@@ -16,7 +16,7 @@ enum class TimerMode {
     return s == "spin" ? TimerMode::Spin : TimerMode::Sleep;
 }
 
-[[nodiscard]] constexpr const char *timerModeToString(const TimerMode m) noexcept {
+[[nodiscard]] constexpr std::string_view timerModeToString(const TimerMode m) noexcept {
     return m == TimerMode::Spin ? "spin" : "sleep";
 }
 

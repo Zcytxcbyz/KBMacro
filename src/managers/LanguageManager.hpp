@@ -18,7 +18,7 @@ public:
 
     [[nodiscard]] Lang currentLang() const noexcept { return m_lang; }
 
-    [[nodiscard]] const char *currentCode() const noexcept;
+    [[nodiscard]] std::string_view currentCode() const noexcept;
 
     [[nodiscard]] std::wstring tr(int id) const;
 

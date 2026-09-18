@@ -6,6 +6,7 @@
 #ifndef RC_INVOKED
 
 #include <iterator>
+#include <string_view>
 
 #define LANG_DEFAULT_BASE LANG_ZH_CN_BASE
 #define LANG_DEFAULT Lang::ZH_CN
@@ -20,8 +21,8 @@ enum class Lang {
 struct LangInfo {
     Lang id;
     int baseResId;
-    const char *code;
-    const wchar_t *displayName;
+    std::string_view code;
+    std::wstring_view displayName;
 };
 
 inline constexpr LangInfo kLangs[] = {

@@ -9,7 +9,7 @@ LanguageManager &LanguageManager::instance() {
     return inst;
 }
 
-void LanguageManager::setLanguage(Lang lang) {
+void LanguageManager::setLanguage(const Lang lang) {
     for (const auto &info: kLangs) {
         if (info.id == lang) {
             m_lang = lang;
@@ -44,7 +44,7 @@ void LanguageManager::setLanguageFromSystem() {
     }
 }
 
-const char *LanguageManager::currentCode() const noexcept {
+std::string_view LanguageManager::currentCode() const noexcept {
     for (const auto &info: kLangs) {
         if (info.id == m_lang) return info.code;
     }
