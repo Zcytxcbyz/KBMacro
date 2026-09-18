@@ -294,8 +294,7 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     const auto portablePath = std::filesystem::path(exePath)
                               .concat(L".json");
 
-    std::error_code ec;
-    if (!std::filesystem::exists(portablePath, ec) || ec) {
+    if (std::error_code ec; !std::filesystem::exists(portablePath, ec) || ec) {
         wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE),
                      TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
