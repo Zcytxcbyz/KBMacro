@@ -146,6 +146,9 @@
 // ---- 坐标捕获覆盖层 ----
 #define IDS_CAPTURE_HINT                8001
 
+// ---- 状态栏 ----
+#define IDS_STATUS_READY                9001
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

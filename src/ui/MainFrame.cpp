@@ -38,5 +38,8 @@ MainFrame::MainFrame()
 
     wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
 
-    wxFrameBase::SetStatusBar(new KBMacroStatusBar(this));
+    // --- 状态栏 ----
+    auto *statusBar = new KBMacroStatusBar(this);
+    wxFrameBase::SetStatusBar(statusBar);
+    statusBar->SetMessage(TR(IDS_STATUS_READY));
 }

@@ -138,6 +138,9 @@ BEGIN
 
     // ---- Screen capture overlay ----
     L(IDS_CAPTURE_HINT)              "Click anywhere to capture the coordinates\nPress Esc or right-click to cancel"
+
+    // ---- Status bar ----
+    L(IDS_STATUS_READY)             "Ready"
 END
 
 #undef L

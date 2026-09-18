@@ -138,6 +138,9 @@ BEGIN
 
     // ---- 坐标捕获覆盖层 ----
     L(IDS_CAPTURE_HINT)              "点击任意位置以捕获坐标\n按 Esc 或鼠标右键取消"
+
+    // ---- 状态栏 ----
+    L(IDS_STATUS_READY)             "就绪"
 END
 
 #undef L

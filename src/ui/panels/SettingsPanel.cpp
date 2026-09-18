@@ -221,9 +221,29 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
     }
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("settings: always on top = {}", event.IsChecked());
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
+    const bool on = event.IsChecked();
+    LOG_DEBUG("settings: always on top = {}", on);
+
+    // 找到所属的顶层窗口（MainFrame），切换 wxSTAY_ON_TOP
+    auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame);
+    if (!frame) {
+        LOG_WARN("settings: top-level frame not found");
+        return;
+    }
+
+    int style = frame->GetWindowStyleFlag();
+    if (on) {
+        style |= wxSTAY_ON_TOP;
+    } else {
+        style &= ~wxSTAY_ON_TOP;
+    }
+    frame->SetWindowStyleFlag(style);
+
+    // MSW 下 SetWindowStyleFlag 对 wxSTAY_ON_TOP 的切换不会自动重排 z-order，
+    // 手动 Raise 一次让窗口状态立即反映
+    frame->Raise();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
