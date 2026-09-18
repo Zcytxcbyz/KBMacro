@@ -25,6 +25,12 @@ private:
 
     void onExport(wxCommandEvent &event);
 
+    void refreshEnableStates();
+    void onTypeChanged(wxCommandEvent &event);
+    void onRunModeChanged(wxCommandEvent &event);
+    void onCoordChar(wxKeyEvent &event);
+    [[nodiscard]] bool isWheelTypeSelected() const;
+
     // ---- 坐标 ----
     wxTextCtrl *m_x{};
     wxTextCtrl *m_y{};

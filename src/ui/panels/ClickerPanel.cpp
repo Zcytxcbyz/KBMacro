@@ -6,6 +6,18 @@
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
 
+namespace {
+    // 点击类型下拉框的索引：滚轮类的范围
+    constexpr int kTypeWheelFirst = 4;  // Wheel Up
+    constexpr int kTypeWheelLast  = 7;  // Wheel Right
+
+    // 运行模式下拉框索引
+    // ReSharper disable once CppDeclaratorNeverUsed
+    constexpr int kRunModeInfinite = 0;
+    constexpr int kRunModeTimed    = 1;
+    constexpr int kRunModeCounted  = 2;
+}
+
 ClickerPanel::ClickerPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
     buildUi();
@@ -159,10 +171,19 @@ void ClickerPanel::buildUi() {
     // ---- 事件绑定 ----
     m_btnCapture->Bind(wxEVT_BUTTON, &ClickerPanel::onCapturePos, this);
     m_chkIgnorePos->Bind(wxEVT_CHECKBOX, &ClickerPanel::onIgnorePos, this);
+    m_choiceType->Bind(wxEVT_CHOICE, &ClickerPanel::onTypeChanged, this);
+    m_choiceRunMode->Bind(wxEVT_CHOICE, &ClickerPanel::onRunModeChanged, this);
     m_btnStart->Bind(wxEVT_BUTTON, &ClickerPanel::onStart, this);
     m_btnStop->Bind(wxEVT_BUTTON, &ClickerPanel::onStop, this);
     m_btnImport->Bind(wxEVT_BUTTON, &ClickerPanel::onImport, this);
     m_btnExport->Bind(wxEVT_BUTTON, &ClickerPanel::onExport, this);
+
+    // X/Y 只允许数字和负号
+    m_x->Bind(wxEVT_CHAR, &ClickerPanel::onCoordChar, this);
+    m_y->Bind(wxEVT_CHAR, &ClickerPanel::onCoordChar, this);
+
+    // 初始状态刷新
+    refreshEnableStates();
 }
 
 // ============================================================
@@ -186,11 +207,43 @@ void ClickerPanel::onCapturePos(wxCommandEvent &) {
             m_x->SetValue(wxString::Format("%d", pos.x));
             m_y->SetValue(wxString::Format("%d", pos.y));
         });
+
+    refreshEnableStates();
+}
+
+void ClickerPanel::onIgnorePos(wxCommandEvent &event) {
+    LOG_DEBUG("clicker: ignore position = {}", event.IsChecked());
+    refreshEnableStates();
+}
+
+void ClickerPanel::onTypeChanged(wxCommandEvent &) {
+    refreshEnableStates();
+}
+
+void ClickerPanel::onRunModeChanged(wxCommandEvent &) {
+    refreshEnableStates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onIgnorePos(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: ignore position = {}", event.IsChecked());
+void ClickerPanel::onCoordChar(wxKeyEvent &event) { // NOLINT(*-convert-member-functions-to-static)
+    const int key = event.GetKeyCode();
+
+    // 控制键放行
+    if (key == WXK_BACK || key == WXK_DELETE ||
+        key == WXK_LEFT || key == WXK_RIGHT ||
+        key == WXK_HOME || key == WXK_END || key == WXK_TAB) {
+        event.Skip();
+        return;
+        }
+
+    // 数字和负号放行
+    if ((key >= '0' && key <= '9') || key == '-') {
+        event.Skip();
+        // ReSharper disable once CppRedundantControlFlowJump
+        return;
+    }
+
+    // 其余吞掉
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -211,4 +264,29 @@ void ClickerPanel::onImport(wxCommandEvent &) { // NOLINT(*-convert-member-funct
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void ClickerPanel::onExport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("clicker: export clicked");
+}
+
+bool ClickerPanel::isWheelTypeSelected() const {
+    const int sel = m_choiceType->GetSelection();
+    return sel >= kTypeWheelFirst && sel <= kTypeWheelLast;
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ClickerPanel::refreshEnableStates() { // NOLINT(*-convert-member-functions-to-static)
+    // ---- 坐标区 ----
+    const bool ignorePos = m_chkIgnorePos->GetValue();
+    m_x->Enable(!ignorePos);
+    m_y->Enable(!ignorePos);
+    m_btnCapture->Enable(!ignorePos);
+
+    // ---- 点击设置 ----
+    const bool isWheel = isWheelTypeSelected();
+    m_spinWheelSteps->Enable(isWheel);
+    m_spinHoldTime->Enable(!isWheel);
+
+    // ---- 运行模式 ----
+    const int runMode = m_choiceRunMode->GetSelection();
+    m_spinDuration->Enable(runMode == kRunModeTimed);
+    m_spinCount->Enable(runMode == kRunModeCounted);
 }
