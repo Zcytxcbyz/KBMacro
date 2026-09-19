@@ -34,15 +34,19 @@ namespace utils {
     // 修饰键虚拟码 → hk::kMod* 位掩码；非修饰键返回 0
     [[nodiscard]] unsigned modifierBitForVk(unsigned vk);
 
-    // ---- nlohmann ADL 序列化 ----
-    //
-    // JSON 形态：
-    //   { "modifiers": ["Ctrl", "Shift"], "vk": "F1" }
-    //
-    // modifiers 存修饰键名字数组（固定顺序 Ctrl/Shift/Alt/Win）
-    // vk 存键名字符串，未设置时为空串
-
-    void to_json(nlohmann::json &j, const Hotkey &hk);
-    void from_json(const nlohmann::json &j, Hotkey &hk);
-
 } // namespace utils
+
+// ============================================================
+// Hotkey 的 nlohmann ADL 序列化
+//
+// JSON 形态：
+//   { "modifiers": ["Ctrl", "Shift"], "vk": "F1" }
+//
+// modifiers 存修饰键名字数组（固定顺序 Ctrl/Shift/Alt/Win）
+// vk 存键名字符串，未设置时为空串
+//
+// 放在全局命名空间，和 Hotkey 同处，让 ADL 能找到。
+// ============================================================
+
+void to_json(nlohmann::json &j, const Hotkey &hk);
+void from_json(const nlohmann::json &j, Hotkey &hk);

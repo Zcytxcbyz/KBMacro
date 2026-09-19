@@ -7,30 +7,30 @@
 #include "common/KeyNames.gen.hpp"
 #include "common/Utils.hpp"
 
-namespace utils {
+namespace {
 
-    namespace {
+    struct ModifierEntry {
+        const wchar_t *name;
+        unsigned bit;
+    };
 
-        struct ModifierEntry {
-            const wchar_t *name;
-            unsigned bit;
-        };
+    constexpr ModifierEntry kModifiers[] = {
+        {L"Ctrl",  hk::kModCtrl},
+        {L"Shift", hk::kModShift},
+        {L"Alt",   hk::kModAlt},
+        {L"Win",   hk::kModWin},
+    };
 
-        constexpr ModifierEntry kModifiers[] = {
-            {.name = L"Ctrl",  .bit = hk::kModCtrl},
-            {.name = L"Shift", .bit = hk::kModShift},
-            {.name = L"Alt",   .bit = hk::kModAlt},
-            {.name = L"Win",   .bit = hk::kModWin},
-        };
-
-        unsigned modifierBit(const std::wstring_view name) {
-            for (const auto &[n, b]: kModifiers) {
-                if (name == n) return b;
-            }
-            return 0;
+    unsigned modifierBit(const std::wstring_view name) {
+        for (const auto &[n, b]: kModifiers) {
+            if (name == n) return b;
         }
+        return 0;
+    }
 
-    } // namespace
+} // namespace
+
+namespace utils {
 
     bool isModifierKey(const unsigned vk) {
         switch (vk) {
@@ -114,38 +114,42 @@ namespace utils {
         return true;
     }
 
-    void to_json(nlohmann::json &j, const Hotkey &hk) {
-        j = nlohmann::json::object();
-
-        nlohmann::json mods = nlohmann::json::array();
-        for (const auto &[name, bit]: kModifiers) {
-            if (hk.modifiers & bit) {
-                mods.push_back(ToUtf8(name));
-            }
-        }
-        j["modifiers"] = std::move(mods);
-
-        j["vk"] = ToUtf8(vkToString(hk.vk));
-    }
-
-    void from_json(const nlohmann::json &j, Hotkey &hk) {
-        hk = Hotkey{};
-
-        if (j.contains("modifiers") && j["modifiers"].is_array()) {
-            for (const auto &item: j["modifiers"]) {
-                if (!item.is_string()) continue;
-                const std::wstring wname = ToWide(item.get<std::string>());
-                hk.modifiers |= modifierBit(wname);
-            }
-        }
-
-        if (j.contains("vk") && j["vk"].is_string()) {
-            const std::string utf8 = j["vk"].get<std::string>();
-            if (!utf8.empty()) {
-                const std::wstring wname = ToWide(utf8);
-                hk.vk = vkFromString(wname);
-            }
-        }
-    }
-
 } // namespace utils
+
+// ============================================================
+// Hotkey 序列化（全局命名空间）
+// ============================================================
+
+void to_json(nlohmann::json &j, const Hotkey &hk) {
+    j = nlohmann::json::object();
+
+    nlohmann::json mods = nlohmann::json::array();
+    for (const auto &[name, bit]: kModifiers) {
+        if (hk.modifiers & bit) {
+            mods.push_back(utils::ToUtf8(name));
+        }
+    }
+    j["modifiers"] = std::move(mods);
+
+    j["vk"] = utils::ToUtf8(utils::vkToString(hk.vk));
+}
+
+void from_json(const nlohmann::json &j, Hotkey &hk) {
+    hk = Hotkey{};
+
+    if (j.contains("modifiers") && j["modifiers"].is_array()) {
+        for (const auto &item: j["modifiers"]) {
+            if (!item.is_string()) continue;
+            const std::wstring wname = utils::ToWide(item.get<std::string>());
+            hk.modifiers |= modifierBit(wname);
+        }
+    }
+
+    if (j.contains("vk") && j["vk"].is_string()) {
+        const std::string utf8 = j["vk"].get<std::string>();
+        if (!utf8.empty()) {
+            const std::wstring wname = utils::ToWide(utf8);
+            hk.vk = utils::vkFromString(wname);
+        }
+    }
+}

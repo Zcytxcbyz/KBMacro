@@ -64,6 +64,7 @@ set(SOURCES
         src/ui/dialogs/HotkeyCaptureDialog.cpp
         src/ui/ScreenCaptureOverlay.cpp
         src/ui/dialogs/ActionEditDialog.cpp
+        src/common/Action.cpp
         # 在这里添加 .cpp 文件
 )
 
