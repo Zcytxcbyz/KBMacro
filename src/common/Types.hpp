@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
 #include <string_view>
+
+#include <nlohmann/json.hpp>
 
 // ============================================================
 // 跨模块共享的枚举与常量
@@ -55,4 +58,68 @@ struct Hotkey {
     unsigned vk = 0;
 };
 
-// 将来放这里：RunMode（无限/定时/固定次数）、点击类型等
+// ============================================================
+// 运行模式
+// ============================================================
+
+enum class RunMode {
+    Infinite,
+    Timed,
+    Counted,
+};
+
+struct RunModeEntry {
+    RunMode mode;
+    std::string_view name;
+};
+
+inline constexpr RunModeEntry kRunModeEntries[] = {
+    {.mode = RunMode::Infinite, .name = "Infinite"},
+    {.mode = RunMode::Timed,    .name = "Timed"},
+    {.mode = RunMode::Counted,  .name = "Counted"},
+};
+
+[[nodiscard]] constexpr RunMode runModeFromString(const std::string_view s) noexcept {
+    for (const auto &[mode, name]: kRunModeEntries) {
+        if (name == s) return mode;
+    }
+    return RunMode::Infinite;
+}
+
+[[nodiscard]] constexpr std::string_view runModeToString(const RunMode m) noexcept {
+    for (const auto &[mode, name]: kRunModeEntries) {
+        if (mode == m) return name;
+    }
+    return "Infinite";
+}
+
+// 运行模式参数：无限 / 定时 / 固定次数
+struct RunSpec {
+    RunMode mode = RunMode::Infinite;
+    int durationSec = 10;   // mode == Timed 时有效
+    int count = 100;        // mode == Counted 时有效
+};
+
+// 序列化：按 mode 精简
+inline void to_json(nlohmann::json &j, const RunSpec &r) {
+    j = nlohmann::json::object();
+    j["mode"] = runModeToString(r.mode);
+
+    switch (r.mode) {
+        case RunMode::Infinite:
+            break;
+        case RunMode::Timed:
+            j["durationSec"] = r.durationSec;
+            break;
+        case RunMode::Counted:
+            j["count"] = r.count;
+            break;
+    }
+}
+
+inline void from_json(const nlohmann::json &j, RunSpec &r) {
+    r = RunSpec{};
+    r.mode = runModeFromString(j.value("mode", std::string{"Infinite"}));
+    r.durationSec = j.value("durationSec", 10);
+    r.count = j.value("count", 100);
+}

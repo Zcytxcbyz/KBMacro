@@ -65,6 +65,8 @@ set(SOURCES
         src/ui/ScreenCaptureOverlay.cpp
         src/ui/dialogs/ActionEditDialog.cpp
         src/common/Action.cpp
+        src/common/ClickerParams.cpp
+        src/common/KeyboardParams.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -88,6 +90,8 @@ set(HEADERS
         src/common/Action.hpp
         src/ui/dialogs/ActionEditDialog.hpp
         src/common/KeyNames.gen.hpp
+        src/common/ClickerParams.hpp
+        src/common/KeyboardParams.hpp
         # 在这里添加 .h 文件
 )
 
