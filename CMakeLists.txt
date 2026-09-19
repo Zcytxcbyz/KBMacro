@@ -86,6 +86,7 @@ set(HEADERS
         src/ui/ScreenCaptureOverlay.hpp
         src/common/Action.hpp
         src/ui/dialogs/ActionEditDialog.hpp
+        src/common/KeyNames.gen.hpp
         # 在这里添加 .h 文件
 )
 

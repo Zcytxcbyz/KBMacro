@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+#include <nlohmann/json.hpp>
+
 #include "common/Types.hpp"
 
 namespace utils {
@@ -16,6 +18,10 @@ namespace utils {
     // 未知键返回 "?"，vk == 0 返回空串
     [[nodiscard]] std::wstring vkToString(unsigned vk);
 
+    // 键名 → 虚拟键码，如 "F1" → VK_F1
+    // 找不到返回 0
+    [[nodiscard]] unsigned vkFromString(std::wstring_view name);
+
     // 校验热键是否有效
     //   requireMainKey == true  必须有主键（vk != 0），用于全局热键
     //   requireMainKey == false 允许纯修饰键或纯主键
@@ -27,5 +33,16 @@ namespace utils {
 
     // 修饰键虚拟码 → hk::kMod* 位掩码；非修饰键返回 0
     [[nodiscard]] unsigned modifierBitForVk(unsigned vk);
+
+    // ---- nlohmann ADL 序列化 ----
+    //
+    // JSON 形态：
+    //   { "modifiers": ["Ctrl", "Shift"], "vk": "F1" }
+    //
+    // modifiers 存修饰键名字数组（固定顺序 Ctrl/Shift/Alt/Win）
+    // vk 存键名字符串，未设置时为空串
+
+    void to_json(nlohmann::json &j, const Hotkey &hk);
+    void from_json(const nlohmann::json &j, Hotkey &hk);
 
 } // namespace utils
