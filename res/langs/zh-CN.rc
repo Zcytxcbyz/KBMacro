@@ -141,6 +141,33 @@ BEGIN
 
     // ---- 状态栏 ----
     L(IDS_STATUS_READY)             "就绪"
+
+    // ---- 动作编辑对话框 ----
+    L(IDS_ACTION_TYPE_MOUSE_MOVE)      "鼠标移动"
+    L(IDS_ACTION_TYPE_MOUSE_CLICK)     "鼠标点击"
+    L(IDS_ACTION_TYPE_MOUSE_WHEEL)     "鼠标滚轮"
+    L(IDS_ACTION_TYPE_KEYBOARD)        "键盘"
+    L(IDS_ACTION_PARAM_BUTTON)         "按键"
+    L(IDS_ACTION_PARAM_X)              "X"
+    L(IDS_ACTION_PARAM_Y)              "Y"
+    L(IDS_ACTION_PARAM_DELAY)          "延时 (ms)"
+    L(IDS_ACTION_PARAM_HOLD)           "保持 (ms)"
+    L(IDS_ACTION_PARAM_WHEEL_DIR)      "方向"
+    L(IDS_ACTION_PARAM_WHEEL_STEPS)    "步数"
+    L(IDS_ACTION_PARAM_KEY)            "按键"
+    L(IDS_ACTION_PARAM_KEY_EVENT)      "事件"
+    L(IDS_ACTION_WHEEL_UP)             "上"
+    L(IDS_ACTION_WHEEL_DOWN)           "下"
+    L(IDS_ACTION_WHEEL_LEFT)           "左"
+    L(IDS_ACTION_WHEEL_RIGHT)          "右"
+    L(IDS_ACTION_KEY_DOWN)             "按下"
+    L(IDS_ACTION_KEY_UP)               "抬起"
+    L(IDS_ACTION_DIALOG_TITLE_EDIT)    "编辑动作"
+    L(IDS_ACTION_DIALOG_TITLE_ADD)     "添加动作"
+    L(IDS_ACTION_DIALOG_BTN_CAPTURE)   "捕捉坐标"
+    L(IDS_ACTION_DIALOG_BTN_SET_KEY)   "设置按键"
+    L(IDS_ACTION_GROUP_PARAMS)         "参数"
+    L(IDS_ACTION_LABEL_TYPE)           "动作类型："
 END
 
 #undef L

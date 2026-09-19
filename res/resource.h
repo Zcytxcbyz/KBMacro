@@ -149,6 +149,37 @@
 // ---- 状态栏 ----
 #define IDS_STATUS_READY                9001
 
+// ---- 动作编辑对话框 ----
+#define IDS_ACTION_TYPE_MOUSE_MOVE      10001
+#define IDS_ACTION_TYPE_MOUSE_CLICK     10002
+#define IDS_ACTION_TYPE_MOUSE_WHEEL     10003
+#define IDS_ACTION_TYPE_KEYBOARD        10004
+
+#define IDS_ACTION_PARAM_BUTTON         10010
+#define IDS_ACTION_PARAM_X              10011
+#define IDS_ACTION_PARAM_Y              10012
+#define IDS_ACTION_PARAM_DELAY          10013
+#define IDS_ACTION_PARAM_HOLD           10014
+#define IDS_ACTION_PARAM_WHEEL_DIR      10015
+#define IDS_ACTION_PARAM_WHEEL_STEPS    10016
+#define IDS_ACTION_PARAM_KEY            10017
+#define IDS_ACTION_PARAM_KEY_EVENT      10018
+
+#define IDS_ACTION_WHEEL_UP             10020
+#define IDS_ACTION_WHEEL_DOWN           10021
+#define IDS_ACTION_WHEEL_LEFT           10022
+#define IDS_ACTION_WHEEL_RIGHT          10023
+
+#define IDS_ACTION_KEY_DOWN             10030
+#define IDS_ACTION_KEY_UP               10031
+
+#define IDS_ACTION_DIALOG_TITLE_EDIT    10040
+#define IDS_ACTION_DIALOG_TITLE_ADD     10041
+#define IDS_ACTION_DIALOG_BTN_CAPTURE   10042
+#define IDS_ACTION_DIALOG_BTN_SET_KEY   10043
+#define IDS_ACTION_GROUP_PARAMS         10044
+#define IDS_ACTION_LABEL_TYPE           10045
+
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

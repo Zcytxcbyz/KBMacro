@@ -32,7 +32,7 @@ ENDIF(WIN32)
 # ============================================================
 # 查找 Conan 管理的依赖（由 CMakeDeps 生成）
 # ============================================================
-find_package(wxWidgets REQUIRED COMPONENTS core base)
+find_package(wxWidgets REQUIRED COMPONENTS core base adv)
 find_package(nlohmann_json REQUIRED)
 find_package(wil REQUIRED)
 find_package(concurrentqueue REQUIRED)
@@ -63,6 +63,7 @@ set(SOURCES
         src/common/Hotkey.cpp
         src/ui/dialogs/HotkeyCaptureDialog.cpp
         src/ui/ScreenCaptureOverlay.cpp
+        src/ui/dialogs/ActionEditDialog.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -83,6 +84,8 @@ set(HEADERS
         src/common/Hotkey.hpp
         src/ui/dialogs/HotkeyCaptureDialog.hpp
         src/ui/ScreenCaptureOverlay.hpp
+        src/common/Action.hpp
+        src/ui/dialogs/ActionEditDialog.hpp
         # 在这里添加 .h 文件
 )
 

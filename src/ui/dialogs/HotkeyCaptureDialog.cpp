@@ -97,8 +97,7 @@ void HotkeyCaptureDialog::onOk(wxCommandEvent &event) {
 // 显示刷新
 // ============================================================
 void HotkeyCaptureDialog::updateDisplay() const {
-    const std::wstring s = utils::hotkeyToString(m_hotkey);
-    if (s.empty()) {
+    if (const std::wstring s = utils::hotkeyToString(m_hotkey); s.empty()) {
         m_display->SetValue(TR(IDS_HOTKEY_DIALOG_HINT));
     } else {
         m_display->SetValue(s);
