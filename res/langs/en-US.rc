@@ -73,6 +73,7 @@ BEGIN
     L(IDS_RECORDER_BTN_STOP_PLAYBACK)    "Stop Playback"
     L(IDS_RECORDER_BTN_IMPORT_SCRIPT)    "Import Script"
     L(IDS_RECORDER_BTN_EXPORT_SCRIPT)    "Export Script"
+    L(IDS_RECORDER_BTN_ADD)              "Add"
     L(IDS_RECORDER_LIST_COL_INDEX)       "#"
     L(IDS_RECORDER_LIST_COL_ACTION)      "Action"
     L(IDS_RECORDER_LIST_COL_PARAM)       "Parameter"

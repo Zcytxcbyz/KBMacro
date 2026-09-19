@@ -2,13 +2,113 @@
 
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
-#include <wx/listctrl.h>
+#include <cassert>
 
+#include "common/Hotkey.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
+#include "ui/dialogs/ActionEditDialog.hpp"
+
+namespace {
+
+    // ---- Action → 显示文本 ----
+
+    wxString actionTypeText(const ActionType t) {
+        switch (t) {
+            case ActionType::MouseMove:  return {TR(IDS_ACTION_TYPE_MOUSE_MOVE)};
+            case ActionType::MouseClick: return {TR(IDS_ACTION_TYPE_MOUSE_CLICK)};
+            case ActionType::MouseWheel: return {TR(IDS_ACTION_TYPE_MOUSE_WHEEL)};
+            case ActionType::Keyboard:   return {TR(IDS_ACTION_TYPE_KEYBOARD)};
+        }
+        return {};
+    }
+
+    wxString mouseButtonText(const MouseButton b) {
+        switch (b) {
+            case MouseButton::Left:   return {TR(IDS_CLICKER_TYPE_LEFT)};
+            case MouseButton::Right:  return {TR(IDS_CLICKER_TYPE_RIGHT)};
+            case MouseButton::Middle: return {TR(IDS_CLICKER_TYPE_MIDDLE)};
+            case MouseButton::Side1:  return {TR(IDS_CLICKER_TYPE_SIDE1)};
+            case MouseButton::Side2:  return {TR(IDS_CLICKER_TYPE_SIDE2)};
+        }
+        return {};
+    }
+
+    wxString wheelDirText(const WheelDirection d) {
+        switch (d) {
+            case WheelDirection::Up:    return {TR(IDS_ACTION_WHEEL_UP)};
+            case WheelDirection::Down:  return {TR(IDS_ACTION_WHEEL_DOWN)};
+            case WheelDirection::Left:  return {TR(IDS_ACTION_WHEEL_LEFT)};
+            case WheelDirection::Right: return {TR(IDS_ACTION_WHEEL_RIGHT)};
+        }
+        return {};
+    }
+
+    wxString actionParamText(const Action &a) {
+        switch (a.type) {
+            case ActionType::MouseMove:
+                return wxString::Format("(%d, %d)", a.x, a.y);
+            case ActionType::MouseClick:
+                return wxString::Format("%s (%d, %d)",
+                                        mouseButtonText(a.button), a.x, a.y);
+            case ActionType::MouseWheel:
+                return wxString::Format("%s x%d", wheelDirText(a.wheelDirection), a.wheelSteps);
+            case ActionType::Keyboard: {
+                const auto key = wxString(utils::hotkeyToString(a.hotkey));
+                const auto evt = (a.keyEvent == KeyEventType::Down)
+                                     ? wxString(TR(IDS_ACTION_KEY_DOWN))
+                                     : wxString(TR(IDS_ACTION_KEY_UP));
+                return wxString::Format("%s [%s]", key, evt);
+            }
+        }
+        return {};
+    }
+
+    // 从 wxListCtrl 的 long 行号安全转 vector 索引。
+    // 调用方保证 row >= 0（选中判断之后才调用）。
+    [[nodiscard]] std::size_t toIndex(const long row) {
+        assert(row >= 0);
+        return static_cast<std::size_t>(row);
+    }
+
+    [[nodiscard]] long toRow(const std::size_t i) {
+        return static_cast<long>(i);
+    }
+
+    // size_t → 有符号索引（用于迭代器算术）
+    [[nodiscard]] std::ptrdiff_t toDiff(const std::size_t i) {
+        return static_cast<std::ptrdiff_t>(i);
+    }
+} // namespace
 
 RecorderPanel::RecorderPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
+    // 临时假数据（等 Recorder 模块做出来时清掉）
+    {
+        Action a1;
+        a1.type = ActionType::MouseMove;
+        a1.x = 960;
+        a1.y = 540;
+        a1.delayMs = 120;
+        m_actions.push_back(a1);
+
+        Action a2;
+        a2.type = ActionType::MouseClick;
+        a2.button = MouseButton::Left;
+        a2.x = 960;
+        a2.y = 540;
+        a2.delayMs = 0;
+        a2.holdMs = 50;
+        m_actions.push_back(a2);
+
+        Action a3;
+        a3.type = ActionType::MouseWheel;
+        a3.wheelDirection = WheelDirection::Up;
+        a3.wheelSteps = 3;
+        a3.delayMs = 50;
+        m_actions.push_back(a3);
+    }
+
     buildUi();
 }
 
@@ -44,30 +144,17 @@ void RecorderPanel::buildUi() {
         m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_DELAY), wxLIST_FORMAT_RIGHT, 80);
         m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_HOLD), wxLIST_FORMAT_RIGHT, 80);
 
-        // ---- 临时假数据：仅用于预览列宽，接逻辑时删除 ----
-        const auto addRow = [this](const long idx, const wxString &action,
-                                   const wxString &param, const wxString &delay,
-                                   const wxString &hold) {
-            m_listCtrl->InsertItem(idx, wxString::Format("%ld", idx + 1));
-            m_listCtrl->SetItem(idx, 1, action);
-            m_listCtrl->SetItem(idx, 2, param);
-            m_listCtrl->SetItem(idx, 3, delay);
-            m_listCtrl->SetItem(idx, 4, hold);
-        };
-        addRow(0, "Mouse Move", "(960, 540)", "120", "-");
-        addRow(1, "Left Click", "(960, 540)", "0", "50");
-        addRow(2, "Wheel Up", "3 steps", "50", "-");
-        // ---- 假数据结束 ----
-
         box->Add(m_listCtrl, 0, wxEXPAND | wxALL, 8);
 
         auto *btnRow = new wxBoxSizer(wxHORIZONTAL);
+        m_btnAdd = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_ADD));
         m_btnEdit = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_EDIT));
         m_btnDelete = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_DELETE));
         m_btnMoveUp = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_MOVE_UP));
         m_btnMoveDown = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_MOVE_DOWN));
         m_btnClear = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_CLEAR));
 
+        btnRow->Add(m_btnAdd, 0, wxALL, 4);
         btnRow->Add(m_btnEdit, 0, wxALL, 4);
         btnRow->Add(m_btnDelete, 0, wxALL, 4);
         btnRow->Add(m_btnMoveUp, 0, wxALL, 4);
@@ -142,6 +229,7 @@ void RecorderPanel::buildUi() {
     // ---- 事件绑定 ----
     m_btnStartRecord->Bind(wxEVT_BUTTON, &RecorderPanel::onStartRecord, this);
     m_btnStopRecord->Bind(wxEVT_BUTTON, &RecorderPanel::onStopRecord, this);
+    m_btnAdd->Bind(wxEVT_BUTTON, &RecorderPanel::onAdd, this);
     m_btnEdit->Bind(wxEVT_BUTTON, &RecorderPanel::onEdit, this);
     m_btnDelete->Bind(wxEVT_BUTTON, &RecorderPanel::onDelete, this);
     m_btnMoveUp->Bind(wxEVT_BUTTON, &RecorderPanel::onMoveUp, this);
@@ -151,17 +239,154 @@ void RecorderPanel::buildUi() {
     m_btnStopPlayback->Bind(wxEVT_BUTTON, &RecorderPanel::onStopPlayback, this);
     m_btnImportScript->Bind(wxEVT_BUTTON, &RecorderPanel::onImportScript, this);
     m_btnExportScript->Bind(wxEVT_BUTTON, &RecorderPanel::onExportScript, this);
-    m_listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED, &RecorderPanel::onListSelectionChanged, this);
-    m_listCtrl->Bind(wxEVT_LIST_ITEM_DESELECTED, &RecorderPanel::onListSelectionChanged, this);
 
-    // 初始状态
-    refreshButtonStates();
+    m_listCtrl->Bind(wxEVT_LIST_ITEM_SELECTED,
+                     &RecorderPanel::onListSelectionChanged, this);
+    m_listCtrl->Bind(wxEVT_LIST_ITEM_DESELECTED,
+                     &RecorderPanel::onListSelectionChanged, this);
+
+    // ---- 初始填充 ----
+    refreshList();
 }
 
 // ============================================================
-// 事件处理（纯 UI 阶段：只记录日志，不接实际逻辑）
+// 列表维护
 // ============================================================
+void RecorderPanel::refreshList() {
+    m_listCtrl->DeleteAllItems();
 
+    for (std::size_t i = 0; i < m_actions.size(); ++i) {
+        const auto &a = m_actions[i];
+        const long row = m_listCtrl->InsertItem(static_cast<long>(i),
+                                                wxString::Format("%zu", i + 1));
+        m_listCtrl->SetItem(row, 1, actionTypeText(a.type));
+        m_listCtrl->SetItem(row, 2, actionParamText(a));
+        m_listCtrl->SetItem(row, 3, wxString::Format("%d", a.delayMs));
+        if (a.type == ActionType::MouseClick) {
+            m_listCtrl->SetItem(row, 4, wxString::Format("%d", a.holdMs));
+        } else {
+            m_listCtrl->SetItem(row, 4, "-");
+        }
+    }
+
+    refreshButtonStates();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::refreshButtonStates() {
+    const long row = getSelectedRow();
+    const long total = m_listCtrl->GetItemCount();
+
+    const bool hasSelection = (row >= 0);
+    const bool hasItems = (total > 0);
+
+    m_btnEdit->Enable(hasSelection);
+    m_btnDelete->Enable(hasSelection);
+    m_btnMoveUp->Enable(hasSelection && row > 0);
+    m_btnMoveDown->Enable(hasSelection && row < total - 1);
+    m_btnClear->Enable(hasItems);
+}
+
+void RecorderPanel::selectRow(const long row) {
+    const long total = m_listCtrl->GetItemCount();
+    if (row < 0 || row >= total) return;
+
+    m_listCtrl->SetItemState(row, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+    m_listCtrl->EnsureVisible(row);
+    refreshButtonStates();
+}
+
+long RecorderPanel::getSelectedRow() const {
+    return m_listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+}
+
+void RecorderPanel::onListSelectionChanged(wxListEvent &event) {
+    refreshButtonStates();
+    event.Skip();
+}
+
+// ============================================================
+// 列表操作
+// ============================================================
+void RecorderPanel::onAdd(wxCommandEvent &) {
+    Action newAction; // 默认 MouseMove
+    ActionEditDialog dlg(this, TR(IDS_ACTION_DIALOG_TITLE_ADD), newAction);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    m_actions.push_back(dlg.getAction());
+    refreshList();
+    selectRow(static_cast<long>(m_actions.size()) - 1);
+
+    LOG_DEBUG("recorder: added action, total={}", m_actions.size());
+}
+
+void RecorderPanel::onEdit(wxCommandEvent &) {
+    const long row = getSelectedRow();
+    if (row < 0) return;
+
+    ActionEditDialog dlg(this, TR(IDS_ACTION_DIALOG_TITLE_EDIT),
+                         m_actions[toIndex(row)]);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    m_actions[toIndex(row)] = dlg.getAction();
+    refreshList();
+    selectRow(row);
+
+    LOG_DEBUG("recorder: edited action at row {}", row);
+}
+
+void RecorderPanel::onDelete(wxCommandEvent &) {
+    const long row = getSelectedRow();
+    if (row < 0) return;
+
+    m_actions.erase(m_actions.begin() + toDiff(row));
+    refreshList();
+
+    // 尽量选中同一位置，删了最后一个就往前退一格
+    if (!m_actions.empty()) {
+        const long target = std::min<long>(row, toRow(m_actions.size() - 1));
+        selectRow(target);
+    }
+
+    LOG_DEBUG("recorder: deleted action, remaining={}", m_actions.size());
+}
+
+void RecorderPanel::onMoveUp(wxCommandEvent &) {
+    const long row = getSelectedRow();
+    if (row <= 0) return;
+
+    std::swap(m_actions[toIndex(row)],
+              m_actions[toIndex(row - 1)]);
+    refreshList();
+    selectRow(row - 1);
+
+    LOG_DEBUG("recorder: moved action up from row {}", row);
+}
+
+void RecorderPanel::onMoveDown(wxCommandEvent &) {
+    const long row = getSelectedRow();
+    if (row < 0 || row >= static_cast<long>(m_actions.size()) - 1) return;
+
+    std::swap(m_actions[toIndex(row)],
+              m_actions[toIndex(row + 1)]);
+    refreshList();
+    selectRow(row + 1);
+
+    LOG_DEBUG("recorder: moved action down from row {}", row);
+}
+
+void RecorderPanel::onClear(wxCommandEvent &) {
+    if (m_actions.empty()) return;
+
+    m_actions.clear();
+    refreshList();
+
+    LOG_DEBUG("recorder: cleared all actions");
+}
+
+// ============================================================
+// 录制 / 回放 / 导入导出（暂占位）
+// ============================================================
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onStartRecord(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: start recording clicked");
@@ -171,95 +396,19 @@ void RecorderPanel::onStartRecord(wxCommandEvent &) { // NOLINT(*-convert-member
 void RecorderPanel::onStopRecord(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: stop recording clicked");
 }
-
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onEdit(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: edit clicked");
-}
-
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onDelete(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: delete clicked");
-    // TODO: 真实删除逻辑
-    // renumberRows();
-    // refreshButtonStates();
-}
-
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onMoveUp(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: move up clicked");
-    // TODO: 真实上移逻辑
-    // renumberRows();
-    // refreshButtonStates();
-}
-
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onMoveDown(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: move down clicked");
-    // TODO: 真实下移逻辑
-    // renumberRows();
-    // refreshButtonStates();
-}
-
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onClear(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: clear clicked");
-    // TODO: 真实清空逻辑
-    // refreshButtonStates();
-}
-
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onStartPlayback(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: start playback clicked");
 }
-
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onStopPlayback(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: stop playback clicked");
 }
-
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onImportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: import script clicked");
 }
-
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onExportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("recorder: export script clicked");
-}
-
-void RecorderPanel::onListSelectionChanged(wxListEvent &event) {
-    refreshButtonStates();
-    event.Skip();
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void RecorderPanel::refreshButtonStates() {
-    const long row = m_listCtrl->GetNextItem(-1, wxLIST_NEXT_ALL,
-                                             wxLIST_STATE_SELECTED);
-    const long total = m_listCtrl->GetItemCount();
-
-    const bool hasSelection = (row >= 0);
-    const bool hasItems = (total > 0);
-
-    // 编辑、删除：有选中即可
-    m_btnEdit->Enable(hasSelection);
-    m_btnDelete->Enable(hasSelection);
-
-    // 上移：有选中且不是第一行
-    m_btnMoveUp->Enable(hasSelection && row > 0);
-
-    // 下移：有选中且不是最后一行
-    m_btnMoveDown->Enable(hasSelection && row < total - 1);
-
-    // 清空：列表非空
-    m_btnClear->Enable(hasItems);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void RecorderPanel::renumberRows() {
-    const long total = m_listCtrl->GetItemCount();
-    for (long i = 0; i < total; ++i) {
-        m_listCtrl->SetItem(i, 0, wxString::Format("%ld", i + 1));
-    }
 }
