@@ -4,10 +4,14 @@
 #include <iterator>
 
 #include <wx/statbox.h>
+#include <wx/msgdlg.h>
+#include <wx/stdpaths.h>
+#include <wx/utils.h>
 
 #include "common/Hotkey.hpp"
 #include "common/HotkeyAction.hpp"
 #include "common/Log.hpp"
+#include "common/Utils.hpp"
 #include "managers/ConfigManager.hpp"
 #include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
@@ -236,12 +240,54 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     const int sel = event.GetSelection();
     if (sel < 0 || sel >= static_cast<int>(std::size(kLangs))) return;
 
-    LOG_DEBUG("settings: language changed to '{}'", kLangs[sel].code);
-    ConfigManager::instance().setLanguage(kLangs[sel].code);
+    const Lang newLang = kLangs[sel].id;
+    const Lang curLang = LanguageManager::instance().currentLang();
 
-    wxMessageBox(TR(IDS_SETTINGS_MSG_RESTART_REQUIRED),
-                 TR(IDS_APP_TITLE),
-                 wxOK | wxICON_INFORMATION, this);
+    // 用户切回当前语言：什么也不做
+    if (newLang == curLang) return;
+
+    // 询问对话框：立即重启 / 稍后重启 / 取消
+    wxMessageDialog dlg(this,
+                        TR(IDS_SETTINGS_MSG_RESTART_ASK),
+                        TR(IDS_APP_TITLE),
+                        wxYES_NO | wxCANCEL | wxICON_QUESTION);
+    dlg.SetYesNoLabels(TR(IDS_SETTINGS_BTN_RESTART_NOW).data(),
+                       TR(IDS_SETTINGS_BTN_RESTART_LATER).data());
+    const int ret = dlg.ShowModal();
+
+    if (ret == wxID_CANCEL) {
+        // 回退控件到当前语言
+        for (std::size_t i = 0; i < std::size(kLangs); ++i) {
+            if (kLangs[i].id == curLang) {
+                m_choiceLanguage->SetSelection(static_cast<int>(i));
+                break;
+            }
+        }
+        LOG_DEBUG("settings: language change cancelled");
+        return;
+    }
+
+    // 落盘（用户主动选过 = 记住）
+    ConfigManager::instance().setLanguage(kLangs[sel].code);
+    LOG_INFO("settings: language changed to '{}'", kLangs[sel].code);
+
+    if (ret == wxID_YES) {
+        // 立即重启
+        const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
+        LOG_INFO("settings: restarting immediately, exe={}",
+                 utils::ToUtf8(exePath.ToStdWstring()));
+
+        if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
+            // 新进程已启动，关闭当前实例
+            // Close(true) 强制关闭，会触发 wxApp::OnExit -> Log::Shutdown
+            Close(true);
+        } else {
+            // 新进程启动失败：不关，让用户继续用当前实例
+            // 配置已落盘，用户下次手动启动仍是新语言
+            LOG_ERROR("settings: failed to launch new instance");
+        }
+    }
+    // wxID_NO = 稍后重启：什么都不做，配置已落盘
 }
 
 void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {

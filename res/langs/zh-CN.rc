@@ -132,6 +132,9 @@ BEGIN
     L(IDS_SETTINGS_MSG_DELETE_CONFIRM)     "将删除便携配置文件，删除后下次启动将回退到 APPDATA 配置。是否继续？"
     L(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM)"将清除所有屏幕适配记忆，是否继续？"
     L(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM) "将清除高精度模式的确认状态，下次切换时会再次提醒。是否继续？"
+    L(IDS_SETTINGS_MSG_RESTART_ASK)        "切换语言需重启程序才能生效。\n\n如果当前有任务正在运行，请先停止所有任务。\n\n是否立即重启？"
+    L(IDS_SETTINGS_BTN_RESTART_NOW)        "立即重启"
+    L(IDS_SETTINGS_BTN_RESTART_LATER)      "稍后重启"
 
     // ---- About 面板 ----
     L(IDS_ABOUT_GROUP_APP)          "程序信息"

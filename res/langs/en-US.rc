@@ -132,6 +132,9 @@ BEGIN
     L(IDS_SETTINGS_MSG_DELETE_CONFIRM)     "The portable config file will be deleted. The next launch will fall back to APPDATA. Continue?"
     L(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM)"All screen adaptation records will be cleared. Continue?"
     L(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM) "The spin-mode confirmation will be cleared, and you'll be prompted again next time. Continue?"
+    L(IDS_SETTINGS_MSG_RESTART_ASK)        "Changing language requires a restart to take effect.\n\nIf any task is currently running, please stop it first.\n\nRestart now?"
+    L(IDS_SETTINGS_BTN_RESTART_NOW)        "Restart Now"
+    L(IDS_SETTINGS_BTN_RESTART_LATER)      "Restart Later"
 
     // ---- About panel ----
     L(IDS_ABOUT_GROUP_APP)          "Application"
