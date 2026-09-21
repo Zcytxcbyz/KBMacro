@@ -58,11 +58,14 @@ public:
 
     // 把当前内存配置写到 {exe}.json，并切换到便携模式。
     // 之后所有 setter 的 save 都写这个文件。
-    void exportToPortable();
+    //   返回 true  = 成功
+    //   返回 false = 写文件失败，状态不变（仍是原 APPDATA 模式）
+    [[nodiscard]] bool exportToPortable();
 
     // 删除 {exe}.json，切回 APPDATA，并把当前内存配置写一份到 APPDATA。
-    // 文件不存在时只做切换，不报错。
-    void deletePortable();
+    //   返回 true  = 成功（含"本来就不是便携模式"的幂等情况）
+    //   返回 false = 删文件失败，状态不变（仍是便携模式）
+    [[nodiscard]] bool deletePortable();
 
     // ---- 重置 ----
 

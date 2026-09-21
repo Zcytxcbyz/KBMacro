@@ -104,37 +104,49 @@ void ConfigManager::setSpinWarningConfirmed(const bool v) {
 // 便携模式
 // ============================================================
 
-void ConfigManager::exportToPortable() {
+bool ConfigManager::exportToPortable() {
     const auto exePath = utils::GetExecutablePath();
     auto portablePath = exePath;
     portablePath.concat(L".json");
 
     if (!config::saveTo(portablePath, m_config)) {
-        LOG_ERROR("config: export to portable failed");
-        return;
+        // 写文件失败：状态不变，仍是原来的 APPDATA 模式
+        LOG_ERROR("config: export to portable failed, state unchanged");
+        return false;
     }
 
     m_path = std::move(portablePath);
     m_portable = true;
     LOG_INFO("config: switched to portable mode: {}",
              utils::ToUtf8(m_path.wstring()));
+    return true;
 }
 
-void ConfigManager::deletePortable() {
+bool ConfigManager::deletePortable() {
+    // 幂等：本来就不是便携模式，视为成功
     if (!m_portable) {
         LOG_DEBUG("config: deletePortable called but not in portable mode");
-        return;
+        return true;
     }
 
-    // 删除便携文件（文件可能已被用户手动删掉，不视为错误）
+    // 删除便携文件
     std::error_code ec;
     const bool removed = std::filesystem::remove(m_path, ec);
+
     if (ec) {
-        LOG_WARN("config: remove portable failed: {} ({})",
-                 utils::ToUtf8(m_path.wstring()), ec.message());
-    } else if (removed) {
+        // 删除失败：状态不变，仍是便携模式
+        LOG_ERROR("config: remove portable failed: {} ({}), state unchanged",
+                  utils::ToUtf8(m_path.wstring()), ec.message());
+        return false;
+    }
+
+    if (removed) {
         LOG_INFO("config: portable config removed: {}",
                  utils::ToUtf8(m_path.wstring()));
+    } else {
+        // 文件本来就不存在（用户手动删了）：不视为错误，继续切换
+        LOG_DEBUG("config: portable file already absent: {}",
+                  utils::ToUtf8(m_path.wstring()));
     }
 
     // 切回 APPDATA
@@ -147,8 +159,8 @@ void ConfigManager::deletePortable() {
     save();
     LOG_INFO("config: switched back to APPDATA: {}",
              utils::ToUtf8(m_path.wstring()));
+    return true;
 }
-
 // ============================================================
 // 重置
 // ============================================================
