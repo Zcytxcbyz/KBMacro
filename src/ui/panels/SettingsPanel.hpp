@@ -1,18 +1,24 @@
 #pragma once
 
-#include <array>
 #include <wx/wx.h>
 #include <wx/listctrl.h>
 
-#include "common/Types.hpp"
-
+// ============================================================
 // 设置面板。
 //
-// 当前为纯 UI 阶段：控件已布局，弹窗交互已实现，破坏性操作只记录日志。
-// ConfigManager 与 HotkeyManager 对接后续补齐。
+// 数据来源：
+//   - 通用 / 计时器 / 置顶 / 配置路径：ConfigManager 单例
+//   - 热键：HotkeyManager（注入引用），数据本身存在 ConfigManager
+//
+// 构造时 refreshFromConfig() 把当前配置同步到各控件；
+// 用户操作走 ConfigManager::setXxx / HotkeyManager::setHotkey，内部落盘。
+// ============================================================
+
+class HotkeyManager;
+
 class SettingsPanel : public wxPanel {
 public:
-    explicit SettingsPanel(wxWindow *parent);
+    SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr);
 
 private:
     void buildUi();
@@ -21,6 +27,15 @@ private:
     void buildHotkeyGroup(wxSizer *parent);
     void buildConfigGroup(wxSizer *parent);
     void buildResetGroup(wxSizer *parent);
+
+    // 从 ConfigManager 读当前配置，同步到所有控件（不触发事件回写）
+    void refreshFromConfig();
+
+    // 重填热键列表（数据源：ConfigManager::config().hotkeys）
+    void refreshHotkeyList();
+
+    // 刷新配置文件路径显示
+    void refreshConfigPathText();
 
     void onLanguageChanged(wxCommandEvent &event);
     void onTimerModeChanged(const wxCommandEvent &event);
@@ -33,14 +48,15 @@ private:
     void onDeletePortableConfig(wxCommandEvent &event);
     void onHotkeySelectionChanged(wxListEvent &event);
 
+    // ---- 服务（外部注入）----
+    HotkeyManager &m_hotkeyMgr;
+
     // ---- 通用 ----
     wxChoice *m_choiceLanguage{};
     wxChoice *m_choiceTimerMode{};
     wxCheckBox *m_chkAlwaysOnTop{};
 
     // ---- 热键 ----
-    static constexpr int kHotkeyCount = 10;
-    std::array<Hotkey, kHotkeyCount> m_hotkeys{};
     wxListCtrl *m_hotkeyList{};
     wxButton *m_btnModifyHotkey{};
 

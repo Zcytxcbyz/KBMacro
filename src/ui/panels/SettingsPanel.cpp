@@ -1,38 +1,31 @@
+#include "ui/panels/SettingsPanel.hpp"
+
 #include <filesystem>
 #include <iterator>
 
 #include <wx/statbox.h>
 
-#include "common/Log.hpp"
-#include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
+#include "common/HotkeyAction.hpp"
+#include "common/Log.hpp"
+#include "managers/ConfigManager.hpp"
+#include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
-#include "ui/panels/SettingsPanel.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
-    // 计时器模式下拉框的索引
+    // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致
     constexpr int kTimerModeSleep = 0;
-    constexpr int kTimerModeSpin = 1;
-
-    // 热键动作列表（顺序即列表行序）
-    constexpr int kHotkeyActionResIds[] = {
-        IDS_SETTINGS_HOTKEY_START_CLICKER,
-        IDS_SETTINGS_HOTKEY_STOP_CLICKER,
-        IDS_SETTINGS_HOTKEY_START_KEYBOARD,
-        IDS_SETTINGS_HOTKEY_STOP_KEYBOARD,
-        IDS_SETTINGS_HOTKEY_START_RECORD,
-        IDS_SETTINGS_HOTKEY_STOP_RECORD,
-        IDS_SETTINGS_HOTKEY_START_PLAYBACK,
-        IDS_SETTINGS_HOTKEY_STOP_PLAYBACK,
-        IDS_SETTINGS_HOTKEY_START_ALL,
-        IDS_SETTINGS_HOTKEY_STOP_ALL,
-    };
+    constexpr int kTimerModeSpin  = 1;
 }
 
-SettingsPanel::SettingsPanel(wxWindow *parent)
-    : wxPanel(parent, wxID_ANY) {
+SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
+    : wxPanel(parent, wxID_ANY),
+      m_hotkeyMgr(hotkeyMgr) {
     buildUi();
+    refreshFromConfig();
+    refreshHotkeyList();
+    refreshConfigPathText();
 }
 
 void SettingsPanel::buildUi() {
@@ -67,17 +60,16 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
     form->AddGrowableCol(1, 1);
 
-    // 语言
+    // 语言：从 kLangs 遍历，索引 ↔ 语言一一对应
     m_choiceLanguage = new wxChoice(staticBox, wxID_ANY);
-    m_choiceLanguage->Append(L"简体中文");
-    m_choiceLanguage->Append(L"English");
-    m_choiceLanguage->SetSelection(0);
+    for (const auto &lang: kLangs) {
+        m_choiceLanguage->Append(wxString(lang.displayName.data(), lang.displayName.size()));
+    }
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_LANGUAGE)),
               0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_choiceLanguage, 1, wxEXPAND);
 
-    // 语言提示（占位空标签 + 提示）
     form->AddSpacer(0);
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_RESTART)),
               1, wxEXPAND);
@@ -86,7 +78,6 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     m_choiceTimerMode = new wxChoice(staticBox, wxID_ANY);
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SLEEP));
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SPIN));
-    m_choiceTimerMode->SetSelection(kTimerModeSleep);
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_TIMER)),
               0, wxALIGN_CENTER_VERTICAL);
@@ -115,15 +106,7 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, 200);
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_HOTKEY), wxLIST_FORMAT_LEFT, 150);
 
-    for (std::size_t i = 0; i < std::size(kHotkeyActionResIds); ++i) {
-        const long row = m_hotkeyList->InsertItem(static_cast<long>(i),
-                                                  TR(kHotkeyActionResIds[i]));
-        const std::wstring s = utils::hotkeyToString(m_hotkeys[i]);
-        m_hotkeyList->SetItem(row, 1,
-                              s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
-                                        : wxString(s));
-        m_hotkeyList->CheckItem(row, true);
-    }
+    // 列表内容由 refreshHotkeyList() 填，构造末尾会调一次
 
     box->Add(m_hotkeyList, 0, wxEXPAND | wxALL, 8);
 
@@ -137,7 +120,7 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     parent->Add(box, 0, wxEXPAND | wxALL, 8);
 
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_SELECTED,
-                   &SettingsPanel::onHotkeySelectionChanged, this);
+                       &SettingsPanel::onHotkeySelectionChanged, this);
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED,
                        &SettingsPanel::onHotkeySelectionChanged, this);
 
@@ -155,7 +138,8 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
     form->AddGrowableCol(1, 1);
 
-    m_configPathText = new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_CONFIG_PATH_UNIMPL));
+    m_configPathText = new wxStaticText(staticBox, wxID_ANY, wxEmptyString);
+    m_configPathText->SetMinSize(wxSize(280, -1));
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_CONFIG_PATH)),
               0, wxALIGN_CENTER_VERTICAL);
@@ -198,11 +182,63 @@ void SettingsPanel::buildResetGroup(wxSizer *parent) {
 }
 
 // ============================================================
+// 从 ConfigManager 同步到控件
+// ============================================================
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::refreshFromConfig() {
+    const auto &cfg = ConfigManager::instance().config();
+
+    // 语言：按 LanguageManager 当前状态定位
+    const Lang cur = LanguageManager::instance().currentLang();
+    for (std::size_t i = 0; i < std::size(kLangs); ++i) {
+        if (kLangs[i].id == cur) {
+            m_choiceLanguage->SetSelection(static_cast<int>(i));
+            break;
+        }
+    }
+
+    // 计时器模式
+    m_choiceTimerMode->SetSelection(
+        cfg.timerMode == TimerMode::Spin ? kTimerModeSpin : kTimerModeSleep);
+
+    // 窗口置顶
+    m_chkAlwaysOnTop->SetValue(cfg.alwaysOnTop);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::refreshHotkeyList() {
+    m_hotkeyList->DeleteAllItems();
+
+    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    for (std::size_t i = 0; i < std::size(kHotkeyActionResIds); ++i) {
+        const long row = m_hotkeyList->InsertItem(static_cast<long>(i),
+                                                  TR(kHotkeyActionResIds[i]));
+        const std::wstring s = utils::hotkeyToString(hotkeys[i]);
+        m_hotkeyList->SetItem(row, 1,
+                              s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
+                                        : wxString(s));
+        m_hotkeyList->CheckItem(row, true);
+    }
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::refreshConfigPathText() {
+    const auto &path = ConfigManager::instance().currentPath();
+    m_configPathText->SetLabel(wxString(path.wstring()));
+}
+
+// ============================================================
 // 事件处理
 // ============================================================
 
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
-    LOG_DEBUG("settings: language changed, index={}", event.GetSelection());
+    const int sel = event.GetSelection();
+    if (sel < 0 || sel >= static_cast<int>(std::size(kLangs))) return;
+
+    LOG_DEBUG("settings: language changed to '{}'", kLangs[sel].code);
+    ConfigManager::instance().setLanguage(kLangs[sel].code);
+
     wxMessageBox(TR(IDS_SETTINGS_MSG_RESTART_REQUIRED),
                  TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
@@ -210,15 +246,29 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
 
 void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
     const int sel = event.GetSelection();
+    if (sel < 0) return;
+
     LOG_DEBUG("settings: timer mode changed, index={}", sel);
-    if (sel == kTimerModeSpin) {
+
+    const TimerMode newMode = (sel == kTimerModeSpin)
+                                  ? TimerMode::Spin
+                                  : TimerMode::Sleep;
+    auto &cfgMgr = ConfigManager::instance();
+
+    if (newMode == TimerMode::Spin && !cfgMgr.config().flags.spinWarningConfirmed) {
         const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_SPIN_WARNING),
                                      TR(IDS_APP_TITLE),
                                      wxOK | wxCANCEL | wxICON_WARNING, this);
         if (ret != wxOK) {
+            // 用户取消：控件回退，配置不动
             m_choiceTimerMode->SetSelection(kTimerModeSleep);
+            return;
         }
+        // 记住已确认，下次不再提醒（除非"清除高精度确认"）
+        cfgMgr.setSpinWarningConfirmed(true);
     }
+
+    cfgMgr.setTimerMode(newMode);
 }
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
@@ -226,7 +276,10 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
     const bool on = event.IsChecked();
     LOG_DEBUG("settings: always on top = {}", on);
 
-    // 找到所属的顶层窗口（MainFrame），切换 wxSTAY_ON_TOP
+    // 落盘
+    ConfigManager::instance().setAlwaysOnTop(on);
+
+    // 立即作用于窗口
     auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame);
     if (!frame) {
         LOG_WARN("settings: top-level frame not found");
@@ -246,7 +299,6 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
     frame->Raise();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
 void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
                                                wxLIST_STATE_SELECTED);
@@ -255,66 +307,96 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
         return;
     }
 
-    HotkeyCaptureDialog dlg(this,
-                            TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
-                            m_hotkeys[static_cast<std::size_t>(row)],
-                            /*requireMainKey=*/true);
+    const auto index = static_cast<int>(row);
+    const Hotkey current = ConfigManager::instance().config().hotkeys[index];
+
+    // 冲突检测：闭包捕获 index，排除自身
+    HotkeyCaptureDialog dlg(
+        this,
+        TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
+        current,
+        /*requireMainKey=*/true,
+        [this, index](const Hotkey &hk) {
+            return m_hotkeyMgr.isConflicting(hk, index);
+        });
+
     if (dlg.ShowModal() != wxID_OK) return;
 
-    m_hotkeys[static_cast<std::size_t>(row)] = dlg.getHotkey();
+    // setHotkey 内部：冲突检查 → 注销旧 → 落盘 → 注册新
+    // 冲突时会弹提示（HotkeyCaptureDialog 已先行检查），此处失败一般是"被其他程序占用"
+    if (!m_hotkeyMgr.setHotkey(index, dlg.getHotkey())) {
+        LOG_WARN("settings: hotkey[{}] set failed (occupied?)", index);
+    }
 
-    const std::wstring s = utils::hotkeyToString(m_hotkeys[static_cast<std::size_t>(row)]);
-    m_hotkeyList->SetItem(row, 1,
-                          s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
-                                    : wxString(s));
-
-    LOG_DEBUG("settings: hotkey row {} set to {}",
-              row, utils::ToUtf8(s));
+    refreshHotkeyList();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void SettingsPanel::onExportConfig(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
+void SettingsPanel::onExportConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: export config clicked");
+
+    ConfigManager::instance().exportToPortable();
+
+    // 导出成功后路径已切到便携文件，刷新显示
+    refreshConfigPathText();
 }
 
 void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
     LOG_DEBUG("settings: clear adaptation clicked");
+
     const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM),
                                  TR(IDS_APP_TITLE),
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret == wxOK) {
-        LOG_DEBUG("settings: clear adaptation confirmed (not implemented)");
-    }
+    if (ret != wxOK) return;
+
+    // TODO: Recorder 模块落地后接适配记忆的清理
+    LOG_DEBUG("settings: clear adaptation confirmed (recorder not implemented)");
 }
 
 void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {
     LOG_DEBUG("settings: clear spin confirmation clicked");
+
     const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM),
                                  TR(IDS_APP_TITLE),
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret == wxOK) {
-        LOG_DEBUG("settings: clear spin confirmation confirmed (not implemented)");
-    }
+    if (ret != wxOK) return;
+
+    ConfigManager::instance().clearSpinWarning();
 }
 
 void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     LOG_DEBUG("settings: reset defaults clicked");
+
     const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM),
                                  TR(IDS_APP_TITLE),
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret == wxOK) {
-        LOG_DEBUG("settings: reset defaults confirmed (not implemented)");
+    if (ret != wxOK) return;
+
+    ConfigManager::instance().resetToDefaults();
+
+    // 重置后：配置里的热键都变空，需要重新注册
+    // HotkeyManager::registerAll 会遍历 config，逐个注册（空热键跳过）
+    m_hotkeyMgr.registerAll();
+
+    // 刷新所有控件回默认状态
+    refreshFromConfig();
+    refreshHotkeyList();
+    refreshConfigPathText();
+
+    // 窗口置顶也要回默认（false）
+    if (auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame)) {
+        int style = frame->GetWindowStyleFlag();
+        style &= ~wxSTAY_ON_TOP;
+        frame->SetWindowStyleFlag(style);
+        frame->Raise();
     }
+
+    LOG_INFO("settings: reset to defaults completed");
 }
 
 void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: delete portable config clicked");
 
-    const auto exePath = utils::GetExecutablePath();
-    const auto portablePath = std::filesystem::path(exePath)
-                              .concat(L".json");
-
-    if (std::error_code ec; !std::filesystem::exists(portablePath, ec) || ec) {
+    if (!ConfigManager::instance().isPortable()) {
         wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE),
                      TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
@@ -322,12 +404,13 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     }
 
     const wxString msg = TR(IDS_SETTINGS_MSG_DELETE_CONFIRM)
-                         + L"\n\n" + portablePath.wstring();
+                         + L"\n\n" + ConfigManager::instance().currentPath().wstring();
     const int ret = wxMessageBox(msg, TR(IDS_APP_TITLE),
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret == wxOK) {
-        LOG_DEBUG("settings: delete portable config confirmed (not implemented)");
-    }
+    if (ret != wxOK) return;
+
+    ConfigManager::instance().deletePortable();
+    refreshConfigPathText();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

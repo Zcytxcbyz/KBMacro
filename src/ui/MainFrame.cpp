@@ -17,55 +17,49 @@
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
               wxDefaultPosition, wxSize(550, 710),
-              // 启动时按配置决定是否置顶。
-              // 与 SettingsPanel 里 SetWindowStyleFlag 切换 wxSTAY_ON_TOP 配合：
-              //   - 构造时用样式参数（wxFrame 初始化的正道）
-              //   - 运行时用 SetWindowStyleFlag（用户切换）
               ConfigManager::instance().config().alwaysOnTop
                   ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
                   : wxDEFAULT_FRAME_STYLE) {
-    auto *notebook = new wxNotebook(this, wxID_ANY);
-
-    // ---- 标签页1：鼠标连点器 ----
-    m_clickerPanel = new ClickerPanel(notebook);
-    notebook->AddPage(m_clickerPanel, TR(IDS_TAB_CLICKER));
-
-    // ---- 标签页2：键盘模拟器 ----
-    m_keyboardPanel = new KeyboardPanel(notebook);
-    notebook->AddPage(m_keyboardPanel, TR(IDS_TAB_KEYBOARD));
-
-    // ---- 标签页3：录制与编排 ----
-    m_recorderPanel = new RecorderPanel(notebook);
-    notebook->AddPage(m_recorderPanel, TR(IDS_TAB_RECORDER));
-
-    // ---- 标签页4：设置 ----
-    m_settingsPanel = new SettingsPanel(notebook);
-    notebook->AddPage(m_settingsPanel, TR(IDS_TAB_SETTINGS));
-
-    // ---- 标签页5：关于 ----
-    m_aboutPanel = new AboutPanel(notebook);
-    notebook->AddPage(m_aboutPanel, TR(IDS_TAB_ABOUT));
-
-    wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
-
-    // ---- 状态栏 ----
-    m_statusBar = new KBMacroStatusBar(this);
-    wxFrameBase::SetStatusBar(m_statusBar);
-    m_statusBar->SetMessage(TR(IDS_STATUS_READY));
-
-    // ---- 热键管理 ----
-    // 用 MainFrame 的 HWND 注册热键，WM_HOTKEY 会发到这里。
+    // ---- 1. 先创建 HotkeyManager（只依赖 HWND）----
     // 触发回调在 dispatch 时才执行，此时面板都已构造完毕。
     m_hotkeyMgr = std::make_unique<HotkeyManager>(
         GetHWND(),
         [this](const HotkeyAction action) {
             dispatchHotkeyAction(action);
         });
-
-    // wxWidgets 收到 WM_HOTKEY 后产生 wxEVT_HOTKEY，
-    // 事件的 GetId() 即 RegisterHotKey 时用的 id。
     Bind(wxEVT_HOTKEY, &MainFrame::onHotkey, this);
 
+    // ---- 2. 组装 UI ----
+    auto *notebook = new wxNotebook(this, wxID_ANY);
+
+    // 标签页1：鼠标连点器
+    m_clickerPanel = new ClickerPanel(notebook);
+    notebook->AddPage(m_clickerPanel, TR(IDS_TAB_CLICKER));
+
+    // 标签页2：键盘模拟器
+    m_keyboardPanel = new KeyboardPanel(notebook);
+    notebook->AddPage(m_keyboardPanel, TR(IDS_TAB_KEYBOARD));
+
+    // 标签页3：录制与编排
+    m_recorderPanel = new RecorderPanel(notebook);
+    notebook->AddPage(m_recorderPanel, TR(IDS_TAB_RECORDER));
+
+    // 标签页4：设置（注入 HotkeyManager）
+    m_settingsPanel = new SettingsPanel(notebook, *m_hotkeyMgr);
+    notebook->AddPage(m_settingsPanel, TR(IDS_TAB_SETTINGS));
+
+    // 标签页5：关于
+    m_aboutPanel = new AboutPanel(notebook);
+    notebook->AddPage(m_aboutPanel, TR(IDS_TAB_ABOUT));
+
+    wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
+
+    // ---- 3. 状态栏 ----
+    m_statusBar = new KBMacroStatusBar(this);
+    wxFrameBase::SetStatusBar(m_statusBar);
+    m_statusBar->SetMessage(TR(IDS_STATUS_READY));
+
+    // ---- 4. 最后注册热键（面板都构造好了，之后触发的回调才能安全分发）----
     m_hotkeyMgr->registerAll();
     reportHotkeyFailures();
 }
