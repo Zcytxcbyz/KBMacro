@@ -1,6 +1,10 @@
+#include <filesystem>
+
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 
+#include "common/Utils.hpp"
+#include "common/JsonIO.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/panels/ClickerPanel.hpp"
@@ -12,10 +16,12 @@ namespace {
     constexpr int kTypeWheelLast  = 7;  // Wheel Right
 
     // 运行模式下拉框索引
-    // ReSharper disable once CppDeclaratorNeverUsed
     constexpr int kRunModeInfinite = 0;
     constexpr int kRunModeTimed    = 1;
     constexpr int kRunModeCounted  = 2;
+
+    // *.clicker.json 的 schema 版本
+    constexpr int kClickerParamsVersion = 1;
 }
 
 ClickerPanel::ClickerPanel(wxWindow *parent)
@@ -187,16 +193,65 @@ void ClickerPanel::buildUi() {
 }
 
 // ============================================================
-// 事件处理（纯 UI 阶段：只记录日志，不接实际逻辑）
+// 参数收集 / 应用
+// ============================================================
+
+ClickerParams ClickerPanel::collectParams() const {
+    ClickerParams p;
+
+    p.ignorePosition = m_chkIgnorePos->GetValue();
+
+    // 坐标用 ToLong 解析，失败时保留 0
+    long coord = 0;
+    if (m_x->GetValue().ToLong(&coord)) p.x = static_cast<int>(coord);
+    if (m_y->GetValue().ToLong(&coord)) p.y = static_cast<int>(coord);
+
+    p.clickType = static_cast<ClickType>(m_choiceType->GetSelection());
+    p.wheelSteps = m_spinWheelSteps->GetValue();
+    p.intervalMs = m_spinInterval->GetValue();
+    p.holdMs = m_spinHoldTime->GetValue();
+
+    // ReSharper disable once CppDeclaratorNeverUsed
+    switch (const int runSel = m_choiceRunMode->GetSelection()) {
+        case kRunModeTimed:   p.run.mode = RunMode::Timed;   break;
+        case kRunModeCounted: p.run.mode = RunMode::Counted; break;
+        default:              p.run.mode = RunMode::Infinite; break;
+    }
+    p.run.durationSec = m_spinDuration->GetValue();
+    p.run.count = m_spinCount->GetValue();
+
+    return p;
+}
+
+void ClickerPanel::applyParams(const ClickerParams &p) {
+    m_chkIgnorePos->SetValue(p.ignorePosition);
+
+    m_x->SetValue(wxString::Format("%d", p.x));
+    m_y->SetValue(wxString::Format("%d", p.y));
+
+    m_choiceType->SetSelection(static_cast<int>(p.clickType));
+    m_spinWheelSteps->SetValue(p.wheelSteps);
+    m_spinInterval->SetValue(p.intervalMs);
+    m_spinHoldTime->SetValue(p.holdMs);
+
+    switch (p.run.mode) {
+        case RunMode::Timed:   m_choiceRunMode->SetSelection(kRunModeTimed);   break;
+        case RunMode::Counted: m_choiceRunMode->SetSelection(kRunModeCounted); break;
+        default:               m_choiceRunMode->SetSelection(kRunModeInfinite); break;
+    }
+    m_spinDuration->SetValue(p.run.durationSec);
+    m_spinCount->SetValue(p.run.count);
+
+    refreshEnableStates();
+}
+
+// ============================================================
+// 事件处理
 // ============================================================
 
 void ClickerPanel::onCapturePos(wxCommandEvent &) {
     LOG_DEBUG("clicker: capture position started");
 
-    // 新建一个全屏覆盖层，用户点击后回填坐标并自动销毁
-    // 捕获期间用户仍能看见屏幕内容（半透明），点击/右键/Esc 结束
-    // 注意：回调 lambda 捕获 this，overlay 生命周期短（一次点击内），
-    //       只要 panel 在 overlay 存活期间不析构就安全
     new ScreenCaptureOverlay(this,
         [this](const bool captured, const wxPoint pos) {
             if (!captured) {
@@ -254,10 +309,13 @@ void ClickerPanel::onStop(wxCommandEvent &) {
     stop();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::startWithCurrentParams() { // NOLINT(*-convert-member-functions-to-static)
-    // TODO: 从控件读取 ClickerParams，交给 ThreadManager
-    LOG_DEBUG("clicker: start with current params (not implemented)");
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ClickerPanel::startWithCurrentParams() {
+    // ReSharper disable once CppDeclaratorNeverUsed
+    const ClickerParams p = collectParams();
+    // TODO: ThreadManager::StartClicker(p)
+    LOG_DEBUG("clicker: start with params (interval={}ms, type={})",
+              p.intervalMs, static_cast<int>(p.clickType));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -266,14 +324,81 @@ void ClickerPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("clicker: stop (not implemented)");
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onImport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: import clicked");
+void ClickerPanel::onImport(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_IMPORT_PARAMS),
+                     wxEmptyString,
+                     wxEmptyString,
+                     TR(IDS_FILTER_CLICKER),
+                     wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    if (!jsonio::loadFrom(path, j)) {
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    // 版本校验
+    if (const int fileVer = j.value("version", 1);
+        fileVer > kClickerParamsVersion) {
+        LOG_WARN("clicker: import version {} > supported {}",
+                 fileVer, kClickerParamsVersion);
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (!j.contains("params") || !j["params"].is_object()) {
+        LOG_WARN("clicker: import missing 'params' object");
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    try {
+        applyParams(j["params"].get<ClickerParams>());
+    } catch (const std::exception &e) {
+        LOG_WARN("clicker: import deserialize failed: {}", e.what());
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("clicker: params imported from {}",
+             utils::ToUtf8(path.wstring()));
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onExport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: export clicked");
+void ClickerPanel::onExport(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_EXPORT_PARAMS),
+                     wxEmptyString,
+                     L"clicker.clicker.json",
+                     TR(IDS_FILTER_CLICKER),
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    j["version"] = kClickerParamsVersion;
+    j["params"] = collectParams();
+
+    if (!jsonio::saveTo(path, j)) {
+        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("clicker: params exported to {}",
+             utils::ToUtf8(path.wstring()));
 }
 
 bool ClickerPanel::isWheelTypeSelected() const {
@@ -281,9 +406,8 @@ bool ClickerPanel::isWheelTypeSelected() const {
     return sel >= kTypeWheelFirst && sel <= kTypeWheelLast;
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppMemberFunctionMayBeConst
-void ClickerPanel::refreshEnableStates() { // NOLINT(*-convert-member-functions-to-static)
+void ClickerPanel::refreshEnableStates() {
     // ---- 坐标区 ----
     const bool ignorePos = m_chkIgnorePos->GetValue();
     m_x->Enable(!ignorePos);

@@ -1,10 +1,15 @@
 #include "ui/panels/RecorderPanel.hpp"
 
+#include <filesystem>
+#include <utility>
+
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 #include <cassert>
 
+#include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
+#include "common/JsonIO.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
@@ -79,6 +84,9 @@ namespace {
     [[nodiscard]] std::ptrdiff_t toDiff(const std::size_t i) {
         return static_cast<std::ptrdiff_t>(i);
     }
+
+    // *.macro.json 的 schema 版本
+    constexpr int kMacroVersion = 1;
 } // namespace
 
 RecorderPanel::RecorderPanel(wxWindow *parent)
@@ -385,7 +393,7 @@ void RecorderPanel::onClear(wxCommandEvent &) {
 }
 
 // ============================================================
-// 录制 / 回放 / 导入导出（暂占位）
+// 录制 / 回放
 // ============================================================
 void RecorderPanel::onStartRecord(wxCommandEvent &) {
     startRecording();
@@ -402,6 +410,7 @@ void RecorderPanel::onStartPlayback(wxCommandEvent &) {
 void RecorderPanel::onStopPlayback(wxCommandEvent &) {
     stopPlayback();
 }
+
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::startRecording() { // NOLINT(*-convert-member-functions-to-static)
     // TODO: ThreadManager::StartRecord()
@@ -409,6 +418,7 @@ void RecorderPanel::startRecording() { // NOLINT(*-convert-member-functions-to-s
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::stopRecording() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StopRecord()
     LOG_DEBUG("recorder: stop recording (not implemented)");
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -418,13 +428,98 @@ void RecorderPanel::startPlayback() { // NOLINT(*-convert-member-functions-to-st
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StopPlayback()
     LOG_DEBUG("recorder: stop playback (not implemented)");
 }
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onImportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: import script clicked");
+
+// ============================================================
+// 导入 / 导出脚本
+// ============================================================
+
+void RecorderPanel::onImportScript(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_IMPORT_PARAMS),
+                     wxEmptyString,
+                     wxEmptyString,
+                     TR(IDS_FILTER_MACRO),
+                     wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    if (!jsonio::loadFrom(path, j)) {
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (const int fileVer = j.value("version", 1); fileVer > kMacroVersion) {
+        LOG_WARN("recorder: import version {} > supported {}",
+                 fileVer, kMacroVersion);
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (!j.contains("actions") || !j["actions"].is_array()) {
+        LOG_WARN("recorder: import missing 'actions' array");
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    std::vector<Action> imported;
+    try {
+        imported = j["actions"].get<std::vector<Action>>();
+    } catch (const std::exception &e) {
+        LOG_WARN("recorder: import deserialize failed: {}", e.what());
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    // 替换确认
+    const int ret = wxMessageBox(TR(IDS_MSG_MACRO_REPLACE_CONFIRM),
+                                 TR(IDS_APP_TITLE),
+                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
+    if (ret != wxOK) {
+        LOG_DEBUG("recorder: import cancelled by user");
+        return;
+    }
+
+    m_actions = std::move(imported);
+    refreshList();
+
+    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("recorder: imported {} actions from {}",
+             m_actions.size(), utils::ToUtf8(path.wstring()));
 }
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onExportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: export script clicked");
+
+void RecorderPanel::onExportScript(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_EXPORT_PARAMS),
+                     wxEmptyString,
+                     L"macro.macro.json",
+                     TR(IDS_FILTER_MACRO),
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    j["version"] = kMacroVersion;
+    j["actions"] = m_actions;
+
+    if (!jsonio::saveTo(path, j)) {
+        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("recorder: exported {} actions to {}",
+             m_actions.size(), utils::ToUtf8(path.wstring()));
 }

@@ -1,17 +1,24 @@
+#include <filesystem>
+
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 
-#include "common/Log.hpp"
+#include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
+#include "common/JsonIO.hpp"
+#include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
-    // ReSharper disable once CppDeclaratorNeverUsed
+    // 运行模式下拉框索引
     constexpr int kRunModeInfinite = 0;
     constexpr int kRunModeTimed    = 1;
     constexpr int kRunModeCounted  = 2;
+
+    // *.keyboard.json 的 schema 版本
+    constexpr int kKeyboardParamsVersion = 1;
 }
 
 KeyboardPanel::KeyboardPanel(wxWindow *parent)
@@ -146,14 +153,63 @@ void KeyboardPanel::buildUi() {
     m_btnExport->Bind(wxEVT_BUTTON, &KeyboardPanel::onExport, this);
     m_choiceRunMode->Bind(wxEVT_CHOICE, &KeyboardPanel::onRunModeChanged, this);
 
+    refreshKeyDisplay();
     refreshEnableStates();
 }
 
 // ============================================================
-// 事件处理（纯 UI 阶段：只记录日志，不接实际逻辑）
+// 参数收集 / 应用
 // ============================================================
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
+KeyboardParams KeyboardPanel::collectParams() const {
+    KeyboardParams p;
+    p.hotkey = m_hotkey;
+    p.intervalMs = m_spinInterval->GetValue();
+    p.holdMs = m_spinHoldTime->GetValue();
+
+    // ReSharper disable once CppDeclaratorNeverUsed
+    switch (const int runSel = m_choiceRunMode->GetSelection()) {
+        case kRunModeTimed:   p.run.mode = RunMode::Timed;   break;
+        case kRunModeCounted: p.run.mode = RunMode::Counted; break;
+        default:              p.run.mode = RunMode::Infinite; break;
+    }
+    p.run.durationSec = m_spinDuration->GetValue();
+    p.run.count = m_spinCount->GetValue();
+
+    return p;
+}
+
+void KeyboardPanel::applyParams(const KeyboardParams &p) {
+    m_hotkey = p.hotkey;
+    m_spinInterval->SetValue(p.intervalMs);
+    m_spinHoldTime->SetValue(p.holdMs);
+
+    switch (p.run.mode) {
+        case RunMode::Timed:   m_choiceRunMode->SetSelection(kRunModeTimed);   break;
+        case RunMode::Counted: m_choiceRunMode->SetSelection(kRunModeCounted); break;
+        default:               m_choiceRunMode->SetSelection(kRunModeInfinite); break;
+    }
+    m_spinDuration->SetValue(p.run.durationSec);
+    m_spinCount->SetValue(p.run.count);
+
+    refreshKeyDisplay();
+    refreshEnableStates();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void KeyboardPanel::refreshKeyDisplay() {
+    const std::wstring s = utils::hotkeyToString(m_hotkey);
+    if (s.empty()) {
+        m_keyDisplay->SetValue(TR(IDS_KEYBOARD_KEY_UNSET));
+    } else {
+        m_keyDisplay->SetValue(s);
+    }
+}
+
+// ============================================================
+// 事件处理
+// ============================================================
+
 void KeyboardPanel::onSetKey(wxCommandEvent &) {
     HotkeyCaptureDialog dlg(this,
                             TR(IDS_KEYBOARD_BTN_SET_KEY),
@@ -162,20 +218,16 @@ void KeyboardPanel::onSetKey(wxCommandEvent &) {
     if (dlg.ShowModal() != wxID_OK) return;
 
     m_hotkey = dlg.getHotkey();
+    refreshKeyDisplay();
 
-    const std::wstring s = utils::hotkeyToString(m_hotkey);
-    if (s.empty()) {
-        m_keyDisplay->SetValue(TR(IDS_KEYBOARD_KEY_UNSET));
-    } else {
-        m_keyDisplay->SetValue(s);
-    }
-
-    LOG_DEBUG("keyboard: hotkey set to {}", utils::ToUtf8(s));
+    LOG_DEBUG("keyboard: hotkey set to {}",
+              utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void KeyboardPanel::onSendOnce(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: send once clicked");
+    // TODO: 单次发送用 SendInput，等 win32 模块落地
+    LOG_DEBUG("keyboard: send once (not implemented)");
 }
 
 void KeyboardPanel::onStart(wxCommandEvent &) {
@@ -186,10 +238,13 @@ void KeyboardPanel::onStop(wxCommandEvent &) {
     stop();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::startWithCurrentParams() { // NOLINT(*-convert-member-functions-to-static)
-    // TODO: 从控件读取 KeyboardParams，交给 ThreadManager
-    LOG_DEBUG("keyboard: start with current params (not implemented)");
+// ReSharper disable once CppMemberFunctionMayBeConst
+void KeyboardPanel::startWithCurrentParams() {
+    // ReSharper disable once CppDeclaratorNeverUsed
+    const KeyboardParams p = collectParams();
+    // TODO: ThreadManager::StartKeyboard(p)
+    LOG_DEBUG("keyboard: start with params (interval={}ms, key={})",
+              p.intervalMs, utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
@@ -198,14 +253,80 @@ void KeyboardPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
     LOG_DEBUG("keyboard: stop (not implemented)");
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onImport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: import clicked");
+void KeyboardPanel::onImport(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_IMPORT_PARAMS),
+                     wxEmptyString,
+                     wxEmptyString,
+                     TR(IDS_FILTER_KEYBOARD),
+                     wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    if (!jsonio::loadFrom(path, j)) {
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (const int fileVer = j.value("version", 1);
+        fileVer > kKeyboardParamsVersion) {
+        LOG_WARN("keyboard: import version {} > supported {}",
+                 fileVer, kKeyboardParamsVersion);
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (!j.contains("params") || !j["params"].is_object()) {
+        LOG_WARN("keyboard: import missing 'params' object");
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    try {
+        applyParams(j["params"].get<KeyboardParams>());
+    } catch (const std::exception &e) {
+        LOG_WARN("keyboard: import deserialize failed: {}", e.what());
+        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("keyboard: params imported from {}",
+             utils::ToUtf8(path.wstring()));
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onExport(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: export clicked");
+void KeyboardPanel::onExport(wxCommandEvent &) {
+    wxFileDialog dlg(this,
+                     TR(IDS_DIALOG_EXPORT_PARAMS),
+                     wxEmptyString,
+                     L"keyboard.keyboard.json",
+                     TR(IDS_FILTER_KEYBOARD),
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+    if (dlg.ShowModal() != wxID_OK) return;
+
+    const auto path = std::filesystem::path(dlg.GetPath().ToStdWstring());
+
+    nlohmann::json j;
+    j["version"] = kKeyboardParamsVersion;
+    j["params"] = collectParams();
+
+    if (!jsonio::saveTo(path, j)) {
+        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+                 wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("keyboard: params exported to {}",
+             utils::ToUtf8(path.wstring()));
 }
 
 void KeyboardPanel::onRunModeChanged(wxCommandEvent &) {

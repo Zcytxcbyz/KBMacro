@@ -26,6 +26,18 @@ BEGIN
     L(IDS_COMMON_GROUP_RUNMODE)      "Run Mode"
     L(IDS_COMMON_GROUP_ACTIONS)      "Actions"
 
+    // ---- Parameter import / export ----
+    L(IDS_DIALOG_IMPORT_PARAMS)      "Import Parameters"
+    L(IDS_DIALOG_EXPORT_PARAMS)      "Export Parameters"
+    L(IDS_FILTER_CLICKER)            "Mouse Clicker Parameters (*.clicker.json)|*.clicker.json|All Files (*.*)|*.*"
+    L(IDS_FILTER_KEYBOARD)           "Keyboard Simulator Parameters (*.keyboard.json)|*.keyboard.json|All Files (*.*)|*.*"
+    L(IDS_FILTER_MACRO)              "Macro Script (*.macro.json)|*.macro.json|All Files (*.*)|*.*"
+    L(IDS_MSG_IMPORT_SUCCESS)        "Import succeeded."
+    L(IDS_MSG_IMPORT_FAILED)         "Import failed. Please check the file format."
+    L(IDS_MSG_EXPORT_SUCCESS)        "Export succeeded."
+    L(IDS_MSG_EXPORT_FAILED)         "Export failed. Please check the file path."
+    L(IDS_MSG_MACRO_REPLACE_CONFIRM) "This will replace the current action list. Continue?"
+
     // ---- Clicker panel ----
     L(IDS_CLICKER_LABEL_X)               "X:"
     L(IDS_CLICKER_LABEL_Y)               "Y:"

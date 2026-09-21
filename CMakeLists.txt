@@ -71,6 +71,7 @@ set(SOURCES
         src/common/ConfigPaths.cpp
         src/managers/ConfigManager.cpp
         src/managers/HotkeyManager.cpp
+        src/common/JsonIO.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -101,6 +102,7 @@ set(HEADERS
         src/managers/ConfigManager.hpp
         src/common/HotkeyAction.hpp
         src/managers/HotkeyManager.hpp
+        src/common/JsonIO.hpp
         # 在这里添加 .h 文件
 )
 

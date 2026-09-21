@@ -2,12 +2,14 @@
 
 #include <wx/wx.h>
 
+#include "common/KeyboardParams.hpp"
 #include "common/Types.hpp"
 
 // 键盘模拟器面板。
 //
-// 当前为纯 UI 阶段：控件已布局，按钮事件只记录日志，不接实际逻辑。
-// 热键捕获对话框、控件启用/禁用、ThreadManager 对接等后续补齐。
+// 与 ThreadManager 的对接在模块落地后补。本阶段：
+//   - 提供公开方法（供热键路径调用）
+//   - 支持参数的导入 / 导出（*.keyboard.json）
 class KeyboardPanel : public wxPanel {
 public:
     explicit KeyboardPanel(wxWindow *parent);
@@ -18,6 +20,12 @@ public:
 
 private:
     void buildUi();
+
+    // 从控件组装 KeyboardParams
+    [[nodiscard]] KeyboardParams collectParams() const;
+
+    // 把 KeyboardParams 同步到控件
+    void applyParams(const KeyboardParams &p);
 
     void onSetKey(wxCommandEvent &event);
 
@@ -33,6 +41,9 @@ private:
 
     void refreshEnableStates();
     void onRunModeChanged(wxCommandEvent &event);
+
+    // 刷新按键显示框
+    void refreshKeyDisplay();
 
     // ---- 按键 ----
     Hotkey m_hotkey;

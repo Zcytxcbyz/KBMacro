@@ -11,6 +11,10 @@
 //
 // 当前为过渡期：面板自己持有 std::vector<Action> 作为数据源，
 // 将来 Recorder 模块做出来后，数据挪到模块里，本面板通过接口读写。
+//
+// 本阶段：
+//   - 提供公开方法（供热键路径调用）
+//   - 支持宏脚本的导入 / 导出（*.macro.json，整体替换语义）
 class RecorderPanel : public wxPanel {
 public:
     explicit RecorderPanel(wxWindow *parent);
@@ -25,7 +29,7 @@ public:
 private:
     void buildUi();
 
-    // ---- 录制 / 回放 / 导入导出（暂占位）----
+    // ---- 录制 / 回放 / 导入导出 ----
     void onStartRecord(wxCommandEvent &event);
     void onStopRecord(wxCommandEvent &event);
     void onStartPlayback(wxCommandEvent &event);

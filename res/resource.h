@@ -33,6 +33,20 @@
 #define IDS_COMMON_GROUP_RUNMODE         1120
 #define IDS_COMMON_GROUP_ACTIONS         1121
 
+// ---- 参数导入导出（跨面板共用）----
+#define IDS_DIALOG_IMPORT_PARAMS        1201
+#define IDS_DIALOG_EXPORT_PARAMS        1202
+
+#define IDS_FILTER_CLICKER              1210
+#define IDS_FILTER_KEYBOARD             1211
+#define IDS_FILTER_MACRO                1212
+
+#define IDS_MSG_IMPORT_SUCCESS          1220
+#define IDS_MSG_IMPORT_FAILED           1221
+#define IDS_MSG_EXPORT_SUCCESS          1222
+#define IDS_MSG_EXPORT_FAILED           1223
+#define IDS_MSG_MACRO_REPLACE_CONFIRM   1224
+
 // ---- Clicker 面板 ----
 #define IDS_CLICKER_LABEL_X              2001
 #define IDS_CLICKER_LABEL_Y              2002
