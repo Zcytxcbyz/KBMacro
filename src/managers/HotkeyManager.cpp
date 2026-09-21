@@ -64,6 +64,12 @@ void HotkeyManager::registerAll() {
              registered, kHotkeyCount);
 }
 
+void HotkeyManager::unregisterAll() {
+    for (int i = 0; i < kHotkeyCount; ++i) {
+        unregisterOne(i);
+    }
+}
+
 // ============================================================
 // 单个注册 / 注销
 // ============================================================
