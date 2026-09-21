@@ -292,7 +292,6 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
         }
     }
     // wxID_NO = 稍后重启：什么都不做，配置已落盘
-    // wxID_NO = 稍后重启：什么都不做，配置已落盘
 }
 
 void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
