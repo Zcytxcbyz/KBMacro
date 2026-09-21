@@ -44,8 +44,10 @@ void ConfigManager::load() {
     LOG_INFO("config: resolved path: {} (portable={})",
              utils::ToUtf8(m_path.wstring()), m_portable);
 
-    // 加载失败不报错：全新环境没文件是正常的，行为等价于默认配置。
-    (void)config::loadFrom(m_path, m_config);
+    if (!config::loadFrom(m_path, m_config)) {
+        LOG_INFO("config: initializing new config file");
+        save();
+    }
 }
 
 // ============================================================
