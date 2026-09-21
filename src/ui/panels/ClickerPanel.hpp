@@ -10,6 +10,12 @@ class ClickerPanel : public wxPanel {
 public:
     explicit ClickerPanel(wxWindow *parent);
 
+    // 供 MainFrame 从热键路径调用，与用户点击"开始"/"停止"按钮等价。
+    // 从当前控件值组装 ClickerParams，交给 ThreadManager 启动。
+    // 具体实现等 Clicker 模块落地，当前只打日志占位。
+    void startWithCurrentParams();
+    void stop();
+
 private:
     void buildUi();
 

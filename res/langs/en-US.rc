@@ -143,6 +143,7 @@ BEGIN
 
     // ---- Status bar ----
     L(IDS_STATUS_READY)             "Ready"
+    L(IDS_STATUS_HOTKEY_FAILED)     "Failed to register %d hotkey(s)"
 
     // ---- Action edit dialog ----
     L(IDS_ACTION_TYPE_MOUSE_MOVE)      "Mouse Move"

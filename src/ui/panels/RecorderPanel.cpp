@@ -387,22 +387,38 @@ void RecorderPanel::onClear(wxCommandEvent &) {
 // ============================================================
 // 录制 / 回放 / 导入导出（暂占位）
 // ============================================================
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onStartRecord(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: start recording clicked");
+void RecorderPanel::onStartRecord(wxCommandEvent &) {
+    startRecording();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onStopRecord(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: stop recording clicked");
+void RecorderPanel::onStopRecord(wxCommandEvent &) {
+    stopRecording();
+}
+
+void RecorderPanel::onStartPlayback(wxCommandEvent &) {
+    startPlayback();
+}
+
+void RecorderPanel::onStopPlayback(wxCommandEvent &) {
+    stopPlayback();
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onStartPlayback(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: start playback clicked");
+void RecorderPanel::startRecording() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StartRecord()
+    LOG_DEBUG("recorder: start recording (not implemented)");
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::onStopPlayback(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("recorder: stop playback clicked");
+void RecorderPanel::stopRecording() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_DEBUG("recorder: stop recording (not implemented)");
+}
+// ReSharper disable once CppMemberFunctionMayBeStatic
+void RecorderPanel::startPlayback() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StartPlayback(m_actions, runSpec)
+    LOG_DEBUG("recorder: start playback (not implemented)");
+}
+// ReSharper disable once CppMemberFunctionMayBeStatic
+void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_DEBUG("recorder: stop playback (not implemented)");
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::onImportScript(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)

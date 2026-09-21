@@ -15,6 +15,13 @@ class RecorderPanel : public wxPanel {
 public:
     explicit RecorderPanel(wxWindow *parent);
 
+    // 供 MainFrame 从热键路径调用，与用户点击对应按钮等价。
+    // 录制与回放互斥，由 ThreadManager 内部保证；面板只管发起请求。
+    void startRecording();
+    void stopRecording();
+    void startPlayback();
+    void stopPlayback();
+
 private:
     void buildUi();
 

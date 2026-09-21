@@ -178,14 +178,24 @@ void KeyboardPanel::onSendOnce(wxCommandEvent &) { // NOLINT(*-convert-member-fu
     LOG_DEBUG("keyboard: send once clicked");
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onStart(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: start clicked");
+void KeyboardPanel::onStart(wxCommandEvent &) {
+    startWithCurrentParams();
+}
+
+void KeyboardPanel::onStop(wxCommandEvent &) {
+    stop();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onStop(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("keyboard: stop clicked");
+void KeyboardPanel::startWithCurrentParams() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: 从控件读取 KeyboardParams，交给 ThreadManager
+    LOG_DEBUG("keyboard: start with current params (not implemented)");
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+void KeyboardPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StopKeyboard()
+    LOG_DEBUG("keyboard: stop (not implemented)");
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic

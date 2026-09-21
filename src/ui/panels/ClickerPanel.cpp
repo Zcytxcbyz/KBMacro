@@ -246,14 +246,24 @@ void ClickerPanel::onCoordChar(wxKeyEvent &event) { // NOLINT(*-convert-member-f
     // 其余吞掉
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onStart(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: start clicked");
+void ClickerPanel::onStart(wxCommandEvent &) {
+    startWithCurrentParams();
+}
+
+void ClickerPanel::onStop(wxCommandEvent &) {
+    stop();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::onStop(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    LOG_DEBUG("clicker: stop clicked");
+void ClickerPanel::startWithCurrentParams() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: 从控件读取 ClickerParams，交给 ThreadManager
+    LOG_DEBUG("clicker: start with current params (not implemented)");
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+void ClickerPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+    // TODO: ThreadManager::StopClicker()
+    LOG_DEBUG("clicker: stop (not implemented)");
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic

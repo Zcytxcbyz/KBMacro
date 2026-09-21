@@ -150,6 +150,7 @@
 
 // ---- 状态栏 ----
 #define IDS_STATUS_READY                9001
+#define IDS_STATUS_HOTKEY_FAILED        9002
 
 // ---- 动作编辑对话框 ----
 #define IDS_ACTION_TYPE_MOUSE_MOVE      10001

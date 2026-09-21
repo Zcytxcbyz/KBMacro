@@ -12,6 +12,10 @@ class KeyboardPanel : public wxPanel {
 public:
     explicit KeyboardPanel(wxWindow *parent);
 
+    // 供 MainFrame 从热键路径调用，与用户点击"开始"/"停止"按钮等价。
+    void startWithCurrentParams();
+    void stop();
+
 private:
     void buildUi();
 

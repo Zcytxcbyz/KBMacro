@@ -143,6 +143,7 @@ BEGIN
 
     // ---- 状态栏 ----
     L(IDS_STATUS_READY)             "就绪"
+    L(IDS_STATUS_HOTKEY_FAILED)     "热键注册失败：%d 个"
 
     // ---- 动作编辑对话框 ----
     L(IDS_ACTION_TYPE_MOUSE_MOVE)      "鼠标移动"
