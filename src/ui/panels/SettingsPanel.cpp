@@ -364,6 +364,9 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     const auto index = static_cast<int>(row);
     const Hotkey current = ConfigManager::instance().config().hotkeys[index];
 
+    LOG_DEBUG("settings: modify hotkey[{}], current='{}'",
+              index, utils::ToUtf8(utils::hotkeyToString(current)));
+
     // 冲突检测：闭包捕获 index，排除自身
     HotkeyCaptureDialog dlg(
         this,
@@ -374,12 +377,22 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
             return m_hotkeyMgr.isConflicting(hk, index);
         });
 
-    if (dlg.ShowModal() != wxID_OK) return;
+    if (dlg.ShowModal() != wxID_OK) {
+        LOG_DEBUG("settings: hotkey[{}] modify cancelled", index);
+        return;
+    }
+
+    const Hotkey wanted = dlg.getHotkey();
+    const std::string wantedStr = utils::ToUtf8(utils::hotkeyToString(wanted));
 
     // setHotkey 内部：冲突检查 → 注销旧 → 落盘 → 注册新
     // 冲突时会弹提示（HotkeyCaptureDialog 已先行检查），此处失败一般是"被其他程序占用"
-    if (!m_hotkeyMgr.setHotkey(index, dlg.getHotkey())) {
-        LOG_WARN("settings: hotkey[{}] set failed (occupied?)", index);
+    if (!m_hotkeyMgr.setHotkey(index, wanted)) {
+        LOG_WARN("settings: hotkey[{}] set to '{}' failed (occupied?)",
+                 index, wantedStr);
+    } else {
+        LOG_INFO("settings: hotkey[{}] set to '{}'",
+                 index, wantedStr);
     }
 
     refreshHotkeyList();

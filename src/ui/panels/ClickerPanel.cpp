@@ -311,17 +311,17 @@ void ClickerPanel::onStop(wxCommandEvent &) {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ClickerPanel::startWithCurrentParams() {
-    // ReSharper disable once CppDeclaratorNeverUsed
     const ClickerParams p = collectParams();
+    LOG_INFO("clicker: start requested (interval={}ms, type={}, run={})",
+             p.intervalMs, static_cast<int>(p.clickType),
+             runModeToString(p.run.mode));
     // TODO: ThreadManager::StartClicker(p)
-    LOG_DEBUG("clicker: start with params (interval={}ms, type={})",
-              p.intervalMs, static_cast<int>(p.clickType));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void ClickerPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_INFO("clicker: stop requested");
     // TODO: ThreadManager::StopClicker()
-    LOG_DEBUG("clicker: stop (not implemented)");
 }
 
 void ClickerPanel::onImport(wxCommandEvent &) {

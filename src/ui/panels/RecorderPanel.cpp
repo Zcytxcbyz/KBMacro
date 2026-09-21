@@ -426,29 +426,27 @@ void RecorderPanel::onStopPlayback(wxCommandEvent &) {
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::startRecording() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_INFO("recorder: start recording requested");
     // TODO: ThreadManager::StartRecord()
-    LOG_DEBUG("recorder: start recording (not implemented)");
 }
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::stopRecording() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_INFO("recorder: stop recording requested");
     // TODO: ThreadManager::StopRecord()
-    LOG_DEBUG("recorder: stop recording (not implemented)");
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::startPlayback() {
-    // ReSharper disable once CppDeclaratorNeverUsed
     const RunSpec run = collectRunSpec();
-
+    LOG_INFO("recorder: start playback requested (actions={}, mode={})",
+             m_actions.size(), runModeToString(run.mode));
     // TODO: ThreadManager::StartPlayback(m_actions, run)
-    LOG_DEBUG("recorder: start playback (actions={}, mode={})",
-              m_actions.size(), runModeToString(run.mode));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_INFO("recorder: stop playback requested");
     // TODO: ThreadManager::StopPlayback()
-    LOG_DEBUG("recorder: stop playback (not implemented)");
 }
 
 // ============================================================

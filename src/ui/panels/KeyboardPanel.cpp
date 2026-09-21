@@ -240,17 +240,18 @@ void KeyboardPanel::onStop(wxCommandEvent &) {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void KeyboardPanel::startWithCurrentParams() {
-    // ReSharper disable once CppDeclaratorNeverUsed
     const KeyboardParams p = collectParams();
+    LOG_INFO("keyboard: start requested (interval={}ms, key='{}', run={})",
+             p.intervalMs,
+             utils::ToUtf8(utils::hotkeyToString(p.hotkey)),
+             runModeToString(p.run.mode));
     // TODO: ThreadManager::StartKeyboard(p)
-    LOG_DEBUG("keyboard: start with params (interval={}ms, key={})",
-              p.intervalMs, utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void KeyboardPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+    LOG_INFO("keyboard: stop requested");
     // TODO: ThreadManager::StopKeyboard()
-    LOG_DEBUG("keyboard: stop (not implemented)");
 }
 
 void KeyboardPanel::onImport(wxCommandEvent &) {
