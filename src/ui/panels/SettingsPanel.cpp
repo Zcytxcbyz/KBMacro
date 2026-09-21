@@ -278,15 +278,20 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
                  utils::ToUtf8(exePath.ToStdWstring()));
 
         if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
-            // 新进程已启动，关闭当前实例
-            // Close(true) 强制关闭，会触发 wxApp::OnExit -> Log::Shutdown
-            Close(true);
+            // 新进程已启动。
+            // 用 ExitMainLoop 而非 Close(true)：
+            //   Close 是"请求关闭窗口"，依赖事件循环处理，
+            //   在事件 handler 内调用容易被推迟或不生效（表现为新旧窗口并存）。
+            //   ExitMainLoop 直接退出事件循环，保证旧进程一定退出。
+            // OnExit 会被正常调用，日志 flush 不丢。
+            wxTheApp->ExitMainLoop();
         } else {
-            // 新进程启动失败：不关，让用户继续用当前实例
+            // 新进程启动失败：不退出，让用户继续用当前实例
             // 配置已落盘，用户下次手动启动仍是新语言
             LOG_ERROR("settings: failed to launch new instance");
         }
     }
+    // wxID_NO = 稍后重启：什么都不做，配置已落盘
     // wxID_NO = 稍后重启：什么都不做，配置已落盘
 }
 
@@ -380,10 +385,16 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
 void SettingsPanel::onExportConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: export config clicked");
 
-    ConfigManager::instance().exportToPortable();
-
-    // 导出成功后路径已切到便携文件，刷新显示
-    refreshConfigPathText();
+    if (ConfigManager::instance().exportToPortable()) {
+        // 成功：路径已切到便携文件，刷新显示
+        refreshConfigPathText();
+        wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_INFORMATION, this);
+    } else {
+        // 失败：状态不变（仍是 APPDATA），路径显示不动
+        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+    }
 }
 
 void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
@@ -455,8 +466,16 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
     if (ret != wxOK) return;
 
-    ConfigManager::instance().deletePortable();
-    refreshConfigPathText();
+    if (ConfigManager::instance().deletePortable()) {
+        // 成功：路径已切回 APPDATA，刷新显示
+        refreshConfigPathText();
+        wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_INFORMATION, this);
+    } else {
+        // 失败：状态不变（仍是便携），路径显示不动
+        wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_ERROR, this);
+    }
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

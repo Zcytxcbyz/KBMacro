@@ -125,7 +125,6 @@ BEGIN
     L(IDS_SETTINGS_HOTKEY_START_ALL)       "Start All"
     L(IDS_SETTINGS_HOTKEY_STOP_ALL)        "Stop All"
     L(IDS_SETTINGS_HOTKEY_UNSET)           "Not set"
-    L(IDS_SETTINGS_MSG_RESTART_REQUIRED)   "Changing language requires a restart to take effect."
     L(IDS_SETTINGS_MSG_SPIN_WARNING)       "High-precision mode significantly increases CPU usage. Continue?"
     L(IDS_SETTINGS_MSG_RESET_CONFIRM)      "All settings will be reset to defaults. Continue?"
     L(IDS_SETTINGS_MSG_DELETE_NO_FILE)     "Portable config file not found."
@@ -135,6 +134,8 @@ BEGIN
     L(IDS_SETTINGS_MSG_RESTART_ASK)        "Changing language requires a restart to take effect.\n\nIf any task is currently running, please stop it first.\n\nRestart now?"
     L(IDS_SETTINGS_BTN_RESTART_NOW)        "Restart Now"
     L(IDS_SETTINGS_BTN_RESTART_LATER)      "Restart Later"
+    L(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK)     "Portable config deleted. The next launch will use APPDATA config."
+    L(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED) "Failed to delete portable config. The file may be in use."
 
     // ---- About panel ----
     L(IDS_ABOUT_GROUP_APP)          "Application"

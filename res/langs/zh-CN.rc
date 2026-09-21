@@ -125,7 +125,6 @@ BEGIN
     L(IDS_SETTINGS_HOTKEY_START_ALL)       "全部开始"
     L(IDS_SETTINGS_HOTKEY_STOP_ALL)        "全部停止"
     L(IDS_SETTINGS_HOTKEY_UNSET)           "未设置"
-    L(IDS_SETTINGS_MSG_RESTART_REQUIRED)   "切换语言需重启程序生效。"
     L(IDS_SETTINGS_MSG_SPIN_WARNING)       "高精度模式会显著提升 CPU 占用，是否继续？"
     L(IDS_SETTINGS_MSG_RESET_CONFIRM)      "将恢复所有设置到默认值，是否继续？"
     L(IDS_SETTINGS_MSG_DELETE_NO_FILE)     "未找到便携配置文件。"
@@ -135,6 +134,8 @@ BEGIN
     L(IDS_SETTINGS_MSG_RESTART_ASK)        "切换语言需重启程序才能生效。\n\n如果当前有任务正在运行，请先停止所有任务。\n\n是否立即重启？"
     L(IDS_SETTINGS_BTN_RESTART_NOW)        "立即重启"
     L(IDS_SETTINGS_BTN_RESTART_LATER)      "稍后重启"
+    L(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK)     "便携配置已删除，下次启动将使用 APPDATA 配置。"
+    L(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED) "删除便携配置失败，文件可能被占用。"
 
     // ---- About 面板 ----
     L(IDS_ABOUT_GROUP_APP)          "程序信息"

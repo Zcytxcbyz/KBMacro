@@ -91,32 +91,6 @@ namespace {
 
 RecorderPanel::RecorderPanel(wxWindow *parent)
     : wxPanel(parent, wxID_ANY) {
-    // 临时假数据（等 Recorder 模块做出来时清掉）
-    {
-        Action a1;
-        a1.type = ActionType::MouseMove;
-        a1.x = 960;
-        a1.y = 540;
-        a1.delayMs = 120;
-        m_actions.push_back(a1);
-
-        Action a2;
-        a2.type = ActionType::MouseClick;
-        a2.button = MouseButton::Left;
-        a2.x = 960;
-        a2.y = 540;
-        a2.delayMs = 0;
-        a2.holdMs = 50;
-        m_actions.push_back(a2);
-
-        Action a3;
-        a3.type = ActionType::MouseWheel;
-        a3.wheelDirection = WheelDirection::Up;
-        a3.wheelSteps = 3;
-        a3.delayMs = 50;
-        m_actions.push_back(a3);
-    }
-
     buildUi();
 }
 
@@ -255,6 +229,29 @@ void RecorderPanel::buildUi() {
 
     // ---- 初始填充 ----
     refreshList();
+
+    // ---- 运行模式下拉框事件 ----
+    m_choiceRunMode->Bind(wxEVT_CHOICE, &RecorderPanel::onRunModeChanged, this);
+    refreshEnableStates();
+}
+
+// ============================================================
+// 参数收集
+// ============================================================
+
+RunSpec RecorderPanel::collectRunSpec() const {
+    RunSpec run;
+
+    // ReSharper disable once CppDeclaratorNeverUsed
+    switch (const int sel = m_choiceRunMode->GetSelection()) {
+        case 1:  run.mode = RunMode::Timed;   break;
+        case 2:  run.mode = RunMode::Counted; break;
+        default: run.mode = RunMode::Infinite; break;
+    }
+    run.durationSec = m_spinDuration->GetValue();
+    run.count = m_spinCount->GetValue();
+
+    return run;
 }
 
 // ============================================================
@@ -393,6 +390,22 @@ void RecorderPanel::onClear(wxCommandEvent &) {
 }
 
 // ============================================================
+// 运行模式
+// ============================================================
+
+void RecorderPanel::onRunModeChanged(wxCommandEvent &) {
+    refreshEnableStates();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::refreshEnableStates() {
+    const int runMode = m_choiceRunMode->GetSelection();
+    m_spinDuration->Enable(runMode == 1);
+    m_spinCount->Enable(runMode == 2);
+}
+
+
+// ============================================================
 // 录制 / 回放
 // ============================================================
 void RecorderPanel::onStartRecord(wxCommandEvent &) {
@@ -421,11 +434,17 @@ void RecorderPanel::stopRecording() { // NOLINT(*-convert-member-functions-to-st
     // TODO: ThreadManager::StopRecord()
     LOG_DEBUG("recorder: stop recording (not implemented)");
 }
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::startPlayback() { // NOLINT(*-convert-member-functions-to-static)
-    // TODO: ThreadManager::StartPlayback(m_actions, runSpec)
-    LOG_DEBUG("recorder: start playback (not implemented)");
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::startPlayback() {
+    // ReSharper disable once CppDeclaratorNeverUsed
+    const RunSpec run = collectRunSpec();
+
+    // TODO: ThreadManager::StartPlayback(m_actions, run)
+    LOG_DEBUG("recorder: start playback (actions={}, mode={})",
+              m_actions.size(), runModeToString(run.mode));
 }
+
 // ReSharper disable once CppMemberFunctionMayBeStatic
 void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-static)
     // TODO: ThreadManager::StopPlayback()

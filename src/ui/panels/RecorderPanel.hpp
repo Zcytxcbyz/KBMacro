@@ -6,6 +6,7 @@
 #include <wx/listctrl.h>
 
 #include "common/Action.hpp"
+#include "common/Types.hpp"
 
 // 录制与编排面板。
 //
@@ -29,6 +30,9 @@ public:
 private:
     void buildUi();
 
+    // 从控件组装 RunSpec（回放用）
+    [[nodiscard]] RunSpec collectRunSpec() const;
+
     // ---- 录制 / 回放 / 导入导出 ----
     void onStartRecord(wxCommandEvent &event);
     void onStopRecord(wxCommandEvent &event);
@@ -46,6 +50,10 @@ private:
     void onClear(wxCommandEvent &event);
 
     void onListSelectionChanged(wxListEvent &event);
+
+    // ---- 运行模式 ----
+    void onRunModeChanged(wxCommandEvent &event);
+    void refreshEnableStates();
 
     // ---- 列表维护 ----
     void refreshList();
