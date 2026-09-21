@@ -4,6 +4,7 @@
 #include <string>
 #include <nlohmann/json.hpp>
 
+#include "common/HotkeyAction.hpp"
 #include "common/Types.hpp"
 
 // ============================================================
@@ -20,9 +21,6 @@
 // 配置 JSON 的 schema 版本。结构不兼容时 +1。
 // 加载时若文件 version > kConfigVersion，说明文件来自更新版本，应拒绝加载。
 inline constexpr int kConfigVersion = 1;
-
-// 全局热键数量。Config / HotkeyManager / SettingsPanel 共用。
-inline constexpr int kHotkeyCount = 10;
 
 struct Config {
     // 界面语言代码（"zh-CN" / "en-US"）。

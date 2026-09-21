@@ -136,6 +136,7 @@ BEGIN
     L(IDS_HOTKEY_DIALOG_HINT)        "Press a key combination"
     L(IDS_HOTKEY_DIALOG_BTN_CLEAR)   "Clear"
     L(IDS_HOTKEY_DIALOG_MSG_INVALID) "Please press a valid key combination."
+    L(IDS_HOTKEY_DIALOG_MSG_CONFLICT) "This hotkey conflicts with another one already set."
 
     // ---- Screen capture overlay ----
     L(IDS_CAPTURE_HINT)              "Click anywhere to capture the coordinates\nPress Esc or right-click to cancel"

@@ -70,6 +70,7 @@ set(SOURCES
         src/common/Config.cpp
         src/common/ConfigPaths.cpp
         src/managers/ConfigManager.cpp
+        src/managers/HotkeyManager.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -98,6 +99,8 @@ set(HEADERS
         src/common/Config.hpp
         src/common/ConfigPaths.hpp
         src/managers/ConfigManager.hpp
+        src/common/HotkeyAction.hpp
+        src/managers/HotkeyManager.hpp
         # 在这里添加 .h 文件
 )
 

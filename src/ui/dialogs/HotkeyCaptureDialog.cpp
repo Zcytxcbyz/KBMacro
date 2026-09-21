@@ -2,6 +2,7 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <wx/statbox.h>
+#include <utility>
 
 #include "common/Hotkey.hpp"
 #include "managers/LanguageManager.hpp"
@@ -9,10 +10,12 @@
 HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
                                          const wxString &title,
                                          const Hotkey &initial,
-                                         const bool requireMainKey)
+                                         const bool requireMainKey,
+                                         ConflictChecker checkConflict)
     : wxDialog(parent, wxID_ANY, title),
       m_hotkey(initial),
-      m_requireMainKey(requireMainKey) {
+      m_requireMainKey(requireMainKey),
+      m_checkConflict(std::move(checkConflict)) {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
     // ---- 捕获显示区 ----
@@ -90,7 +93,17 @@ void HotkeyCaptureDialog::onOk(wxCommandEvent &event) {
                      wxOK | wxICON_WARNING, this);
         return;
     }
-    event.Skip(); // 让 wxDialog 处理 wxID_OK：关闭并返回 wxID_OK
+
+    // 冲突检查：空热键（清除）不参与
+    const bool isEmpty = (m_hotkey.vk == 0 && m_hotkey.modifiers == 0);
+    if (!isEmpty && m_checkConflict && m_checkConflict(m_hotkey)) {
+        wxMessageBox(TR(IDS_HOTKEY_DIALOG_MSG_CONFLICT),
+                     GetTitle(),
+                     wxOK | wxICON_WARNING, this);
+        return;
+    }
+
+    event.Skip();
 }
 
 // ============================================================

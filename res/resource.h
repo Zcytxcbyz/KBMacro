@@ -143,6 +143,7 @@
 #define IDS_HOTKEY_DIALOG_HINT          7001
 #define IDS_HOTKEY_DIALOG_BTN_CLEAR     7002
 #define IDS_HOTKEY_DIALOG_MSG_INVALID   7003
+#define IDS_HOTKEY_DIALOG_MSG_CONFLICT  7004
 
 // ---- 坐标捕获覆盖层 ----
 #define IDS_CAPTURE_HINT                8001
