@@ -67,6 +67,9 @@ set(SOURCES
         src/common/Action.cpp
         src/common/ClickerParams.cpp
         src/common/KeyboardParams.cpp
+        src/common/Config.cpp
+        src/common/ConfigPaths.cpp
+        src/managers/ConfigManager.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -92,6 +95,9 @@ set(HEADERS
         src/common/KeyNames.gen.hpp
         src/common/ClickerParams.hpp
         src/common/KeyboardParams.hpp
+        src/common/Config.hpp
+        src/common/ConfigPaths.hpp
+        src/managers/ConfigManager.hpp
         # 在这里添加 .h 文件
 )
 
