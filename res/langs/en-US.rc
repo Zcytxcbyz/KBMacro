@@ -26,9 +26,11 @@ BEGIN
     L(IDS_COMMON_GROUP_RUNMODE)      "Run Mode"
     L(IDS_COMMON_GROUP_ACTIONS)      "Actions"
 
-    // ---- Parameter import / export ----
+    // ---- Parameter / script import / export ----
     L(IDS_DIALOG_IMPORT_PARAMS)      "Import Parameters"
     L(IDS_DIALOG_EXPORT_PARAMS)      "Export Parameters"
+    L(IDS_DIALOG_IMPORT_SCRIPT)      "Import Script"
+    L(IDS_DIALOG_EXPORT_SCRIPT)      "Export Script"
     L(IDS_FILTER_CLICKER)            "Mouse Clicker Parameters (*.clicker.json)|*.clicker.json|All Files (*.*)|*.*"
     L(IDS_FILTER_KEYBOARD)           "Keyboard Simulator Parameters (*.keyboard.json)|*.keyboard.json|All Files (*.*)|*.*"
     L(IDS_FILTER_MACRO)              "Macro Script (*.macro.json)|*.macro.json|All Files (*.*)|*.*"
@@ -108,7 +110,6 @@ BEGIN
     L(IDS_SETTINGS_LABEL_CONFIG_PATH)      "Config file:"
     L(IDS_SETTINGS_BTN_EXPORT_CONFIG)      "Export to Program Directory"
     L(IDS_SETTINGS_HINT_EXPORT)            "After export, the next launch will use portable mode"
-    L(IDS_SETTINGS_CONFIG_PATH_UNIMPL)     "(not implemented)"
     L(IDS_SETTINGS_GROUP_RESET)            "Reset"
     L(IDS_SETTINGS_BTN_CLEAR_ADAPT)        "Clear Adaptation"
     L(IDS_SETTINGS_BTN_CLEAR_SPIN_CONFIRM) "Clear Spin Confirmation"

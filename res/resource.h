@@ -33,9 +33,11 @@
 #define IDS_COMMON_GROUP_RUNMODE         1120
 #define IDS_COMMON_GROUP_ACTIONS         1121
 
-// ---- 参数导入导出（跨面板共用）----
+// ---- 参数 / 脚本导入导出（跨面板共用）----
 #define IDS_DIALOG_IMPORT_PARAMS        1201
 #define IDS_DIALOG_EXPORT_PARAMS        1202
+#define IDS_DIALOG_IMPORT_SCRIPT        1203
+#define IDS_DIALOG_EXPORT_SCRIPT        1204
 
 #define IDS_FILTER_CLICKER              1210
 #define IDS_FILTER_KEYBOARD             1211
@@ -117,7 +119,6 @@
 #define IDS_SETTINGS_LABEL_CONFIG_PATH              5021
 #define IDS_SETTINGS_BTN_EXPORT_CONFIG              5022
 #define IDS_SETTINGS_HINT_EXPORT                    5023
-#define IDS_SETTINGS_CONFIG_PATH_UNIMPL             5024
 #define IDS_SETTINGS_GROUP_RESET                    5030
 #define IDS_SETTINGS_BTN_CLEAR_ADAPT                5031
 #define IDS_SETTINGS_BTN_CLEAR_SPIN_CONFIRM         5032

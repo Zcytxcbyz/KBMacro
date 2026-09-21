@@ -457,7 +457,7 @@ void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-sta
 
 void RecorderPanel::onImportScript(wxCommandEvent &) {
     wxFileDialog dlg(this,
-                     TR(IDS_DIALOG_IMPORT_PARAMS),
+                     TR(IDS_DIALOG_IMPORT_SCRIPT),
                      wxEmptyString,
                      wxEmptyString,
                      TR(IDS_FILTER_MACRO),
@@ -518,7 +518,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
 
 void RecorderPanel::onExportScript(wxCommandEvent &) {
     wxFileDialog dlg(this,
-                     TR(IDS_DIALOG_EXPORT_PARAMS),
+                     TR(IDS_DIALOG_EXPORT_SCRIPT),
                      wxEmptyString,
                      L"macro.macro.json",
                      TR(IDS_FILTER_MACRO),

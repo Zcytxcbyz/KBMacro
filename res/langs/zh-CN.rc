@@ -26,9 +26,11 @@ BEGIN
     L(IDS_COMMON_GROUP_RUNMODE)      "运行模式"
     L(IDS_COMMON_GROUP_ACTIONS)      "操作"
 
-    // ---- 参数导入导出 ----
+    // ---- 参数 / 脚本导入导出 ----
     L(IDS_DIALOG_IMPORT_PARAMS)      "导入参数"
     L(IDS_DIALOG_EXPORT_PARAMS)      "导出参数"
+    L(IDS_DIALOG_IMPORT_SCRIPT)      "导入脚本"
+    L(IDS_DIALOG_EXPORT_SCRIPT)      "导出脚本"
     L(IDS_FILTER_CLICKER)            "鼠标连点器参数 (*.clicker.json)|*.clicker.json|所有文件 (*.*)|*.*"
     L(IDS_FILTER_KEYBOARD)           "键盘模拟器参数 (*.keyboard.json)|*.keyboard.json|所有文件 (*.*)|*.*"
     L(IDS_FILTER_MACRO)              "宏脚本 (*.macro.json)|*.macro.json|所有文件 (*.*)|*.*"
@@ -108,7 +110,6 @@ BEGIN
     L(IDS_SETTINGS_LABEL_CONFIG_PATH)      "配置文件路径："
     L(IDS_SETTINGS_BTN_EXPORT_CONFIG)      "导出配置到程序目录"
     L(IDS_SETTINGS_HINT_EXPORT)            "导出后，下次启动将使用便携模式"
-    L(IDS_SETTINGS_CONFIG_PATH_UNIMPL)     "（未实现）"
     L(IDS_SETTINGS_GROUP_RESET)            "重置"
     L(IDS_SETTINGS_BTN_CLEAR_ADAPT)        "清除适配记忆"
     L(IDS_SETTINGS_BTN_CLEAR_SPIN_CONFIRM) "清除高精度确认"
