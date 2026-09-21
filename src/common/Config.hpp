@@ -56,8 +56,8 @@ struct Config {
     struct Window {
         int x = -1;
         int y = -1;
-        int width = 550;
-        int height = 710;
+        int width = 650;
+        int height = 720;
         bool maximized = false;
     } window;
 
