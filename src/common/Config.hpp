@@ -31,8 +31,22 @@ struct Config {
 
     bool alwaysOnTop = false;
 
+    // 上次选中的标签页索引。越界检查在 MainFrame 里做（只有它知道 tab 数量）。
+    int tabIndex = 0;
+
     // 全局热键，顺序与 HotkeyManager 的动作表一致。
     std::array<Hotkey, kHotkeyCount> hotkeys{};
+
+    // 主窗口几何。
+    // x/y == -1 表示"未设置"，启动时走 wxDefaultPosition。
+    // 位置还会被 MainFrame 检查是否落在虚拟桌面内，屏幕外的位置会被忽略。
+    struct Window {
+        int x = -1;
+        int y = -1;
+        int width = 550;
+        int height = 710;
+        bool maximized = false;
+    } window;
 
     // 零散布尔标志位，集中管理，避免顶层字段膨胀。
     struct Flags {
@@ -47,10 +61,12 @@ struct Config {
 // JSON 形态：
 //   {
 //     "version": 1,
-//     "language": "zh-CN",         // 或 ""
-//     "timerMode": "sleep",        // "sleep" / "spin"
+//     "language": "zh-CN",
+//     "timerMode": "sleep",
 //     "alwaysOnTop": false,
-//     "hotkeys": [ {...}, ... ],   // 长度 kHotkeyCount
+//     "tabIndex": 0,
+//     "hotkeys": [ {...}, ... ],
+//     "window": { "x":..., "y":..., "width":..., "height":..., "maximized":... },
 //     "flags": { "spinWarningConfirmed": false }
 //   }
 //

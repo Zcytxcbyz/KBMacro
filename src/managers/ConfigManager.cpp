@@ -100,6 +100,28 @@ void ConfigManager::setSpinWarningConfirmed(const bool v) {
     LOG_DEBUG("config: spinWarningConfirmed set to {}", v);
 }
 
+void ConfigManager::setWindow(const Config::Window &w) {
+    // ReSharper disable once CppUseStructuredBinding
+    // ReSharper disable once CppTooWideScopeInitStatement
+    const auto &old = m_config.window;
+    if (old.x == w.x && old.y == w.y &&
+        old.width == w.width && old.height == w.height &&
+        old.maximized == w.maximized) {
+        return;
+        }
+    m_config.window = w;
+    save();
+    LOG_DEBUG("config: window set to ({},{}) {}x{} max={}",
+              w.x, w.y, w.width, w.height, w.maximized);
+}
+
+void ConfigManager::setTabIndex(const int index) {
+    if (m_config.tabIndex == index) return;
+    m_config.tabIndex = index;
+    save();
+    LOG_DEBUG("config: tabIndex set to {}", index);
+}
+
 // ============================================================
 // 便携模式
 // ============================================================

@@ -53,6 +53,8 @@ public:
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
     void setSpinWarningConfirmed(bool v);
+    void setWindow(const Config::Window &w);   // ← 新增
+    void setTabIndex(int index);               // ← 新增
 
     // ---- 便携模式 ----
 
