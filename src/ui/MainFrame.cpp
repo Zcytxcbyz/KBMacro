@@ -55,6 +55,7 @@ namespace {
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
               initialPosition(), initialSize(), initialStyle()) {
+    LOG_INFO("mainframe: creating");
     // ---- 1. 先创建 HotkeyManager（只依赖 HWND）----
     m_hotkeyMgr = std::make_unique<HotkeyManager>(
         GetHWND(),
@@ -120,6 +121,9 @@ MainFrame::~MainFrame() = default;
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::onHotkey(wxKeyEvent &event) {
+    const int id = event.GetId();
+    LOG_DEBUG("mainframe: wxEVT_HOTKEY id={} (index={})",
+              id, id - HotkeyManager::kHotkeyIdBase);
     m_hotkeyMgr->dispatch(event.GetId());
 }
 
@@ -167,6 +171,7 @@ void MainFrame::onClose(wxCloseEvent &event) {
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
+    LOG_DEBUG("mainframe: dispatch action={}", static_cast<int>(action));
     switch (action) {
         case HotkeyAction::StartClicker:
             m_clickerPanel->startWithCurrentParams();
@@ -218,7 +223,10 @@ void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::reportHotkeyFailures() {
     const int failed = m_hotkeyMgr->failedCount();
-    if (failed <= 0) return;
+    if (failed <= 0) {
+        LOG_INFO("mainframe: all configured hotkeys registered");
+        return;
+    }
 
     const wxString msg = wxString::Format(TR(IDS_STATUS_HOTKEY_FAILED).data(), failed);
     m_statusBar->SetMessage(msg);
