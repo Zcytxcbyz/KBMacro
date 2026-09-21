@@ -127,6 +127,10 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
                        &SettingsPanel::onHotkeySelectionChanged, this);
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED,
                        &SettingsPanel::onHotkeySelectionChanged, this);
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED,
+                       &SettingsPanel::onHotkeyChecked, this);      // ← 新增
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED,
+                       &SettingsPanel::onHotkeyChecked, this);      // ← 新增
 
     // 初始无选中 → 按钮禁用
     m_btnModifyHotkey->Enable(false);
@@ -213,15 +217,15 @@ void SettingsPanel::refreshFromConfig() {
 void SettingsPanel::refreshHotkeyList() {
     m_hotkeyList->DeleteAllItems();
 
-    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    const auto &cfg = ConfigManager::instance().config();
     for (std::size_t i = 0; i < std::size(kHotkeyActionResIds); ++i) {
         const long row = m_hotkeyList->InsertItem(static_cast<long>(i),
                                                   TR(kHotkeyActionResIds[i]));
-        const std::wstring s = utils::hotkeyToString(hotkeys[i]);
+        const std::wstring s = utils::hotkeyToString(cfg.hotkeys[i]);
         m_hotkeyList->SetItem(row, 1,
                               s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
                                         : wxString(s));
-        m_hotkeyList->CheckItem(row, true);
+        m_hotkeyList->CheckItem(row, cfg.hotkeyEnabled[i]);
     }
 }
 
@@ -482,5 +486,37 @@ void SettingsPanel::onHotkeySelectionChanged(wxListEvent &event) {
     const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
                                                wxLIST_STATE_SELECTED);
     m_btnModifyHotkey->Enable(row >= 0);
+    event.Skip();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onHotkeyChecked(wxListEvent &event) {
+    const long row = event.GetIndex();
+    if (row < 0 || row >= kHotkeyCount) {
+        event.Skip();
+        return;
+    }
+
+    const int index = static_cast<int>(row);
+    const bool checked = m_hotkeyList->IsItemChecked(row);
+
+    // 幂等：编程式 CheckItem（refreshHotkeyList）可能触发本事件。
+    // 读一遍 config 的当前值，一致就什么都不做。
+    const auto idx = static_cast<std::size_t>(index);
+    if (checked == ConfigManager::instance().config().hotkeyEnabled[idx]) {
+        event.Skip();
+        return;
+    }
+
+    LOG_DEBUG("settings: hotkey[{}] checked={}", index, checked);
+
+    if (!m_hotkeyMgr.setEnabled(index, checked)) {
+        // 失败一般是 enable 时键位被别的程序占用。
+        // config 已经记录了用户意图（下次启动 registerAll 会重试），
+        // 所以不回退 UI；失败状态通过 HotkeyManager::failedCount 反映。
+        LOG_WARN("settings: hotkey[{}] setEnabled({}) failed (occupied?)",
+                 index, checked);
+    }
+
     event.Skip();
 }

@@ -83,6 +83,20 @@ void ConfigManager::setAlwaysOnTop(const bool on) {
     LOG_DEBUG("config: alwaysOnTop set to {}", on);
 }
 
+void ConfigManager::setHotkeyEnabled(const int index, const bool enabled) {
+    if (index < 0 || index >= kHotkeyCount) {
+        LOG_WARN("config: setHotkeyEnabled index out of range: {}", index);
+        return;
+    }
+
+    const auto i = static_cast<std::size_t>(index);
+    if (m_config.hotkeyEnabled[i] == enabled) return;
+
+    m_config.hotkeyEnabled[i] = enabled;
+    save();
+    LOG_DEBUG("config: hotkey[{}] enabled set to {}", index, enabled);
+}
+
 void ConfigManager::setHotkey(const int index, const Hotkey &hk) {
     if (index < 0 || index >= kHotkeyCount) {
         LOG_WARN("config: setHotkey index out of range: {}", index);

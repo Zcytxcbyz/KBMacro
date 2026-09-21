@@ -58,10 +58,22 @@ public:
     //   返回 true  = 成功
     //   返回 false = 失败（冲突 / 注册被系统或其他程序占用 / index 越界）
     //
+    // 若该热键当前处于"禁用"状态：只改键位、保持禁用，不注册，恒返回 true。
+    //
     // 失败时：
     //   - 冲突：不落盘、不注册，Config 里的旧值保持不变
     //   - 注册失败：已落盘，但 m_registered[index] = false，可由 failedIndices 查询
     bool setHotkey(int index, const Hotkey &hk);
+
+    // 修改某个热键的启用状态。
+    //   enabled == true  → 落盘 + 注册（可能因被系统/其他程序占用而失败）
+    //   enabled == false → 落盘 + 注销
+    //   返回 true  = 操作成功（disable 恒成功）
+    //   返回 false = index 越界，或 enable 时注册失败
+    //
+    // 注意：与 setHotkey 一样，注册失败时用户意图已落盘，
+    // 下次启动 registerAll 会重试。
+    bool setEnabled(int index, bool enabled);
 
     // MainFrame 收到 wxEVT_HOTKEY 后转发进来
     // id 来自 wxKeyEvent::GetId()

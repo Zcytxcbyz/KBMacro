@@ -22,6 +22,15 @@
 // 加载时若文件 version > kConfigVersion，说明文件来自更新版本，应拒绝加载。
 inline constexpr int kConfigVersion = 1;
 
+// 热键启用标志的默认值：全 true。
+// 老配置文件没有 hotkeyEnabled 字段时走这个默认值，
+// 保证升级后已配的热键不会被静默禁用。
+inline constexpr auto kHotkeyEnabledDefault = [] {
+    std::array<bool, kHotkeyCount> a{};
+    a.fill(true);
+    return a;
+}();
+
 struct Config {
     // 界面语言代码（"zh-CN" / "en-US"）。
     // 空串表示"用户从未主动选择过"，启动时回退到系统语言且不写回。
@@ -36,6 +45,10 @@ struct Config {
 
     // 全局热键，顺序与 HotkeyManager 的动作表一致。
     std::array<Hotkey, kHotkeyCount> hotkeys{};
+
+    // 各热键的启用开关，与 hotkeys 一一对应。
+    // 禁用的热键不注册、不参与冲突检测；默认全开。
+    std::array<bool, kHotkeyCount> hotkeyEnabled = kHotkeyEnabledDefault;
 
     // 主窗口几何。
     // x/y == -1 表示"未设置"，启动时走 wxDefaultPosition。
@@ -66,6 +79,7 @@ struct Config {
 //     "alwaysOnTop": false,
 //     "tabIndex": 0,
 //     "hotkeys": [ {...}, ... ],
+//     "hotkeyEnabled": [ true, false, ... ],
 //     "window": { "x":..., "y":..., "width":..., "height":..., "maximized":... },
 //     "flags": { "spinWarningConfirmed": false }
 //   }

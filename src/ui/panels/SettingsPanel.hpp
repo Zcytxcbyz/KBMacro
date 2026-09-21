@@ -47,6 +47,7 @@ private:
     void onResetDefaults(wxCommandEvent &event);
     void onDeletePortableConfig(wxCommandEvent &event);
     void onHotkeySelectionChanged(wxListEvent &event);
+    void onHotkeyChecked(wxListEvent &event);
 
     // ---- 服务（外部注入）----
     HotkeyManager &m_hotkeyMgr;

@@ -28,6 +28,7 @@ void to_json(nlohmann::json &j, const Config &c) {
         hotkeys.push_back(hk);
     }
     j["hotkeys"] = std::move(hotkeys);
+    j["hotkeyEnabled"] = c.hotkeyEnabled;
 
     j["window"] = nlohmann::json{
         {"x", c.window.x},
@@ -60,6 +61,19 @@ void from_json(const nlohmann::json &j, Config &c) {
         for (std::size_t i = 0; i < n; ++i) {
             if (arr[i].is_object()) {
                 c.hotkeys[i] = arr[i].get<Hotkey>();
+            }
+        }
+    }
+
+    // hotkeyEnabled：长度可能多于/少于 kHotkeyCount，只取前 kHotkeyCount 项；
+    // 缺失的部分保持 kHotkeyEnabledDefault（全 true），兼容老配置。
+    if (j.contains("hotkeyEnabled") && j["hotkeyEnabled"].is_array()) {
+        const auto &arr = j["hotkeyEnabled"];
+        const auto n = std::min<std::size_t>(arr.size(),
+                                             static_cast<std::size_t>(kHotkeyCount));
+        for (std::size_t i = 0; i < n; ++i) {
+            if (arr[i].is_boolean()) {
+                c.hotkeyEnabled[i] = arr[i].get<bool>();
             }
         }
     }

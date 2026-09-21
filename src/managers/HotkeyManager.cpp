@@ -50,20 +50,18 @@ void HotkeyManager::registerAll() {
     // 幂等：先清空已有注册（首次调用时是空操作）
     unregisterAll();
 
-    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    const auto &cfg = ConfigManager::instance().config();
     for (int i = 0; i < kHotkeyCount; ++i) {
-        registerOne(i, hotkeys[i]);
+        if (!cfg.hotkeyEnabled[static_cast<std::size_t>(i)]) {
+            // 禁用项不注册，也不计入失败
+            continue;
+        }
+        registerOne(i, cfg.hotkeys[i]);
     }
 
     const auto registered = std::ranges::count(m_registered, true);
-    LOG_INFO("hotkey: registered {}/{} (empty slots skipped)",
+    LOG_INFO("hotkey: registered {}/{} (empty or disabled slots skipped)",
              registered, kHotkeyCount);
-}
-
-void HotkeyManager::unregisterAll() {
-    for (int i = 0; i < kHotkeyCount; ++i) {
-        unregisterOne(i);
-    }
 }
 
 // ============================================================
@@ -127,10 +125,42 @@ bool HotkeyManager::setHotkey(const int index, const Hotkey &hk) {
     // 落盘。即便下一步注册失败，也保留用户输入，由 failedIndices 反馈。
     ConfigManager::instance().setHotkey(index, hk);
 
+    // 禁用状态下改键：只落盘、保持禁用，不注册
+    const bool enabled = ConfigManager::instance()
+                             .config()
+                             .hotkeyEnabled[static_cast<std::size_t>(index)];
+    if (!enabled) {
+        m_registered[index] = false;
+        LOG_DEBUG("hotkey[{}] updated but stays disabled", index);
+        return true;
+    }
+
     // 注册新的（空热键只落盘，不注册）
     registerOne(index, hk);
 
     // 空热键视为"清除成功"，注册成功也返回 true
+    return m_registered[index] || isEmptyHotkey(hk);
+}
+
+bool HotkeyManager::setEnabled(const int index, const bool enabled) {
+    if (index < 0 || index >= kHotkeyCount) {
+        LOG_WARN("hotkey: setEnabled index out of range: {}", index);
+        return false;
+    }
+
+    // 先落盘（记录用户意图），再动注册状态
+    ConfigManager::instance().setHotkeyEnabled(index, enabled);
+
+    if (!enabled) {
+        unregisterOne(index);
+        LOG_DEBUG("hotkey[{}] disabled", index);
+        return true;
+    }
+
+    const auto &hk = ConfigManager::instance()
+                         .config()
+                         .hotkeys[static_cast<std::size_t>(index)];
+    registerOne(index, hk);
     return m_registered[index] || isEmptyHotkey(hk);
 }
 
@@ -161,11 +191,13 @@ void HotkeyManager::dispatch(const int hotkeyId) {
 // ============================================================
 
 int HotkeyManager::failedCount() const noexcept {
-    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    const auto &cfg = ConfigManager::instance().config();
     int n = 0;
     for (int i = 0; i < kHotkeyCount; ++i) {
+        const auto idx = static_cast<std::size_t>(i);
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增：禁用的不算失败
         // 只统计"用户设置过但注册失败"的项；空热键不算失败
-        if (!m_registered[i] && !isEmptyHotkey(hotkeys[i])) {
+        if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             ++n;
         }
     }
@@ -173,12 +205,14 @@ int HotkeyManager::failedCount() const noexcept {
 }
 
 std::vector<int> HotkeyManager::failedIndices() const {
-    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    const auto &cfg = ConfigManager::instance().config();
     std::vector<int> result;
     result.reserve(kHotkeyCount);
 
     for (int i = 0; i < kHotkeyCount; ++i) {
-        if (!m_registered[i] && !isEmptyHotkey(hotkeys[i])) {
+        const auto idx = static_cast<std::size_t>(i);
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增
+        if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             result.push_back(i);
         }
     }
@@ -190,12 +224,15 @@ bool HotkeyManager::isConflicting(const Hotkey &hk, // NOLINT(*-convert-member-f
                                   const int excludeIndex) const {
     if (isEmptyHotkey(hk)) return false;
 
-    const auto &hotkeys = ConfigManager::instance().config().hotkeys;
+    const auto &cfg = ConfigManager::instance().config();
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (i == excludeIndex) continue;
-        if (hotkeys[i].vk == hk.vk && hotkeys[i].modifiers == hk.modifiers) {
+        const auto idx = static_cast<std::size_t>(i);
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增：禁用的不参与冲突
+        if (cfg.hotkeys[idx].vk == hk.vk &&
+            cfg.hotkeys[idx].modifiers == hk.modifiers) {
             return true;
-        }
+            }
     }
     return false;
 }
