@@ -1,5 +1,6 @@
 #include <wx/notebook.h>
 
+#include "managers/ConfigManager.hpp"
 #include "managers/LanguageManager.hpp"
 
 #include "ui/MainFrame.hpp"
@@ -13,7 +14,14 @@
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              wxDefaultPosition, wxSize(550, 710)) {
+              wxDefaultPosition, wxSize(550, 710),
+              // 启动时按配置决定是否置顶。
+              // 与 SettingsPanel 里 SetWindowStyleFlag 切换 wxSTAY_ON_TOP 配合：
+              //   - 构造时用样式参数（wxFrame 初始化的正道）
+              //   - 运行时用 SetWindowStyleFlag（用户切换）
+              ConfigManager::instance().config().alwaysOnTop
+                  ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
+                  : wxDEFAULT_FRAME_STYLE) {
     auto *notebook = new wxNotebook(this, wxID_ANY);
 
     // ---- 标签页1：鼠标连点器 ----
