@@ -32,6 +32,11 @@ public:
     MainFrame();
     ~MainFrame() override;
 
+    // 把窗口几何 + 当前标签页写到 ConfigManager。
+    // 从 onClose 抽出来，供"切换语言重启"这类不经过 wxEVT_CLOSE_WINDOW
+    // 的退出路径主动调用。
+    void saveWindowState();
+
 private:
     // HotkeyManager 的回调入口：switch 到对应面板方法
     void dispatchHotkeyAction(HotkeyAction action);

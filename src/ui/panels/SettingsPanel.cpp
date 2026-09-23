@@ -16,6 +16,7 @@
 #include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
+#include "ui/MainFrame.hpp"
 
 namespace {
     // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致
@@ -280,6 +281,13 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
         const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
         LOG_INFO("settings: restarting immediately, exe={}",
                  utils::ToUtf8(exePath.ToStdWstring()));
+
+        // 接下来走 ExitMainLoop，不会触发 wxEVT_CLOSE_WINDOW，
+        // 而新进程紧接着就要读配置。所以主动保存一次窗口状态。
+        // 顺序很关键：保存 → 启动新进程 → 退出旧进程。
+        if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
+            frame->saveWindowState();
+        }
 
         if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
             // 新进程已启动。

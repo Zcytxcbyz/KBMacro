@@ -121,6 +121,7 @@ MainFrame::~MainFrame() = default;
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::onHotkey(wxKeyEvent &event) {
+    // ReSharper disable once CppDeclaratorNeverUsed
     const int id = event.GetId();
     LOG_DEBUG("mainframe: wxEVT_HOTKEY id={} (index={})",
               id, id - HotkeyManager::kHotkeyIdBase);
@@ -128,10 +129,10 @@ void MainFrame::onHotkey(wxKeyEvent &event) {
 }
 
 // ============================================================
-// wxEVT_CLOSE_WINDOW：保存窗口几何 + 当前标签页
+// 保存窗口几何 + 当前标签页
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
-void MainFrame::onClose(wxCloseEvent &event) {
+void MainFrame::saveWindowState() {
     auto &cfgMgr = ConfigManager::instance();
 
     // ---- 窗口几何 ----
@@ -161,6 +162,14 @@ void MainFrame::onClose(wxCloseEvent &event) {
     if (m_notebook) {
         cfgMgr.setTabIndex(m_notebook->GetSelection());
     }
+}
+
+// ============================================================
+// wxEVT_CLOSE_WINDOW：保存窗口几何 + 当前标签页
+// ============================================================
+// ReSharper disable once CppMemberFunctionMayBeConst
+void MainFrame::onClose(wxCloseEvent &event) {
+    saveWindowState();
 
     // 放行关闭流程
     event.Skip();
