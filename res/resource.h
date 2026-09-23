@@ -135,6 +135,7 @@
 #define IDS_SETTINGS_HOTKEY_START_ALL               5048
 #define IDS_SETTINGS_HOTKEY_STOP_ALL                5049
 #define IDS_SETTINGS_HOTKEY_UNSET                   5050
+#define IDS_SETTINGS_HOTKEY_SEND_ONCE               5051
 #define IDS_SETTINGS_MSG_SPIN_WARNING               5061
 #define IDS_SETTINGS_MSG_RESET_CONFIRM              5062
 #define IDS_SETTINGS_MSG_DELETE_NO_FILE             5063

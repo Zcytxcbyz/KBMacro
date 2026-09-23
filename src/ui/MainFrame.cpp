@@ -196,6 +196,10 @@ void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
             m_keyboardPanel->stop();
             break;
 
+        case HotkeyAction::SendOnce:
+            m_keyboardPanel->sendOnce();
+            break;
+
         case HotkeyAction::StartRecord:
             m_recorderPanel->startRecording();
             break;

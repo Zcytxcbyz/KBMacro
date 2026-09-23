@@ -18,6 +18,10 @@ public:
     void startWithCurrentParams();
     void stop();
 
+    // 供 MainFrame 从热键路径调用，与用户点击"发送一次"按钮等价。
+    // 不涉及 RunSpec / 线程，直接调 SendInput 发一次当前热键。
+    void sendOnce();
+
 private:
     void buildUi();
 

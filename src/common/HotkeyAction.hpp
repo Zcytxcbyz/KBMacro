@@ -17,6 +17,7 @@ enum class HotkeyAction {
     StopClicker,
     StartKeyboard,
     StopKeyboard,
+    SendOnce,
     StartRecord,
     StopRecord,
     StartPlayback,
@@ -26,7 +27,7 @@ enum class HotkeyAction {
 };
 
 // 热键数量。Config / HotkeyManager / SettingsPanel 共用。
-inline constexpr int kHotkeyCount = 10;
+inline constexpr int kHotkeyCount = 11;
 
 // 动作 → 显示名资源 ID。SettingsPanel 直接按索引取。
 inline constexpr int kHotkeyActionResIds[kHotkeyCount] = {
@@ -34,6 +35,7 @@ inline constexpr int kHotkeyActionResIds[kHotkeyCount] = {
     IDS_SETTINGS_HOTKEY_STOP_CLICKER,
     IDS_SETTINGS_HOTKEY_START_KEYBOARD,
     IDS_SETTINGS_HOTKEY_STOP_KEYBOARD,
+    IDS_SETTINGS_HOTKEY_SEND_ONCE,
     IDS_SETTINGS_HOTKEY_START_RECORD,
     IDS_SETTINGS_HOTKEY_STOP_RECORD,
     IDS_SETTINGS_HOTKEY_START_PLAYBACK,

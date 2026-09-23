@@ -224,10 +224,16 @@ void KeyboardPanel::onSetKey(wxCommandEvent &) {
               utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::onSendOnce(wxCommandEvent &) { // NOLINT(*-convert-member-functions-to-static)
-    // TODO: 单次发送用 SendInput，等 win32 模块落地
-    LOG_DEBUG("keyboard: send once (not implemented)");
+void KeyboardPanel::onSendOnce(wxCommandEvent &) {
+    sendOnce();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void KeyboardPanel::sendOnce() {
+    const KeyboardParams p = collectParams();
+    LOG_INFO("keyboard: send once requested (key='{}')",
+             utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
+    // TODO: win32::SendInput 发送一次 p.hotkey
 }
 
 void KeyboardPanel::onStart(wxCommandEvent &) {

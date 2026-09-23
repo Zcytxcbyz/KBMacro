@@ -119,6 +119,7 @@ BEGIN
     L(IDS_SETTINGS_HOTKEY_STOP_CLICKER)    "Stop Mouse Clicker"
     L(IDS_SETTINGS_HOTKEY_START_KEYBOARD)  "Start Keyboard Simulator"
     L(IDS_SETTINGS_HOTKEY_STOP_KEYBOARD)   "Stop Keyboard Simulator"
+    L(IDS_SETTINGS_HOTKEY_SEND_ONCE)       "Send Key Once"
     L(IDS_SETTINGS_HOTKEY_START_RECORD)    "Start Recording"
     L(IDS_SETTINGS_HOTKEY_STOP_RECORD)     "Stop Recording"
     L(IDS_SETTINGS_HOTKEY_START_PLAYBACK)  "Start Playback"
