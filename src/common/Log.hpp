@@ -13,6 +13,14 @@
 
 #ifdef ENABLE_LOGGING
 
+// spdlog 默认 SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_INFO，
+// 会把 TRACE / DEBUG 在编译期直接剪掉，运行期无论 logger->set_level
+// 设成什么都不会输出。这里显式放开到 TRACE，让运行期级别
+// （Log.cpp 里 logger->set_level(debug)）成为唯一过滤器。
+#ifndef SPDLOG_ACTIVE_LEVEL
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#endif
+
 #include <spdlog/spdlog.h>
 
 class Log {
