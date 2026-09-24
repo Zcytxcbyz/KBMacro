@@ -147,6 +147,7 @@
 #define IDS_SETTINGS_BTN_RESTART_LATER              5069
 #define IDS_SETTINGS_MSG_DELETE_PORTABLE_OK         5070
 #define IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED     5071
+#define IDS_SETTINGS_CHK_SPIN_DONT_ASK              5072
 
 // ---- About 面板 ----
 #define IDS_ABOUT_GROUP_APP            6001

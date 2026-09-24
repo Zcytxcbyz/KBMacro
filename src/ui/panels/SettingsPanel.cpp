@@ -6,6 +6,7 @@
 #include <wx/statbox.h>
 #include <wx/msgdlg.h>
 #include <wx/stdpaths.h>
+#include <wx/richmsgdlg.h>
 #include <wx/utils.h>
 
 #include "common/Hotkey.hpp"
@@ -318,16 +319,25 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
     auto &cfgMgr = ConfigManager::instance();
 
     if (newMode == TimerMode::Spin && !cfgMgr.config().flags.spinWarningConfirmed) {
-        const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_SPIN_WARNING),
-                                     TR(IDS_APP_TITLE),
-                                     wxOK | wxCANCEL | wxICON_WARNING, this);
-        if (ret != wxOK) {
+        // 用 wxRichMessageDialog：带复选框，让用户主动选择是否记住
+        wxRichMessageDialog dlg(this,
+                                TR(IDS_SETTINGS_MSG_SPIN_WARNING),
+                                TR(IDS_APP_TITLE),
+                                wxOK | wxCANCEL | wxICON_WARNING);
+        dlg.ShowCheckBox(TR(IDS_SETTINGS_CHK_SPIN_DONT_ASK));
+        const int ret = dlg.ShowModal();
+
+        if (ret != wxID_OK) {
             // 用户取消：控件回退，配置不动
             m_choiceTimerMode->SetSelection(kTimerModeSleep);
             return;
         }
-        // 记住已确认，下次不再提醒（除非"清除高精度确认"）
-        cfgMgr.setSpinWarningConfirmed(true);
+
+        // 只有勾选了"不再提醒"才记住；否则下次切换还会弹
+        if (dlg.IsCheckBoxChecked()) {
+            LOG_DEBUG("settings: spin warning marked as acknowledged");
+            cfgMgr.setSpinWarningConfirmed(true);
+        }
     }
 
     cfgMgr.setTimerMode(newMode);

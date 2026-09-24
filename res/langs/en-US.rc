@@ -138,6 +138,7 @@ BEGIN
     L(IDS_SETTINGS_BTN_RESTART_LATER)      "Restart Later"
     L(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK)     "Portable config deleted. The next launch will use APPDATA config."
     L(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED) "Failed to delete portable config. The file may be in use."
+    L(IDS_SETTINGS_CHK_SPIN_DONT_ASK)          "Don't ask again"
 
     // ---- About panel ----
     L(IDS_ABOUT_GROUP_APP)          "Application"

@@ -138,6 +138,7 @@ BEGIN
     L(IDS_SETTINGS_BTN_RESTART_LATER)      "稍后重启"
     L(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK)     "便携配置已删除，下次启动将使用 APPDATA 配置。"
     L(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED) "删除便携配置失败，文件可能被占用。"
+    L(IDS_SETTINGS_CHK_SPIN_DONT_ASK)          "不再提醒"
 
     // ---- About 面板 ----
     L(IDS_ABOUT_GROUP_APP)          "程序信息"
