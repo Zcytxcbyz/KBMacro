@@ -52,4 +52,20 @@ namespace utils {
                       L"%Y-%m-%d_%H-%M-%S", &tm);
         return buf;
     }
+
+    ScreenSpec GetPrimaryScreenSpec() {
+        ScreenSpec s;
+        s.width = ::GetSystemMetrics(SM_CXSCREEN);
+        s.height = ::GetSystemMetrics(SM_CYSCREEN);
+
+        // ReSharper disable once CppLocalVariableMayBeConst
+        if (HDC hdc = ::GetDC(nullptr)) {
+            s.dpi = ::GetDeviceCaps(hdc, LOGPIXELSX);
+            ::ReleaseDC(nullptr, hdc);
+        } else {
+            s.dpi = 96;
+        }
+
+        return s;
+    }
 } // namespace utils

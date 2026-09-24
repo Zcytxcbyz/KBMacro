@@ -65,6 +65,8 @@ struct Config {
     struct Flags {
         // 用户已确认过"高精度 Spin 会显著提升 CPU 占用"的警告
         bool spinWarningConfirmed = false;
+        // 录制脚本导入时的坐标适配偏好
+        AdaptationPreference adaptationPreference = AdaptationPreference::Ask;
     } flags;
 };
 
@@ -81,7 +83,7 @@ struct Config {
 //     "hotkeys": [ {...}, ... ],
 //     "hotkeyEnabled": [ true, false, ... ],
 //     "window": { "x":..., "y":..., "width":..., "height":..., "maximized":... },
-//     "flags": { "spinWarningConfirmed": false }
+//     "flags": { "spinWarningConfirmed": false, "adaptationPreference": "Ask" }
 //   }
 //
 // 兼容性策略：

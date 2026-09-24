@@ -40,6 +40,8 @@ void to_json(nlohmann::json &j, const Config &c) {
 
     j["flags"] = nlohmann::json{
         {"spinWarningConfirmed", c.flags.spinWarningConfirmed},
+        {"adaptationPreference",
+         adaptationPreferenceToString(c.flags.adaptationPreference)},
     };
 }
 
@@ -91,5 +93,7 @@ void from_json(const nlohmann::json &j, Config &c) {
     if (j.contains("flags") && j["flags"].is_object()) {
         const auto &f = j["flags"];
         c.flags.spinWarningConfirmed = f.value("spinWarningConfirmed", false);
+        c.flags.adaptationPreference = adaptationPreferenceFromString(
+            f.value("adaptationPreference", std::string{"Ask"}));
     }
 }

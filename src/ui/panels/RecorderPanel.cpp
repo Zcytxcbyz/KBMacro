@@ -5,12 +5,14 @@
 
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
+#include <wx/richmsgdlg.h>
 #include <cassert>
 
 #include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
+#include "managers/ConfigManager.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
 
@@ -496,6 +498,38 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         return;
     }
 
+    // ---- 屏幕规格比对 ----
+    ScreenSpec scriptSpec;
+    if (j.contains("screen") && j["screen"].is_object()) {
+        scriptSpec = j["screen"].get<ScreenSpec>();
+    }
+
+    const ScreenSpec currentSpec = utils::GetPrimaryScreenSpec();
+    const bool specsDiffer =
+        scriptSpec.width > 0 && scriptSpec.height > 0 &&
+        (scriptSpec.width != currentSpec.width ||
+         scriptSpec.height != currentSpec.height ||
+         scriptSpec.dpi != currentSpec.dpi);
+
+    if (specsDiffer) {
+        LOG_INFO("recorder: screen spec differs: script={}x{}@{}dpi, "
+                 "current={}x{}@{}dpi",
+                 scriptSpec.width, scriptSpec.height, scriptSpec.dpi,
+                 currentSpec.width, currentSpec.height, currentSpec.dpi);
+
+        const AdaptChoice choice = askAdaptCoordinates(scriptSpec, currentSpec);
+        if (choice == AdaptChoice::Cancelled) {
+            LOG_INFO("recorder: import cancelled at adapt prompt");
+            return;
+        }
+        if (choice == AdaptChoice::Adapt) {
+            // TODO(T2): 按比例调整 imported 里的 x/y
+            LOG_INFO("recorder: user chose to adapt (algorithm TODO, T2)");
+        } else {
+            LOG_INFO("recorder: user chose to keep original coordinates");
+        }
+    }
+
     // 替换确认
     const int ret = wxMessageBox(TR(IDS_MSG_MACRO_REPLACE_CONFIRM),
                                  TR(IDS_APP_TITLE),
@@ -527,6 +561,7 @@ void RecorderPanel::onExportScript(wxCommandEvent &) {
 
     nlohmann::json j;
     j["version"] = kMacroVersion;
+    j["screen"] = utils::GetPrimaryScreenSpec();
     j["actions"] = m_actions;
 
     if (!jsonio::saveTo(path, j)) {
@@ -539,4 +574,55 @@ void RecorderPanel::onExportScript(wxCommandEvent &) {
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("recorder: exported {} actions to {}",
              m_actions.size(), utils::ToUtf8(path.wstring()));
+}
+
+// ============================================================
+// 坐标适配询问
+// ============================================================
+RecorderPanel::AdaptChoice
+RecorderPanel::askAdaptCoordinates(const ScreenSpec &scriptSpec,
+                                   const ScreenSpec &currentSpec) {
+    auto &cfgMgr = ConfigManager::instance();
+
+    // 记忆命中：不弹窗
+    const auto pref = cfgMgr.config().flags.adaptationPreference;
+    if (pref == AdaptationPreference::AlwaysAdapt) {
+        LOG_INFO("recorder: adapt preference = AlwaysAdapt, skip prompt");
+        return AdaptChoice::Adapt;
+    }
+    if (pref == AdaptationPreference::KeepOriginal) {
+        LOG_INFO("recorder: adapt preference = KeepOriginal, skip prompt");
+        return AdaptChoice::KeepOriginal;
+    }
+
+    // Ask：弹窗
+    const wxString msg = wxString::Format(
+        TR(IDS_MSG_ADAPT_CONFIRM).data(),
+        scriptSpec.width, scriptSpec.height, scriptSpec.dpi,
+        currentSpec.width, currentSpec.height, currentSpec.dpi);
+
+    wxRichMessageDialog dlg(this, msg, TR(IDS_APP_TITLE),
+                            wxYES_NO | wxCANCEL | wxICON_QUESTION);
+    dlg.SetYesNoLabels(TR(IDS_MSG_ADAPT_YES).data(),
+                       TR(IDS_MSG_ADAPT_NO).data());
+    dlg.ShowCheckBox(TR(IDS_MSG_ADAPT_REMEMBER));
+
+    const int ret = dlg.ShowModal();
+
+    if (ret == wxID_CANCEL) {
+        LOG_DEBUG("recorder: adapt prompt cancelled");
+        return AdaptChoice::Cancelled;
+    }
+
+    const bool adapt = (ret == wxID_YES);
+
+    if (dlg.IsCheckBoxChecked()) {
+        const auto chosen = adapt ? AdaptationPreference::AlwaysAdapt
+                                  : AdaptationPreference::KeepOriginal;
+        cfgMgr.setAdaptationPreference(chosen);
+        LOG_INFO("recorder: adapt preference remembered as {}",
+                 adaptationPreferenceToString(chosen));
+    }
+
+    return adapt ? AdaptChoice::Adapt : AdaptChoice::KeepOriginal;
 }

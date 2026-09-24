@@ -123,3 +123,70 @@ inline void from_json(const nlohmann::json &j, RunSpec &r) {
     r.durationSec = j.value("durationSec", 10);
     r.count = j.value("count", 100);
 }
+
+// ============================================================
+// 屏幕规格
+// ============================================================
+
+// 记录录制/导出时的屏幕环境，用于导入脚本时判断是否需要坐标适配。
+//   - width / height: 主屏像素分辨率
+//   - dpi: 主屏 DPI（96 = 100%，120 = 125%，144 = 150%）
+// 全 0 表示"未记录"（老脚本或非 KBMacro 生成的文件）。
+struct ScreenSpec {
+    int width = 0;
+    int height = 0;
+    int dpi = 0;
+};
+
+inline void to_json(nlohmann::json &j, const ScreenSpec &s) {
+    j = nlohmann::json::object();
+    j["width"] = s.width;
+    j["height"] = s.height;
+    j["dpi"] = s.dpi;
+}
+
+inline void from_json(const nlohmann::json &j, ScreenSpec &s) {
+    s = ScreenSpec{};
+    s.width = j.value("width", 0);
+    s.height = j.value("height", 0);
+    s.dpi = j.value("dpi", 0);
+}
+
+// ============================================================
+// 坐标适配偏好
+// ============================================================
+
+// 导入脚本遇到屏幕规格不一致时的处理偏好。
+// Ask 每次弹窗；其余两项直接执行，不弹窗。
+enum class AdaptationPreference {
+    Ask,
+    AlwaysAdapt,
+    KeepOriginal,
+};
+
+struct AdaptationPreferenceEntry {
+    AdaptationPreference value;
+    std::string_view name;
+};
+
+inline constexpr AdaptationPreferenceEntry kAdaptationPreferenceEntries[] = {
+    {.value = AdaptationPreference::Ask,          .name = "Ask"},
+    {.value = AdaptationPreference::AlwaysAdapt,  .name = "AlwaysAdapt"},
+    {.value = AdaptationPreference::KeepOriginal, .name = "KeepOriginal"},
+};
+
+[[nodiscard]] constexpr AdaptationPreference
+adaptationPreferenceFromString(const std::string_view s) noexcept {
+    for (const auto &[v, n]: kAdaptationPreferenceEntries) {
+        if (n == s) return v;
+    }
+    return AdaptationPreference::Ask;
+}
+
+[[nodiscard]] constexpr std::string_view
+adaptationPreferenceToString(const AdaptationPreference p) noexcept {
+    for (const auto &[v, n]: kAdaptationPreferenceEntries) {
+        if (v == p) return n;
+    }
+    return "Ask";
+}

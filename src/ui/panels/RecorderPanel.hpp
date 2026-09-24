@@ -33,6 +33,17 @@ private:
     // 从控件组装 RunSpec（回放用）
     [[nodiscard]] RunSpec collectRunSpec() const;
 
+    // 屏幕规格不一致时询问用户如何处理坐标
+    enum class AdaptChoice {
+        Adapt,
+        KeepOriginal,
+        Cancelled,
+    };
+
+    // 弹窗询问用户是否适配坐标。内部会先查 adaptationPreference 记忆。
+    [[nodiscard]] AdaptChoice askAdaptCoordinates(
+        const ScreenSpec &scriptSpec, const ScreenSpec &currentSpec);
+
     // ---- 录制 / 回放 / 导入导出 ----
     void onStartRecord(wxCommandEvent &event);
     void onStopRecord(wxCommandEvent &event);

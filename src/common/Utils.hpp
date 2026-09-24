@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <string>
+#include "common/Types.hpp"
 
 namespace utils {
 
@@ -19,5 +20,10 @@ namespace utils {
 
     // 文件名友好的时间戳：2026-09-15_22-30-15
     std::wstring GetTimestampForFilename();
+
+    // 主屏规格（分辨率 + DPI）。
+    // 分辨率走 GetSystemMetrics(SM_CXSCREEN/SM_CYSCREEN)，
+    // DPI 走 GetDeviceCaps(LOGPIXELSX)，失败时回退 96。
+    [[nodiscard]] ScreenSpec GetPrimaryScreenSpec();
 
 } // namespace utils

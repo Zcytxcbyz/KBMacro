@@ -40,6 +40,12 @@ BEGIN
     L(IDS_MSG_EXPORT_FAILED)         "Export failed. Please check the file path."
     L(IDS_MSG_MACRO_REPLACE_CONFIRM) "This will replace the current action list. Continue?"
 
+    // ---- Screen adaptation dialog ----
+    L(IDS_MSG_ADAPT_CONFIRM)         "Script was recorded at %d×%d (DPI %d),\ncurrent screen is %d×%d (DPI %d).\n\nScale coordinates proportionally?"
+    L(IDS_MSG_ADAPT_REMEMBER)        "Remember my choice"
+    L(IDS_MSG_ADAPT_YES)             "Adapt"
+    L(IDS_MSG_ADAPT_NO)              "Keep original"
+
     // ---- Clicker panel ----
     L(IDS_CLICKER_LABEL_X)               "X:"
     L(IDS_CLICKER_LABEL_Y)               "Y:"

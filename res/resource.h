@@ -49,6 +49,12 @@
 #define IDS_MSG_EXPORT_FAILED           1223
 #define IDS_MSG_MACRO_REPLACE_CONFIRM   1224
 
+// ---- 坐标适配对话框 ----
+#define IDS_MSG_ADAPT_CONFIRM           1230
+#define IDS_MSG_ADAPT_REMEMBER          1231
+#define IDS_MSG_ADAPT_YES               1232
+#define IDS_MSG_ADAPT_NO                1233
+
 // ---- Clicker 面板 ----
 #define IDS_CLICKER_LABEL_X              2001
 #define IDS_CLICKER_LABEL_Y              2002

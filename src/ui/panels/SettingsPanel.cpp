@@ -439,8 +439,8 @@ void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
                                  wxOK | wxCANCEL | wxICON_QUESTION, this);
     if (ret != wxOK) return;
 
-    // TODO: Recorder 模块落地后接适配记忆的清理
-    LOG_DEBUG("settings: clear adaptation confirmed (recorder not implemented)");
+    ConfigManager::instance().setAdaptationPreference(AdaptationPreference::Ask);
+    LOG_INFO("settings: adaptation preference reset to Ask");
 }
 
 void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {

@@ -40,6 +40,12 @@ BEGIN
     L(IDS_MSG_EXPORT_FAILED)         "导出失败，请检查文件路径。"
     L(IDS_MSG_MACRO_REPLACE_CONFIRM) "将替换当前动作列表，是否继续？"
 
+    // ---- 坐标适配对话框 ----
+    L(IDS_MSG_ADAPT_CONFIRM)         "脚本录制于 %d×%d（DPI %d），\n当前屏幕为 %d×%d（DPI %d）。\n\n是否按比例调整坐标？"
+    L(IDS_MSG_ADAPT_REMEMBER)        "记住我的选择"
+    L(IDS_MSG_ADAPT_YES)             "适配坐标"
+    L(IDS_MSG_ADAPT_NO)              "保持原坐标"
+
     // ---- Clicker 面板 ----
     L(IDS_CLICKER_LABEL_X)               "坐标 X："
     L(IDS_CLICKER_LABEL_Y)               "坐标 Y："

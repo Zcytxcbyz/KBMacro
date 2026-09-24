@@ -52,10 +52,11 @@ public:
     void setTimerMode(TimerMode mode);
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
-    void setHotkeyEnabled(int index, bool enabled);   // ← 新增
+    void setHotkeyEnabled(int index, bool enabled);
     void setSpinWarningConfirmed(bool v);
-    void setWindow(const Config::Window &w);   // ← 新增
-    void setTabIndex(int index);               // ← 新增
+    void setAdaptationPreference(AdaptationPreference pref);
+    void setWindow(const Config::Window &w);
+    void setTabIndex(int index);
 
     // ---- 便携模式 ----
 

@@ -114,6 +114,14 @@ void ConfigManager::setSpinWarningConfirmed(const bool v) {
     LOG_DEBUG("config: spinWarningConfirmed set to {}", v);
 }
 
+void ConfigManager::setAdaptationPreference(const AdaptationPreference pref) {
+    if (m_config.flags.adaptationPreference == pref) return;
+    m_config.flags.adaptationPreference = pref;
+    save();
+    LOG_DEBUG("config: adaptationPreference set to {}",
+              adaptationPreferenceToString(pref));
+}
+
 void ConfigManager::setWindow(const Config::Window &w) {
     // ReSharper disable once CppUseStructuredBinding
     // ReSharper disable once CppTooWideScopeInitStatement
