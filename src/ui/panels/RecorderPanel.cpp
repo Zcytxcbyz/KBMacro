@@ -256,6 +256,20 @@ RunSpec RecorderPanel::collectRunSpec() const {
     return run;
 }
 
+// ===========================================================
+// 参数应用
+// ===========================================================
+void RecorderPanel::applyRunSpec(const RunSpec &run) {
+    switch (run.mode) {
+        case RunMode::Timed:   m_choiceRunMode->SetSelection(1); break;
+        case RunMode::Counted: m_choiceRunMode->SetSelection(2); break;
+        default:               m_choiceRunMode->SetSelection(0); break;
+    }
+    m_spinDuration->SetValue(run.durationSec);
+    m_spinCount->SetValue(run.count);
+    refreshEnableStates();
+}
+
 // ============================================================
 // 列表维护
 // ============================================================
@@ -542,6 +556,11 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
     m_actions = std::move(imported);
     refreshList();
 
+    // 运行模式：缺失走默认（Infinite）
+    if (j.contains("run") && j["run"].is_object()) {
+        applyRunSpec(j["run"].get<RunSpec>());
+    }
+
     wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("recorder: imported {} actions from {}",
@@ -562,6 +581,7 @@ void RecorderPanel::onExportScript(wxCommandEvent &) {
     nlohmann::json j;
     j["version"] = kMacroVersion;
     j["screen"] = utils::GetPrimaryScreenSpec();
+    j["run"] = collectRunSpec();
     j["actions"] = m_actions;
 
     if (!jsonio::saveTo(path, j)) {

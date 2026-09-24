@@ -33,6 +33,9 @@ private:
     // 从控件组装 RunSpec（回放用）
     [[nodiscard]] RunSpec collectRunSpec() const;
 
+    // 把 RunSpec 同步到控件（导入脚本用）
+    void applyRunSpec(const RunSpec &run);
+
     // 屏幕规格不一致时询问用户如何处理坐标
     enum class AdaptChoice {
         Adapt,
