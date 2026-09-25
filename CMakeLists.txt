@@ -103,6 +103,7 @@ set(HEADERS
         src/common/HotkeyAction.hpp
         src/managers/HotkeyManager.hpp
         src/common/JsonIO.hpp
+        src/common/ITimer.hpp
         # 在这里添加 .h 文件
 )
 
