@@ -73,6 +73,7 @@ set(SOURCES
         src/managers/HotkeyManager.cpp
         src/common/JsonIO.cpp
         src/common/Timer.cpp
+        src/common/RunController.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -106,6 +107,7 @@ set(HEADERS
         src/common/JsonIO.hpp
         src/common/ITimer.hpp
         src/common/Timer.hpp
+        src/common/RunController.hpp
         # 在这里添加 .h 文件
 )
 

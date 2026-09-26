@@ -19,6 +19,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/common/Hotkey.cpp
         ${CMAKE_SOURCE_DIR}/src/common/Utils.cpp
         ${CMAKE_SOURCE_DIR}/src/common/Timer.cpp
+        ${CMAKE_SOURCE_DIR}/src/common/RunController.cpp
 )
 
 # 测试文件
@@ -27,6 +28,7 @@ set(TEST_SOURCES
         test_enums.cpp
         test_configpaths.cpp
         test_timer.cpp
+        test_runcontroller.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})

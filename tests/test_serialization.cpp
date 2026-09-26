@@ -15,6 +15,7 @@
 #include "common/Action.hpp"
 #include "common/ClickerParams.hpp"
 #include "common/Config.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "common/Hotkey.hpp"
 #include "common/KeyboardParams.hpp"
 #include "common/Types.hpp"
@@ -106,6 +107,7 @@ TEST(HotkeyRoundTrip, WithModifiersAndKey) {
 }
 
 TEST(HotkeyRoundTrip, Empty) {
+    // ReSharper disable once CppVariableCanBeMadeConstexpr
     const Hotkey hk;
     const auto j = nlohmann::json(hk);
     const Hotkey b = j.get<Hotkey>();
