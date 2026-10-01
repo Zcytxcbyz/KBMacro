@@ -133,6 +133,7 @@ inline void from_json(const nlohmann::json &j, RunSpec &r) {
 enum class FinishReason {
     Completed,
     Stopped,
+    Failed,
 };
 
 // ============================================================

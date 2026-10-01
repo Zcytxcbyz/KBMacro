@@ -74,6 +74,7 @@ set(SOURCES
         src/common/JsonIO.cpp
         src/common/Timer.cpp
         src/common/RunController.cpp
+        src/managers/ThreadManager.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -108,6 +109,7 @@ set(HEADERS
         src/common/ITimer.hpp
         src/common/Timer.hpp
         src/common/RunController.hpp
+        src/managers/ThreadManager.hpp
         # 在这里添加 .h 文件
 )
 
