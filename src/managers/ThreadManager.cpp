@@ -185,12 +185,12 @@ bool ThreadManager::IsRunning(const TaskKind kind) const {
 // ------------------------------------------------------------
 
 void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body) {
-    Slot &slot = m_slots[index(kind)];
+    auto &[thread, state, generation] = m_slots[index(kind)];
 
     // 同一任务已在跑 → 忽略本次请求（拒绝而非抢占）。
     // 顺手停掉旧的再起是错的：那会静默丢掉旧任务的结果（比如正在录的内容），
     // 而旧任务的那条通知又会被序号校验丢弃，连"录制完成"的交付窗都不会出现。
-    if (slot.state == TaskState::Running) {
+    if (state == TaskState::Running) {
         LOG_DEBUG("threadmanager: task {} already running, start ignored", taskKindName(kind));
         return;
     }
@@ -198,16 +198,16 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // 防御性回收：上一轮任务结束后线程已死，但仍是 joinable。
     // 必须在这里收掉，否则下面赋值会析构掉一个 joinable 的 jthread → std::terminate。
     // 走到这里 state 一定不是 Running，所以 join 立即返回。
-    if (slot.thread.joinable()) {
-        slot.thread.request_stop();
-        slot.thread.join();
+    if (thread.joinable()) {
+        thread.request_stop();
+        thread.join();
     }
 
     // 序号只在这里推进。它用来丢弃"上一轮任务还压在 UI 队列里的结束通知"；
     // 若在 Stop 里也推进，就挡不住"定时任务跑完 + 用户抢先开始新任务"这一条。
-    const unsigned gen = ++slot.generation;
+    const unsigned gen = ++generation;
 
-    slot.state = TaskState::Running;
+    state = TaskState::Running;
     LOG_INFO("threadmanager: task {} started: gen={}", taskKindName(kind), gen);
 
     // cb 装进 shared_ptr：CallAfter 会把 functor 拷进事件对象，别让闭包被反复拷贝
@@ -234,7 +234,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     };
 
     // body 的异常不逃出线程（否则 std::terminate），也不让状态永远卡在 Running
-    slot.thread = std::jthread{
+    thread = std::jthread{
         [kind, body = std::move(body), notify = std::move(notify)](const std::stop_token& st) {
             TaskResult res;
 

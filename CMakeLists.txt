@@ -75,6 +75,7 @@ set(SOURCES
         src/common/Timer.cpp
         src/common/RunController.cpp
         src/managers/ThreadManager.cpp
+        src/win32/Input.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -110,6 +111,7 @@ set(HEADERS
         src/common/Timer.hpp
         src/common/RunController.hpp
         src/managers/ThreadManager.hpp
+        src/win32/Input.hpp
         # 在这里添加 .h 文件
 )
 
