@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <wil/win32_helpers.h>
 
+#include "common/Log.hpp"
+
 namespace utils {
     std::filesystem::path GetExecutablePath() {
         return {wil::GetModuleFileNameW().get()};
@@ -66,6 +68,8 @@ namespace utils {
             s.dpi = 96;
         }
 
+        // 坐标适配的唯一数据源：出问题时第一眼看它
+        LOG_DEBUG("utils: primary screen {}x{}@{}dpi", s.width, s.height, s.dpi);
         return s;
     }
 } // namespace utils

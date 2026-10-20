@@ -198,7 +198,10 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // 防御性回收：上一轮任务结束后线程已死，但仍是 joinable。
     // 必须在这里收掉，否则下面赋值会析构掉一个 joinable 的 jthread → std::terminate。
     // 走到这里 state 一定不是 Running，所以 join 立即返回。
+    // 被踩到说明上一轮的通知还压在 UI 队列里没执行（generation 尚未推进）
     if (thread.joinable()) {
+        LOG_DEBUG("threadmanager: task {} reaped before start, gen={}",
+                  taskKindName(kind), generation);
         thread.request_stop();
         thread.join();
     }
@@ -260,7 +263,10 @@ void ThreadManager::stopTask(const TaskKind kind) {
     Slot &slot = m_slots[index(kind)];
 
     // 没起过 / 已经回收过 → 无事可做
-    if (!slot.thread.joinable()) return;
+    if (!slot.thread.joinable()) {
+        LOG_DEBUG("threadmanager: task {} not running, stop ignored", taskKindName(kind));
+        return;
+    }
 
     // 阻塞 join：用户按了停止就不能"还没停"。Sleep 计时器上界约 20ms，Spin 亚毫秒，
     // 这点 UI 停顿可以接受；把 join 推迟到下次 Start 是错的。

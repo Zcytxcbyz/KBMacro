@@ -5,6 +5,8 @@
 #include <utility>
 
 #include "common/Hotkey.hpp"
+#include "common/Log.hpp"
+#include "common/Utils.hpp"   // ToUtf8
 #include "managers/LanguageManager.hpp"
 
 HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
@@ -73,6 +75,7 @@ void HotkeyCaptureDialog::onCharHook(const wxKeyEvent &event) {
         m_hotkey.vk = rawVk;
     }
 
+    LOG_DEBUG("hotkey dialog: captured '{}'", utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
     updateDisplay();
     // 不调用 event.Skip()，阻止按键传播到子控件
 }

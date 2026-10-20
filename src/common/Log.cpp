@@ -13,13 +13,20 @@
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
 
 #include "common/Utils.hpp"
 
 namespace {
     constexpr auto kLoggerName = "KBMacro";
     constexpr auto kLogPattern = "[%Y-%m-%d %H:%M:%S.%e] [%t] [%s:%#] [%l] %v";
+#ifdef KBMACRO_DRY_RUN
+    // 干跑时动作密度可能远高于真实运行（回放 delayMs 很小的脚本），
+    // 8192 条会在 overrun_oldest 策略下悄悄丢最旧的行。给足余量。
+    constexpr std::size_t kAsyncQueueSize = 65536;
+#else
     constexpr std::size_t kAsyncQueueSize = 8192;
+#endif
     constexpr std::size_t kMaxLogFiles = 30;
 
     std::filesystem::path GetLogDirectory() {
@@ -68,9 +75,13 @@ void Log::Init() {
         auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
             utils::ToUtf8(logFile.native()), /*truncate=*/true);
 
+        // 同时送一份到调试器输出（VS 输出窗口）。sink 默认 check_debugger_present_ = true，
+        // 没挂调试器时每行只做一次 IsDebuggerPresent() 就返回，不格式化也不写。
+        auto msvcSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+
         auto logger = std::make_shared<spdlog::async_logger>(
             kLoggerName,
-            fileSink,
+            spdlog::sinks_init_list{fileSink, msvcSink},
             spdlog::thread_pool(),
             spdlog::async_overflow_policy::overrun_oldest);
 

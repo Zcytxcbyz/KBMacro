@@ -6,6 +6,7 @@
 
 #include <windows.h>
 
+#include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
 
 namespace {
@@ -29,6 +30,7 @@ ScreenCaptureOverlay::ScreenCaptureOverlay(wxWindow *parent, Callback callback)
     const int h = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
     m_origin = wxPoint(x, y);
     SetSize(x, y, w, h);
+    LOG_DEBUG("overlay: covering virtual screen ({}, {}), {}x{}", x, y, w, h);
 
     Bind(wxEVT_PAINT, &ScreenCaptureOverlay::onPaint, this);
     Bind(wxEVT_LEFT_DOWN, &ScreenCaptureOverlay::onLeftDown, this);
@@ -105,6 +107,12 @@ void ScreenCaptureOverlay::onSetCursor(wxSetCursorEvent &event) { // NOLINT(*-co
 void ScreenCaptureOverlay::finish(const bool captured, const wxPoint pos) {
     if (m_finished) return;
     m_finished = true;
+
+    if (captured) {
+        LOG_DEBUG("overlay: picked ({}, {})", pos.x, pos.y);
+    } else {
+        LOG_DEBUG("overlay: cancelled");
+    }
 
     // 先移出屏幕，避免闪烁
     Show(false);

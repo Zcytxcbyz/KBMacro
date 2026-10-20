@@ -184,7 +184,7 @@ void init() {
     const int h = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
     int dpi = 0;
-    if (const HDC dc = ::GetDC(nullptr); dc != nullptr) {
+    if (const HDC dc = ::GetDC(nullptr); dc != nullptr) { // NOLINT(*-misplaced-const)
         dpi = ::GetDeviceCaps(dc, LOGPIXELSX);
         ::ReleaseDC(nullptr, dc);
     }

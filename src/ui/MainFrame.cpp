@@ -169,6 +169,9 @@ void MainFrame::saveWindowState() {
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::onClose(wxCloseEvent &event) {
+    // 记在 saveWindowState 之前：关窗真正可能卡住的是之后的
+    // ~MainFrame → ThreadManager::StopAll（4 次阻塞 join），不是存配置
+    LOG_INFO("mainframe: closing");
     saveWindowState();
 
     // 放行关闭流程
