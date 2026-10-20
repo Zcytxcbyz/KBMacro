@@ -14,6 +14,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # ============================================================
 option(ENABLE_TESTS "Build unit tests" OFF)
 option(ENABLE_LOGGING "Enable logging" OFF)
+option(ENABLE_DRY_RUN "Log input actions instead of injecting them" OFF)
 
 # ============================================================
 # 强制 Windows 平台
@@ -137,6 +138,16 @@ target_link_libraries(KBMacro
 if(ENABLE_LOGGING)
     target_link_libraries(KBMacro PRIVATE spdlog::spdlog)
     target_compile_definitions(KBMacro PRIVATE ENABLE_LOGGING)
+endif()
+
+# ============================================================
+# 干跑模式（可选）：只记日志、不真的注入输入
+# 打开后 Input.cpp 里连 SendInput 的调用都不会被编进去（if constexpr），
+# 用于"看日志分析"而不动当前鼠标键盘环境。
+# 默认 OFF，即默认行为是真的发送。
+# ============================================================
+if(ENABLE_DRY_RUN)
+    target_compile_definitions(KBMacro PRIVATE KBMACRO_DRY_RUN)
 endif()
 
 # ============================================================

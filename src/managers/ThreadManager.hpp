@@ -129,7 +129,7 @@ private:
     static constexpr std::size_t kTaskCount = 4;   // 与 TaskKind 的枚举值个数一致
 
     static_assert(static_cast<std::size_t>(TaskKind::Playback) + 1 == kTaskCount,
-                  "TaskKind 增加枚举值时必须同步 kTaskCount");
+                  "When adding enum values to TaskKind, you need to update kTaskCount as well");
 
     [[nodiscard]] static constexpr std::size_t index(TaskKind kind) noexcept {
         return static_cast<std::size_t>(kind);

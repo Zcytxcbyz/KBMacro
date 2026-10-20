@@ -45,4 +45,4 @@ inline constexpr int kHotkeyActionResIds[kHotkeyCount] = {
 };
 
 static_assert(std::size(kHotkeyActionResIds) == kHotkeyCount,
-              "热键动作表与 kHotkeyCount 不一致");
+              "The hotkey action list doesn't match kHotkeyCount");

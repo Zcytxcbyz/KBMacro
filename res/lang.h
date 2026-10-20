@@ -31,6 +31,6 @@ inline constexpr LangInfo kLangs[] = {
 };
 
 static_assert(std::size(kLangs) == static_cast<std::size_t>(Lang::COUNT),
-              "kLangs 与 Lang 枚举数量不一致");
+              "The number of kLangs doesn't match the Lang enum");
 
 #endif // RC_INVOKED

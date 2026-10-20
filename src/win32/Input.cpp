@@ -31,6 +31,16 @@ namespace {
     // 'KBMR'。注入事件的身份标记，Recorder 的钩子用同一个值过滤。
     constexpr ULONG_PTR kInjectedSignature = 0x4B424D52u;
 
+    // 干跑模式：打开 ENABLE_DRY_RUN 时只记日志、不调 SendInput——
+    // 连那次调用都不会编进去，所以对整个系统零影响。
+    // 除"发不发"之外，行为与真实模式完全一致：照样等 holdMs、照样记日志、
+    // 照样返回 true，日志格式只多一个 dry 标记。
+#ifdef KBMACRO_DRY_RUN
+    constexpr bool kDryRun = true;
+#else
+    constexpr bool kDryRun = false;
+#endif
+
     // 修饰键的按下顺序：Ctrl → Shift → Alt → Win；抬起时反过来。
     struct ModifierKey {
         unsigned mask;
@@ -131,9 +141,16 @@ namespace {
         }
 
         const auto expected = static_cast<UINT>(events.size());
-        const UINT sent     = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));
+
+        // 干跑：不调 SendInput，直接认为全部插入成功
+        UINT sent = expected;
+        if constexpr (!kDryRun) {
+            sent = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));
+        }
+
         if (sent == expected) {
-            LOG_DEBUG("input: {} (sent={}/{})", what, sent, expected);
+            LOG_DEBUG("input: {} (sent={}/{}, dry={})", what, sent, expected,
+                      static_cast<int>(kDryRun));
             return;
         }
 
@@ -173,6 +190,10 @@ void init() {
     }
 
     LOG_DEBUG("input: virtual screen at ({}, {}), {}x{}, dpi={}", x, y, w, h, dpi);
+
+    if constexpr (kDryRun) {
+        LOG_WARN("input: DRY RUN enabled, nothing will be injected");
+    }
 }
 
 void moveTo(const int x, const int y) {
@@ -185,10 +206,18 @@ void moveTo(const int x, const int y) {
     const int spanW = (screenW > 1) ? screenW - 1 : 1;
     const int spanH = (screenH > 1) ? screenH - 1 : 1;
 
+    const int normX = ::MulDiv(x - screenX, 65535, spanW);
+    const int normY = ::MulDiv(y - screenY, 65535, spanH);
+
+    std::string what = "move to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
+    if constexpr (kDryRun) {
+        // 干跑时把归一化结果也记出来：排查"坐标偏"不用再手推公式
+        what += " norm=(" + std::to_string(normX) + ", " + std::to_string(normY) + ")";
+    }
+
     sendEvents({makeMouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK,
-                          ::MulDiv(x - screenX, 65535, spanW),
-                          ::MulDiv(y - screenY, 65535, spanH))},
-               "move to (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                          normX, normY)},
+               std::move(what));
 }
 
 void buttonDown(const MouseButton button) {
