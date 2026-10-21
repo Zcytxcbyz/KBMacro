@@ -29,6 +29,8 @@ set(TEST_SOURCES
         test_configpaths.cpp
         test_timer.cpp
         test_runcontroller.cpp
+        test_hotkey_text.cpp
+        test_utf8.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})
