@@ -1,5 +1,5 @@
 // ============================================================
-// ITimer 实现测试（SleepTimer / SpinTimer）
+// ITimer 实现测试（SleepTimer / SpinTimer / HybridTimer）
 //
 // 计时断言的写法规矩：
 //   - 下限断言（"不早于 X"）才有意义，必须严格——它保证不会提前返回
@@ -182,4 +182,76 @@ TEST(SpinTimerTest, StopDuringWaitReturnsFalseQuickly) {
 
     // 亚微秒级响应，留 20ms 给线程调度
     EXPECT_LT(latency, 20);
+}
+
+// ============================================================
+// HybridTimer 特有：语义依赖构造时给的 spinTail
+// ============================================================
+
+TEST(HybridTimerTest, NonPositiveDurationReturnsTrueImmediately) {
+    const HybridTimer timer(Duration(10));
+    std::stop_source src;
+
+    EXPECT_TRUE(timer.wait(Duration(0), src.get_token()));
+    EXPECT_TRUE(timer.wait(Duration(-5), src.get_token()));
+}
+
+TEST(HybridTimerTest, AlreadyStoppedReturnsFalseImmediately) {
+    const HybridTimer timer(Duration(10));
+    std::stop_source src;
+    src.request_stop();
+
+    const auto elapsed = measureMs([&] {
+        EXPECT_FALSE(timer.wait(Duration(500), src.get_token()));
+    });
+    EXPECT_LT(elapsed, 20) << "已停止却还在等";
+}
+
+// 等待时长落在尾巴里 → 全程忙等，精度应与 SpinTimer 一致
+TEST(HybridTimerTest, ShortWaitWithinTailIsPureSpin) {
+    const HybridTimer timer(Duration(10));
+    std::stop_source src;
+
+    const auto elapsed = measureMs([&] {
+        EXPECT_TRUE(timer.wait(Duration(5), src.get_token()));
+    });
+
+    EXPECT_GE(elapsed, 5) << "提前返回了";
+    EXPECT_LT(elapsed, 20) << "这段本该是忙等";
+}
+
+// 长于尾巴 → 睡眠 + 忙等；尾巴要能把睡眠溢出兜住
+TEST(HybridTimerTest, LongWaitEndsCloseToDeadline) {
+    const HybridTimer timer(Duration(10));
+    std::stop_source src;
+
+    const auto elapsed = measureMs([&] {
+        EXPECT_TRUE(timer.wait(Duration(60), src.get_token()));
+    });
+
+    EXPECT_GE(elapsed, 60) << "提前返回了";
+    EXPECT_LT(elapsed, 60 + 10 + 50) << "尾巴没兜住睡眠溢出";
+}
+
+// 停止响应上界 ≈ spinTail + 一个 slice
+TEST(HybridTimerTest, StopDuringWaitReturnsFalseQuickly) {
+    HybridTimer timer(Duration(10));
+
+    const auto latency = stopLatencyMs(timer, Duration(5000));
+    ASSERT_GE(latency, 0) << "没被打断，等满了";
+
+    EXPECT_LT(latency, Duration(10).count() + SleepTimer::kSlice.count() + 50);
+}
+
+// spinTail <= 0 → 退化为纯分段睡眠
+TEST(HybridTimerTest, ZeroTailBehavesLikeSleepTimer) {
+    const HybridTimer timer(Duration(0));
+    std::stop_source src;
+
+    const auto elapsed = measureMs([&] {
+        EXPECT_TRUE(timer.wait(Duration(50), src.get_token()));
+    });
+
+    EXPECT_GE(elapsed, 50) << "提前返回了";
+    EXPECT_LT(elapsed, 250) << "睡过头太多";
 }

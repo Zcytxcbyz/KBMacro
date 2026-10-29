@@ -3,7 +3,7 @@
 #include "common/ITimer.hpp"
 
 // ============================================================
-// ITimer 的两个实现
+// ITimer 的三个实现
 //
 //   SleepTimer —— 分段睡眠
 //       CPU 占用 ≈ 0；"等待中被停止"的响应延迟 = 一次 slice 对齐到系统节拍
@@ -16,7 +16,11 @@
 //       代价是等待期间占满一个核心。这是明确的契约，
 //       UI 侧"高精度模式"的 CPU 警告弹窗就是为它存在的。
 //
-// 两者都是无状态类：同一实例可被多个线程并发调用。
+//   HybridTimer —— 混合
+//       长间隔分段睡、末尾忙等；阈值（末尾忙等时长）由配置给出。
+//       精度接近 Spin，CPU 只在尾巴上烧。
+//
+// 三者都是无状态类：同一实例可被多个线程并发调用。
 // 实现细节（deadline 循环、为什么不做累减）见 Timer.cpp。
 // ============================================================
 
@@ -42,4 +46,26 @@ public:
 class SpinTimer final : public ITimer {
 public:
     [[nodiscard]] bool wait(Duration d, const std::stop_token &st) const override;
+};
+
+// 混合实现：长间隔分段睡、末尾忙等。
+//
+// 语义（T = 构造时给的末尾忙等时长）：
+//   - d >  T：先分段 sleep 到 deadline - T，再用 T 忙等到点
+//   - d <= T：全程忙等（此时等价于 SpinTimer）
+// 精度：误差 = max(0, 最后一段 sleep 的溢出 - T)；T=10ms 时通常能压到个位数毫秒。
+// 停止响应：上界约 T（睡眠段内仍是 slice 对齐，忙等段内是亚微秒）。
+// 代价：忙等的那 T 毫秒占满一个核心 —— 与 SpinTimer 同一份契约。
+// T <= 0 时退化为纯粹的分段睡眠（防御性，UI 不会给出这种值）。
+class HybridTimer final : public ITimer {
+public:
+    explicit HybridTimer(const Duration spinTail) noexcept
+        : m_spinTail(spinTail > Duration::zero() ? spinTail : Duration::zero()) {}
+
+    [[nodiscard]] bool wait(Duration d, const std::stop_token &st) const override;
+
+    [[nodiscard]] Duration spinTail() const noexcept { return m_spinTail; }
+
+private:
+    Duration m_spinTail;
 };

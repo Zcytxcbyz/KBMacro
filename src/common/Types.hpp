@@ -12,7 +12,8 @@
 // 计时器模式：由 ConfigManager 持久化，ITimer 消费
 enum class TimerMode {
     Sleep,
-    Spin
+    Spin,
+    Hybrid,   // 长间隔睡、末尾忙等；忙等时长见 Config::timerHybridSpinMs
 };
 
 struct TimerModeEntry {
@@ -23,6 +24,7 @@ struct TimerModeEntry {
 inline constexpr TimerModeEntry kTimerModeEntries[] = {
     {.mode = TimerMode::Sleep, .name = "sleep"},
     {.mode = TimerMode::Spin, .name = "spin"},
+    {.mode = TimerMode::Hybrid, .name = "hybrid"},
 };
 
 [[nodiscard]] constexpr TimerMode timerModeFromString(const std::string_view s) noexcept {
