@@ -145,7 +145,7 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_CONFIG));
     auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-    auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+    auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
     form->AddGrowableCol(1, 1);
 
     m_configPathText = new wxStaticText(staticBox, wxID_ANY, wxEmptyString);
