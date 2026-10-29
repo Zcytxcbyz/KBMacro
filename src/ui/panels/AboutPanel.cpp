@@ -122,7 +122,7 @@ void AboutPanel::buildUi() {
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
         m_libList = new wxListCtrl(staticBox, wxID_ANY,
-                                   wxDefaultPosition, FromDIP(wxSize(-1, 150)),
+                                   wxDefaultPosition, FromDIP(wxSize(-1, 170)),
                                    wxLC_REPORT | wxLC_SINGLE_SEL);
         m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_NAME), wxLIST_FORMAT_LEFT, FromDIP(220));
         m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_VERSION), wxLIST_FORMAT_LEFT, FromDIP(120));
@@ -148,7 +148,7 @@ void AboutPanel::buildUi() {
 
         auto *text = new wxTextCtrl(staticBox, wxID_ANY,
                                     BuildLicenseText(),
-                                    wxDefaultPosition, FromDIP(wxSize(-1, 220)),
+                                    wxDefaultPosition, FromDIP(wxSize(-1, 200)),
                                     wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
         box->Add(text, 1, wxEXPAND | wxALL, 8);
 
