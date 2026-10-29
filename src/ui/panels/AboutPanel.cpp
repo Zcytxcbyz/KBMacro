@@ -91,7 +91,7 @@ void AboutPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_ABOUT_GROUP_APP));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_ABOUT_LABEL_NAME)),
@@ -122,11 +122,11 @@ void AboutPanel::buildUi() {
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
         m_libList = new wxListCtrl(staticBox, wxID_ANY,
-                                   wxDefaultPosition, wxSize(-1, 150),
+                                   wxDefaultPosition, FromDIP(wxSize(-1, 150)),
                                    wxLC_REPORT | wxLC_SINGLE_SEL);
-        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_NAME), wxLIST_FORMAT_LEFT, 220);
-        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_VERSION), wxLIST_FORMAT_LEFT, 120);
-        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_LICENSE), wxLIST_FORMAT_LEFT, 180);
+        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_NAME), wxLIST_FORMAT_LEFT, FromDIP(220));
+        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_VERSION), wxLIST_FORMAT_LEFT, FromDIP(120));
+        m_libList->AppendColumn(TR(IDS_ABOUT_LIST_COL_LICENSE), wxLIST_FORMAT_LEFT, FromDIP(180));
 
         long row = 0;
         for (const auto &lib: kLibs) {
@@ -148,7 +148,7 @@ void AboutPanel::buildUi() {
 
         auto *text = new wxTextCtrl(staticBox, wxID_ANY,
                                     BuildLicenseText(),
-                                    wxDefaultPosition, wxSize(-1, 220),
+                                    wxDefaultPosition, FromDIP(wxSize(-1, 220)),
                                     wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
         box->Add(text, 1, wxEXPAND | wxALL, 8);
 
