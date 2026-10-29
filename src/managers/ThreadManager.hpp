@@ -59,10 +59,14 @@ enum class TaskKind {
 };
 
 // 任务结束上报。
+//   executed                  → 本次实际执行了多少轮
+//                               连点器/键盘：点击（按键）次数；回放：播了几个动作；
+//                               录制不适用，恒为 0
 //   recorded == nullptr       → 非录制任务
 //   recorded 非空但 ->empty() → 录制任务，但一个动作都没录到
 struct TaskResult {
     FinishReason reason = FinishReason::Completed;
+    int executed = 0;
     std::shared_ptr<std::vector<Action>> recorded;
 };
 
@@ -122,9 +126,10 @@ private:
         unsigned generation = 0;
     };
 
-    // 线程体：收 stop_token，返回录制产物（非录制任务返回 nullptr）。
+    // 线程体：收 stop_token，返回本次任务的结果（产物 + 执行轮数）。
     // 内部数据必须在这里收尾完毕（Recorder 要 drain 光队列）再 return。
-    using ThreadBody = std::function<std::shared_ptr<std::vector<Action>>(std::stop_token)>;
+    // reason 不用自己算——launch 统一按 st.stop_requested() 覆盖，抛异常则记 Failed。
+    using ThreadBody = std::function<TaskResult(std::stop_token)>;
 
     static constexpr std::size_t kTaskCount = 4;   // 与 TaskKind 的枚举值个数一致
 
