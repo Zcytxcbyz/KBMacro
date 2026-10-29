@@ -154,6 +154,8 @@
 #define IDS_SETTINGS_MSG_DELETE_PORTABLE_OK         5070
 #define IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED     5071
 #define IDS_SETTINGS_CHK_SPIN_DONT_ASK              5072
+#define IDS_SETTINGS_TIMER_HYBRID                   5073
+#define IDS_SETTINGS_LABEL_HYBRID_SPIN              5074
 
 // ---- About 面板 ----
 #define IDS_ABOUT_GROUP_APP            6001

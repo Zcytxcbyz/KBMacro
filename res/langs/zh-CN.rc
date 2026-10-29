@@ -107,6 +107,8 @@ BEGIN
     L(IDS_SETTINGS_LABEL_TIMER)            "计时器模式："
     L(IDS_SETTINGS_TIMER_SLEEP)            "普通 Sleep"
     L(IDS_SETTINGS_TIMER_SPIN)             "高精度 Spin"
+    L(IDS_SETTINGS_TIMER_HYBRID)           "混合 Hybrid"
+    L(IDS_SETTINGS_LABEL_HYBRID_SPIN)      "末尾忙等（毫秒）："
     L(IDS_SETTINGS_CHK_ONTOP)              "窗口置顶"
     L(IDS_SETTINGS_GROUP_HOTKEYS)          "热键"
     L(IDS_SETTINGS_LIST_COL_ACTION)        "动作"

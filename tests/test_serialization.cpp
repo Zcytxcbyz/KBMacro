@@ -235,6 +235,7 @@ TEST(ConfigRoundTrip, TopLevelFields) {
     Config c;
     c.language = "en-US";
     c.timerMode = TimerMode::Spin;
+    c.timerHybridSpinMs = 22;
     c.alwaysOnTop = true;
     c.tabIndex = 3;
 
@@ -243,8 +244,23 @@ TEST(ConfigRoundTrip, TopLevelFields) {
 
     EXPECT_EQ(b.language, "en-US");
     EXPECT_EQ(b.timerMode, TimerMode::Spin);
+    EXPECT_EQ(b.timerHybridSpinMs, 22);
     EXPECT_EQ(b.alwaysOnTop, true);
     EXPECT_EQ(b.tabIndex, 3);
+}
+
+// 手改配置可能写出越界值：加载时夹到 [kTimerHybridSpinMsMin, kTimerHybridSpinMsMax]
+TEST(ConfigRoundTrip, HybridSpinMsIsClamped) {
+    nlohmann::json j = Config{};
+
+    j["timerHybridSpinMs"] = 999;
+    EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsMax);
+
+    j["timerHybridSpinMs"] = -3;
+    EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsMin);
+
+    j.erase("timerHybridSpinMs");   // 旧配置没有这个字段
+    EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsDefault);
 }
 
 TEST(ConfigRoundTrip, HotkeysAndEnabled) {

@@ -7,6 +7,7 @@
 #include <wx/msgdlg.h>
 #include <wx/stdpaths.h>
 #include <wx/richmsgdlg.h>
+#include <wx/spinctrl.h>
 #include <wx/utils.h>
 
 #include "common/Hotkey.hpp"
@@ -21,8 +22,26 @@
 
 namespace {
     // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致
-    constexpr int kTimerModeSleep = 0;
-    constexpr int kTimerModeSpin  = 1;
+    constexpr int kTimerModeSleep  = 0;
+    constexpr int kTimerModeSpin   = 1;
+    constexpr int kTimerModeHybrid = 2;
+
+    [[nodiscard]] int timerModeToIndex(const TimerMode mode) {
+        switch (mode) {
+            case TimerMode::Hybrid: return kTimerModeHybrid;
+            case TimerMode::Spin: return kTimerModeSpin;
+            case TimerMode::Sleep:
+            default: return kTimerModeSleep;
+        }
+    }
+
+    [[nodiscard]] TimerMode indexToTimerMode(const int index) {
+        switch (index) {
+            case kTimerModeHybrid: return TimerMode::Hybrid;
+            case kTimerModeSpin: return TimerMode::Spin;
+            default: return TimerMode::Sleep;
+        }
+    }
 }
 
 SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
@@ -47,6 +66,7 @@ void SettingsPanel::buildUi() {
     // ---- 事件绑定 ----
     m_choiceLanguage->Bind(wxEVT_CHOICE, &SettingsPanel::onLanguageChanged, this);
     m_choiceTimerMode->Bind(wxEVT_CHOICE, &SettingsPanel::onTimerModeChanged, this);
+    m_spinHybridMs->Bind(wxEVT_SPINCTRL, &SettingsPanel::onHybridSpinChanged, this);
     m_chkAlwaysOnTop->Bind(wxEVT_CHECKBOX, &SettingsPanel::onAlwaysOnTopToggled, this);
     m_btnModifyHotkey->Bind(wxEVT_BUTTON, &SettingsPanel::onModifyHotkey, this);
     m_btnExportConfig->Bind(wxEVT_BUTTON, &SettingsPanel::onExportConfig, this);
@@ -84,10 +104,21 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     m_choiceTimerMode = new wxChoice(staticBox, wxID_ANY);
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SLEEP));
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SPIN));
+    m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_HYBRID));
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_TIMER)),
               0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_choiceTimerMode, 1, wxEXPAND);
+
+    // 混合模式：末尾忙等时长（仅 Hybrid 时可编辑，见 refreshFromConfig）
+    m_spinHybridMs = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                    wxDefaultPosition, FromDIP(wxSize(80, -1)),
+                                    wxSP_ARROW_KEYS,
+                                    kTimerHybridSpinMsMin, kTimerHybridSpinMsMax,
+                                    kTimerHybridSpinMsDefault);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_HYBRID_SPIN)),
+              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(m_spinHybridMs, 0, wxALIGN_CENTER_VERTICAL);
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
 
@@ -208,8 +239,11 @@ void SettingsPanel::refreshFromConfig() {
     }
 
     // 计时器模式
-    m_choiceTimerMode->SetSelection(
-        cfg.timerMode == TimerMode::Spin ? kTimerModeSpin : kTimerModeSleep);
+    m_choiceTimerMode->SetSelection(timerModeToIndex(cfg.timerMode));
+
+    // 末尾忙等时长：只有 Hybrid 模式下才有意义
+    m_spinHybridMs->SetValue(cfg.timerHybridSpinMs);
+    m_spinHybridMs->Enable(cfg.timerMode == TimerMode::Hybrid);
 
     // 窗口置顶
     m_chkAlwaysOnTop->SetValue(cfg.alwaysOnTop);
@@ -313,12 +347,11 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
 
     LOG_DEBUG("settings: timer mode changed, index={}", sel);
 
-    const TimerMode newMode = (sel == kTimerModeSpin)
-                                  ? TimerMode::Spin
-                                  : TimerMode::Sleep;
+    const TimerMode newMode = indexToTimerMode(sel);
     auto &cfgMgr = ConfigManager::instance();
 
-    if (newMode == TimerMode::Spin && !cfgMgr.config().flags.spinWarningConfirmed) {
+    // Spin 与 Hybrid 都会烧 CPU（Hybrid 只烧末尾那一段），共用同一条警告
+    if (newMode != TimerMode::Sleep && !cfgMgr.config().flags.spinWarningConfirmed) {
         // 用 wxRichMessageDialog：带复选框，让用户主动选择是否记住
         wxRichMessageDialog dlg(this,
                                 TR(IDS_SETTINGS_MSG_SPIN_WARNING),
@@ -328,8 +361,8 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
         const int ret = dlg.ShowModal();
 
         if (ret != wxID_OK) {
-            // 用户取消：控件回退，配置不动
-            m_choiceTimerMode->SetSelection(kTimerModeSleep);
+            // 用户取消：控件回退到当前生效的模式，配置不动
+            m_choiceTimerMode->SetSelection(timerModeToIndex(cfgMgr.config().timerMode));
             return;
         }
 
@@ -340,7 +373,18 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
         }
     }
 
+    // 末尾忙等时长只对 Hybrid 有意义
+    m_spinHybridMs->Enable(newMode == TimerMode::Hybrid);
+
     cfgMgr.setTimerMode(newMode);
+}
+
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+// ReSharper disable once CppMemberFunctionMayBeStatic
+void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
+    const int ms = event.GetInt();
+    LOG_DEBUG("settings: hybrid spin tail = {}ms", ms);
+    ConfigManager::instance().setTimerHybridSpinMs(ms);
 }
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef

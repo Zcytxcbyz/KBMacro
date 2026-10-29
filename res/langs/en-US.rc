@@ -107,6 +107,8 @@ BEGIN
     L(IDS_SETTINGS_LABEL_TIMER)            "Timer mode:"
     L(IDS_SETTINGS_TIMER_SLEEP)            "Normal Sleep"
     L(IDS_SETTINGS_TIMER_SPIN)             "High-precision Spin"
+    L(IDS_SETTINGS_TIMER_HYBRID)           "Hybrid"
+    L(IDS_SETTINGS_LABEL_HYBRID_SPIN)      "Spin tail (ms):"
     L(IDS_SETTINGS_CHK_ONTOP)              "Always on top"
     L(IDS_SETTINGS_GROUP_HOTKEYS)          "Hotkeys"
     L(IDS_SETTINGS_LIST_COL_ACTION)        "Action"

@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
+#include <wx/spinctrl.h>
 
 // ============================================================
 // 设置面板。
@@ -39,6 +40,7 @@ private:
 
     void onLanguageChanged(wxCommandEvent &event);
     void onTimerModeChanged(const wxCommandEvent &event);
+    void onHybridSpinChanged(wxCommandEvent &event);
     void onAlwaysOnTopToggled(wxCommandEvent &event);
     void onModifyHotkey(wxCommandEvent &event);
     void onExportConfig(wxCommandEvent &event);
@@ -55,6 +57,8 @@ private:
     // ---- 通用 ----
     wxChoice *m_choiceLanguage{};
     wxChoice *m_choiceTimerMode{};
+    // 混合模式的末尾忙等时长；仅 Hybrid 时启用
+    wxSpinCtrl *m_spinHybridMs{};
     wxCheckBox *m_chkAlwaysOnTop{};
 
     // ---- 热键 ----
