@@ -380,6 +380,13 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
     m_spinHybridMs->Enable(newMode == TimerMode::Hybrid);
 
     cfgMgr.setTimerMode(newMode);
+
+    // 通知主窗口重建计时器实例：只影响此后启动的任务
+    if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
+        frame->rebuildTimer();
+    } else {
+        LOG_WARN("settings: top-level frame is not MainFrame, timer not rebuilt");
+    }
 }
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef

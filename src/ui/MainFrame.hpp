@@ -5,6 +5,7 @@
 #include <wx/wx.h>
 
 #include "common/HotkeyAction.hpp"
+#include "common/ITimer.hpp"
 
 // 前向声明（避免在头文件里引入一堆面板实现）
 class wxNotebook;
@@ -37,6 +38,10 @@ public:
     // 的退出路径主动调用。
     void saveWindowState();
 
+    // 按当前配置重建计时器实例。设置页切换计时器模式 / 调末尾忙等时长后调用。
+    // 旧实例由 shared_ptr 保活：已经在跑的任务用它跑完，之后启动的任务用新的。
+    void rebuildTimer();
+
 private:
     // HotkeyManager 的回调入口：switch 到对应面板方法
     void dispatchHotkeyAction(HotkeyAction action);
@@ -49,6 +54,11 @@ private:
 
     // 注册失败时把数量写到状态栏
     void reportHotkeyFailures();
+
+    // ---- 计时器 ----
+    // 声明位置有讲究：接线阶段 m_threadMgr 拿的是这个 shared_ptr 的引用，
+    // 所以它必须排在 m_threadMgr 之前（析构顺序反过来，先停线程再放计时器）。
+    std::shared_ptr<ITimer> m_timer;
 
     // ---- 服务 ----
     std::unique_ptr<HotkeyManager> m_hotkeyMgr;

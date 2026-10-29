@@ -6,12 +6,13 @@
 #include <algorithm>
 #include <windows.h>
 
-#include <windows.h>
-
 #include "common/Log.hpp"
+#include "common/Timer.hpp"
 #include "managers/ConfigManager.hpp"
 #include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
+
+#include "win32/Input.hpp"
 
 #include "ui/KBMacroStatusBar.hpp"
 #include "ui/panels/ClickerPanel.hpp"
@@ -46,6 +47,22 @@ namespace {
         return ConfigManager::instance().config().alwaysOnTop
                    ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
                    : wxDEFAULT_FRAME_STYLE;
+    }
+
+    // 按配置创建计时器实例。
+    // 切换模式时整体替换，不原地改参数——ITimer 是 const 的、且可能正被
+    // 运行中的线程持有，替换比改状态安全。
+    std::shared_ptr<ITimer> createTimer() {
+        const auto &cfg = ConfigManager::instance().config();
+        switch (cfg.timerMode) {
+            case TimerMode::Spin:
+                return std::make_shared<SpinTimer>();
+            case TimerMode::Hybrid:
+                return std::make_shared<HybridTimer>(ITimer::Duration{cfg.timerHybridSpinMs});
+            case TimerMode::Sleep:
+            default:
+                return std::make_shared<SleepTimer>();
+        }
     }
 
     // 初始几何 = max(配置值, 内容 best size)，再夹到"窗口将要放的那个显示器"
@@ -98,6 +115,15 @@ MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
               wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
+
+    // 输入注入层初始化：只记一条"虚拟屏 + DPI"（干跑模式下会多一条 WARN）
+    input::init();
+
+    // 计时器：按配置创建，切换模式时由 rebuildTimer() 整体替换
+    m_timer = createTimer();
+    LOG_DEBUG("mainframe: timer ready: mode={}, spinTail={}ms",
+              timerModeToString(ConfigManager::instance().config().timerMode),
+              ConfigManager::instance().config().timerHybridSpinMs);
     // ---- 1. 先创建 HotkeyManager（只依赖 HWND）----
     m_hotkeyMgr = std::make_unique<HotkeyManager>(
         GetHWND(),
@@ -165,6 +191,14 @@ MainFrame::MainFrame()
 }
 
 MainFrame::~MainFrame() = default;
+
+void MainFrame::rebuildTimer() {
+    m_timer = createTimer();
+
+    const auto &cfg = ConfigManager::instance().config();
+    LOG_DEBUG("mainframe: timer rebuilt: mode={}, spinTail={}ms",
+              timerModeToString(cfg.timerMode), cfg.timerHybridSpinMs);
+}
 
 // ============================================================
 // wxEVT_HOTKEY 处理：转发给 HotkeyManager
