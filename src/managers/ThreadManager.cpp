@@ -79,7 +79,7 @@ void ThreadManager::StartClicker(const ClickerParams &p, FinishCallback onFinish
                //       if (!timer->wait(rc.clampWait(Duration(p.intervalMs), ITimer::now()), st)) break;
                //   }
                LOG_WARN("clicker: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return nullptr;   // 非录制任务没有产物
+               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
            });
 }
 
@@ -100,7 +100,7 @@ void ThreadManager::StartKeyboard(const KeyboardParams &p, FinishCallback onFini
            [timer = m_timerRef, p](const std::stop_token& st) {
                // TODO(接线)：换成 modules/Keyboard 的循环（与连点器同骨架，动作换成按下/抬起）
                LOG_WARN("keyboard: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return nullptr;   // 非录制任务没有产物
+               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
            });
 }
 
@@ -129,7 +129,7 @@ void ThreadManager::StartRecord(FinishCallback onFinished) {
         //   退出前必须 drain 光队列，再 return
         // 返回非空表：录制任务即使一个动作都没录到也要交回"空表"（见 TaskResult 注释）
         LOG_WARN("recorder: body not wired yet, finishing with empty result"); // NOLINT(*-lambda-function-name)
-        return std::make_shared<std::vector<Action>>();
+        return TaskResult{.recorded = std::make_shared<std::vector<Action>>()};
     });
 }
 
@@ -159,7 +159,7 @@ void ThreadManager::StartPlayback(std::vector<Action> actions, const RunSpec &ru
                // TODO(接线)：换成 modules/Recorder 的回放端（RunController + timer->wait + SendInput）；
                //             actions / run / timer 已经快照进来，直接用
                LOG_WARN("playback: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return nullptr;   // 非录制任务没有产物
+               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
            });
 }
 
@@ -242,7 +242,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
             TaskResult res;
 
             try {
-                res.recorded = body(st);
+                res = body(st);
                 res.reason = st.stop_requested() ? FinishReason::Stopped
                                                  : FinishReason::Completed;
             } catch (const std::exception &e) {
