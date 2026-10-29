@@ -66,7 +66,10 @@ void SettingsPanel::buildUi() {
     // ---- 事件绑定 ----
     m_choiceLanguage->Bind(wxEVT_CHOICE, &SettingsPanel::onLanguageChanged, this);
     m_choiceTimerMode->Bind(wxEVT_CHOICE, &SettingsPanel::onTimerModeChanged, this);
+    // wxMSW 的 wxSpinCtrl：按上下箭头发 wxEVT_SPINCTRL，手输数字发 wxEVT_TEXT
+    // （手输越界值两者都不发，靠焦点离开时的夹取兜底）。两个都接。
     m_spinHybridMs->Bind(wxEVT_SPINCTRL, &SettingsPanel::onHybridSpinChanged, this);
+    m_spinHybridMs->Bind(wxEVT_TEXT, &SettingsPanel::onHybridSpinChanged, this);
     m_chkAlwaysOnTop->Bind(wxEVT_CHECKBOX, &SettingsPanel::onAlwaysOnTopToggled, this);
     m_btnModifyHotkey->Bind(wxEVT_BUTTON, &SettingsPanel::onModifyHotkey, this);
     m_btnExportConfig->Bind(wxEVT_BUTTON, &SettingsPanel::onExportConfig, this);
@@ -381,8 +384,11 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeStatic
-void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
-    const int ms = event.GetInt();
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
+    (void)event;   // 两个事件类型不同，统一读控件当前值，不依赖 event.GetInt()
+
+    const int ms = m_spinHybridMs->GetValue();
     LOG_DEBUG("settings: hybrid spin tail = {}ms", ms);
     ConfigManager::instance().setTimerHybridSpinMs(ms);
 }
