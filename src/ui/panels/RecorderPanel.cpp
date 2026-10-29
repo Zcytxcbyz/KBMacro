@@ -120,13 +120,13 @@ void RecorderPanel::buildUi() {
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
         m_listCtrl = new wxListCtrl(staticBox, wxID_ANY,
-                                    wxDefaultPosition, wxSize(-1, 200),
+                                    wxDefaultPosition, FromDIP(wxSize(-1, 200)),
                                     wxLC_REPORT | wxLC_SINGLE_SEL);
-        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_INDEX), wxLIST_FORMAT_RIGHT, 40);
-        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, 100);
-        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_PARAM), wxLIST_FORMAT_LEFT, 140);
-        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_DELAY), wxLIST_FORMAT_RIGHT, 80);
-        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_HOLD), wxLIST_FORMAT_RIGHT, 80);
+        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_INDEX), wxLIST_FORMAT_RIGHT, FromDIP(40));
+        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, FromDIP(100));
+        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_PARAM), wxLIST_FORMAT_LEFT, FromDIP(140));
+        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_DELAY), wxLIST_FORMAT_RIGHT, FromDIP(80));
+        m_listCtrl->AppendColumn(TR(IDS_RECORDER_LIST_COL_HOLD), wxLIST_FORMAT_RIGHT, FromDIP(80));
 
         box->Add(m_listCtrl, 0, wxEXPAND | wxALL, 8);
 
@@ -156,7 +156,7 @@ void RecorderPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_choiceRunMode = new wxChoice(staticBox, wxID_ANY);
