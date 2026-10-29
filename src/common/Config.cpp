@@ -20,6 +20,7 @@ void to_json(nlohmann::json &j, const Config &c) {
     j["version"] = kConfigVersion;
     j["language"] = c.language;
     j["timerMode"] = timerModeToString(c.timerMode);
+    j["timerHybridSpinMs"] = c.timerHybridSpinMs;
     j["alwaysOnTop"] = c.alwaysOnTop;
     j["tabIndex"] = c.tabIndex;
 
@@ -51,6 +52,10 @@ void from_json(const nlohmann::json &j, Config &c) {
     c.language = j.value("language", std::string{});
     c.timerMode = timerModeFromString(
         j.value("timerMode", std::string{"sleep"}));
+    // 手改配置可能写出越界值，加载时夹一次；缺失字段走默认值（旧配置兼容）
+    c.timerHybridSpinMs = std::clamp(
+        j.value("timerHybridSpinMs", kTimerHybridSpinMsDefault),
+        kTimerHybridSpinMsMin, kTimerHybridSpinMsMax);
     c.alwaysOnTop = j.value("alwaysOnTop", false);
     c.tabIndex = j.value("tabIndex", 0);
 

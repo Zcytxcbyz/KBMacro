@@ -1,6 +1,7 @@
 #include "managers/ConfigManager.hpp"
 
 #include <string>
+#include <algorithm>
 
 #include "common/ConfigPaths.hpp"
 #include "common/Log.hpp"
@@ -74,6 +75,14 @@ void ConfigManager::setTimerMode(const TimerMode mode) {
     m_config.timerMode = mode;
     save();
     LOG_DEBUG("config: timerMode set to '{}'", timerModeToString(mode));
+}
+
+void ConfigManager::setTimerHybridSpinMs(const int ms) {
+    const int clamped = std::clamp(ms, kTimerHybridSpinMsMin, kTimerHybridSpinMsMax);
+    if (m_config.timerHybridSpinMs == clamped) return;
+    m_config.timerHybridSpinMs = clamped;
+    save();
+    LOG_DEBUG("config: timerHybridSpinMs set to {}ms", clamped);
 }
 
 void ConfigManager::setAlwaysOnTop(const bool on) {

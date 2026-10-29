@@ -50,6 +50,9 @@ public:
 
     void setLanguage(std::string_view code);
     void setTimerMode(TimerMode mode);
+    // 混合计时器的末尾忙等时长（毫秒），越界会被夹到
+    // kTimerHybridSpinMsMin/Max
+    void setTimerHybridSpinMs(int ms);
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
     void setHotkeyEnabled(int index, bool enabled);

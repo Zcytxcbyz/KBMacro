@@ -31,12 +31,22 @@ inline constexpr auto kHotkeyEnabledDefault = [] {
     return a;
 }();
 
+// 混合计时器"末尾忙等时长"的取值范围与默认值（毫秒）。
+// 这里集中定义，避免设置页和各处校验各写一份魔数。
+inline constexpr int kTimerHybridSpinMsMin = 1;
+inline constexpr int kTimerHybridSpinMsMax = 50;
+inline constexpr int kTimerHybridSpinMsDefault = 10;
+
 struct Config {
     // 界面语言代码（"zh-CN" / "en-US"）。
     // 空串表示"用户从未主动选择过"，启动时回退到系统语言且不写回。
     std::string language;
 
     TimerMode timerMode = TimerMode::Sleep;
+
+    // 混合计时器（TimerMode::Hybrid）末尾忙等的毫秒数，范围见
+    // kTimerHybridSpinMsMin/Max。其它两种模式不使用该值。
+    int timerHybridSpinMs = kTimerHybridSpinMsDefault;
 
     bool alwaysOnTop = false;
 
@@ -78,6 +88,7 @@ struct Config {
 //     "version": 1,
 //     "language": "zh-CN",
 //     "timerMode": "sleep",
+//     "timerHybridSpinMs": 10,
 //     "alwaysOnTop": false,
 //     "tabIndex": 0,
 //     "hotkeys": [ {...}, ... ],
