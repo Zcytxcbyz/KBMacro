@@ -1,6 +1,10 @@
 #include "ui/MainFrame.hpp"
 
+#include <wx/display.h>
 #include <wx/notebook.h>
+
+#include <algorithm>
+#include <windows.h>
 
 #include <windows.h>
 
@@ -37,12 +41,6 @@ namespace {
         return visible ? wxPoint(w.x, w.y) : wxDefaultPosition;
     }
 
-    // 从 Config 读取初始窗口大小
-    wxSize initialSize() {
-        const auto &w = ConfigManager::instance().config().window;
-        return {w.width, w.height};
-    }
-
     // 从 Config 读取初始窗口样式（置顶与否）
     long initialStyle() {
         return ConfigManager::instance().config().alwaysOnTop
@@ -50,11 +48,52 @@ namespace {
                    : wxDEFAULT_FRAME_STYLE;
     }
 
+    // 初始几何 = max(配置值, 内容 best size)，再夹到"窗口将要放的那个显示器"
+    // 的可用区（已扣任务栏）的 90%。
+    //
+    // 必须在五个面板建好、SetSizer 之后调用 —— 那时 GetBestSize() 才是完整的。
+    void applyInitialGeometry(wxFrame *frame) {
+        const auto &w = ConfigManager::instance().config().window;
+
+        // 用窗口将要放置的显示器；配置里没有位置时用主显示器
+        const wxPoint pos = initialPosition();
+        unsigned displayIdx = 0;
+        if (pos != wxDefaultPosition) {
+            if (const int idx = wxDisplay::GetFromPoint(pos); idx != wxNOT_FOUND) {
+                displayIdx = static_cast<unsigned>(idx);
+            }
+        }
+
+        const wxRect area = wxDisplay(displayIdx).GetClientArea();
+        const int maxW    = area.width * 9 / 10;
+        const int maxH    = area.height * 9 / 10;
+
+        // 内容实际需要多少（已含当前 DPI 下的字体尺寸）
+        const wxSize content = frame->GetBestSize();
+
+        // 配置值兜底（用户手动调过就尊重），但不能小于内容、也不能超出屏幕
+        wxSize target(std::max(w.width, std::min(content.x, maxW)),
+                      std::max(w.height, std::min(content.y, maxH)));
+        target.x = std::min(target.x, maxW);
+        target.y = std::min(target.y, maxH);
+
+        frame->SetClientSize(target);
+
+        if (pos == wxDefaultPosition) {
+            frame->Centre();
+        } else {
+            frame->Move(pos);
+        }
+
+        LOG_DEBUG("mainframe: content {}x{}, display {}x{}, window {}x{}",
+                  content.x, content.y, area.width, area.height, target.x, target.y);
+    }
+
 } // namespace
 
 MainFrame::MainFrame()
     : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              initialPosition(), initialSize(), initialStyle()) {
+              wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
     // ---- 1. 先创建 HotkeyManager（只依赖 HWND）----
     m_hotkeyMgr = std::make_unique<HotkeyManager>(
@@ -87,6 +126,12 @@ MainFrame::MainFrame()
     m_aboutPanel = new AboutPanel(m_notebook);
     m_notebook->AddPage(m_aboutPanel, TR(IDS_TAB_ABOUT));
 
+    // notebook 必须由 sizer 管，否则它不会被 frame 拉伸：
+    // 窗口拖大它不变、窗口缩小就直接裁剪（旧实现就是这个毛病）
+    auto *root = new wxBoxSizer(wxVERTICAL);
+    root->Add(m_notebook, 1, wxEXPAND);
+    SetSizer(root);
+
     // ---- 3. 恢复上次选中的标签页 ----
     const int savedTab = ConfigManager::instance().config().tabIndex;
     if (savedTab >= 0 && savedTab < m_notebook->GetPageCount()) {
@@ -100,16 +145,19 @@ MainFrame::MainFrame()
     wxFrameBase::SetStatusBar(m_statusBar);
     m_statusBar->SetMessage(TR(IDS_STATUS_READY));
 
-    // ---- 5. 如果配置里记着"最大化"，最大化 ----
+    // ---- 5. 按内容与屏幕确定初始几何（必须在面板建好、SetSizer 之后）----
+    applyInitialGeometry(this);
+
+    // ---- 6. 如果配置里记着"最大化"，最大化 ----
     if (ConfigManager::instance().config().window.maximized) {
         wxTopLevelWindowMSW::Maximize(true);
     }
 
-    // ---- 6. 最后注册热键（面板都构造好了，之后触发的回调才能安全分发）----
+    // ---- 7. 最后注册热键（面板都构造好了，之后触发的回调才能安全分发）----
     m_hotkeyMgr->registerAll();
     reportHotkeyFailures();
 
-    // ---- 7. 关闭时保存几何 + 标签页 ----
+    // ---- 8. 关闭时保存几何 + 标签页 ----
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::onClose, this);
 }
 
