@@ -34,7 +34,7 @@ void KeyboardPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_KEYBOARD_GROUP_KEY));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_keyDisplay = new wxTextCtrl(staticBox, wxID_ANY,
@@ -60,7 +60,7 @@ void KeyboardPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_KEYBOARD_GROUP_PARAMS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_spinInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
@@ -88,7 +88,7 @@ void KeyboardPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_choiceRunMode = new wxChoice(staticBox, wxID_ANY);

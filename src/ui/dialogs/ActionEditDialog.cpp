@@ -81,7 +81,7 @@ void ActionEditDialog::buildUi() {
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
         m_grid = new wxPropertyGrid(staticBox, wxID_ANY,
-                                    wxDefaultPosition, wxSize(420, 200),
+                                    wxDefaultPosition, FromDIP(wxSize(420, 200)),
                                     wxPG_DEFAULT_STYLE | wxPG_SPLITTER_AUTO_CENTER);
         box->Add(m_grid, 1, wxEXPAND | wxALL, 8);
 
@@ -103,7 +103,7 @@ void ActionEditDialog::buildUi() {
     root->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, 12);
 
     SetSizerAndFit(root);
-    SetMinSize(wxSize(500, 420));
+    SetMinSize(FromDIP(wxSize(500, 420)));
 
     // ---- 事件绑定 ----
     m_choiceType->Bind(wxEVT_CHOICE, &ActionEditDialog::onTypeChanged, this);

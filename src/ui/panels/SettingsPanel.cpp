@@ -109,8 +109,8 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
                                   wxDefaultPosition, FromDIP(wxSize(-1, 150)),
                                   wxLC_REPORT | wxLC_SINGLE_SEL);
     m_hotkeyList->EnableCheckBoxes(true);
-    m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, 200);
-    m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_HOTKEY), wxLIST_FORMAT_LEFT, 150);
+    m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, FromDIP(200));
+    m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_HOTKEY), wxLIST_FORMAT_LEFT, FromDIP(150));
 
     // 列表内容由 refreshHotkeyList() 填，构造末尾会调一次
 

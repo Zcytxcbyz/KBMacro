@@ -22,7 +22,7 @@ HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
 
     // ---- 捕获显示区 ----
     m_display = new wxTextCtrl(this, wxID_ANY, "",
-                               wxDefaultPosition, wxSize(360, 32),
+                               wxDefaultPosition, FromDIP(wxSize(360, 32)),
                                wxTE_READONLY | wxTE_CENTRE);
     root->Add(m_display, 0, wxEXPAND | wxALL, 12);
 
@@ -38,7 +38,7 @@ HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
     root->Add(btnSizer, 0, wxEXPAND | wxALL, 12);
 
     SetSizerAndFit(root);
-    wxTopLevelWindowBase::SetMinSize(wxSize(400, -1));
+    wxTopLevelWindowBase::SetMinSize(wxSize(FromDIP(400), -1));
 
     // ---- 焦点 & 键盘捕获 ----
     // wxEVT_CHAR_HOOK 在键盘输入路由到子控件前触发，用于拦截所有按键
