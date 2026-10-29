@@ -37,7 +37,7 @@ void ClickerPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_CLICKER_GROUP_POS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_x = new wxTextCtrl(staticBox, wxID_ANY, "0");
@@ -68,7 +68,7 @@ void ClickerPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_CLICKER_GROUP_CLICK));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_choiceType = new wxChoice(staticBox, wxID_ANY);
@@ -120,7 +120,7 @@ void ClickerPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-        auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+        auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
         m_choiceRunMode = new wxChoice(staticBox, wxID_ANY);
