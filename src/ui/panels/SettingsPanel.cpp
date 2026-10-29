@@ -63,7 +63,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_GENERAL));
     auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-    auto *form = new wxFlexGridSizer(2, wxSize(8, 8));
+    auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
     form->AddGrowableCol(1, 1);
 
     // 语言：从 kLangs 遍历，索引 ↔ 语言一一对应
@@ -106,7 +106,7 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
     m_hotkeyList = new wxListCtrl(staticBox, wxID_ANY,
-                                  wxDefaultPosition, wxSize(-1, 150),
+                                  wxDefaultPosition, FromDIP(wxSize(-1, 150)),
                                   wxLC_REPORT | wxLC_SINGLE_SEL);
     m_hotkeyList->EnableCheckBoxes(true);
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, 200);
@@ -149,7 +149,7 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     form->AddGrowableCol(1, 1);
 
     m_configPathText = new wxStaticText(staticBox, wxID_ANY, wxEmptyString);
-    m_configPathText->SetMinSize(wxSize(280, -1));
+    m_configPathText->SetMinSize(wxSize(FromDIP(280), -1));
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_CONFIG_PATH)),
               0, wxALIGN_CENTER_VERTICAL);
