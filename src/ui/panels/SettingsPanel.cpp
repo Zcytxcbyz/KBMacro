@@ -396,8 +396,19 @@ void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
     (void)event;   // 两个事件类型不同，统一读控件当前值，不依赖 event.GetInt()
 
     const int ms = m_spinHybridMs->GetValue();
+    auto &cfgMgr = ConfigManager::instance();
+
+    // 手输数字时 wxEVT_TEXT 每敲一个字符就发一次，值没变就什么都不做
+    // （"25" 会先收到 2、再收到 25，只有真正变化的那次才落盘 + 重建）。
+    if (ms == cfgMgr.config().timerHybridSpinMs) return;
+
     LOG_DEBUG("settings: hybrid spin tail = {}ms", ms);
-    ConfigManager::instance().setTimerHybridSpinMs(ms);
+    cfgMgr.setTimerHybridSpinMs(ms);
+
+    // 阈值是 HybridTimer 的构造参数，不重建就不生效
+    if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
+        frame->rebuildTimer();
+    }
 }
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
