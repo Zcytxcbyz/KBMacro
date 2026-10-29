@@ -68,8 +68,11 @@ namespace {
         const int maxW    = area.width * 9 / 10;
         const int maxH    = area.height * 9 / 10;
 
-        // 内容实际需要多少（已含当前 DPI 下的字体尺寸）
-        const wxSize content = frame->GetBestSize();
+        // 内容实际需要多少（已含当前 DPI 下的字体尺寸）。
+        // GetBestSize() 是**客户区**尺寸，而 saveWindowState() 存的是 GetSize()
+        // 的**窗口**尺寸；这里统一换成窗口尺寸再比较，否则每次启动都会
+        // 把非客户区（标题栏 + 边框 + 状态栏）重复算进高度，窗口逐次变大。
+        const wxSize content = frame->ClientToWindowSize(frame->GetBestSize());
 
         // 配置值兜底（用户手动调过就尊重），但不能小于内容、也不能超出屏幕
         wxSize target(std::max(w.width, std::min(content.x, maxW)),
@@ -77,7 +80,7 @@ namespace {
         target.x = std::min(target.x, maxW);
         target.y = std::min(target.y, maxH);
 
-        frame->SetClientSize(target);
+        frame->SetSize(target);
 
         if (pos == wxDefaultPosition) {
             frame->Centre();
