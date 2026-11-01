@@ -78,6 +78,7 @@ set(SOURCES
         src/managers/ThreadManager.cpp
         src/win32/Input.cpp
         src/modules/Clicker.cpp
+        src/modules/Keyboard.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -115,6 +116,7 @@ set(HEADERS
         src/managers/ThreadManager.hpp
         src/win32/Input.hpp
         src/modules/Clicker.hpp
+        src/modules/Keyboard.hpp
         # 在这里添加 .h 文件
 )
 
