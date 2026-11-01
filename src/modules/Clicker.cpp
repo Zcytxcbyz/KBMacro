@@ -77,6 +77,10 @@ int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) 
 
         if (interrupted) break;
 
+        // 最后一轮之后不必再等一个间隔：Counted 已跑满、Timed 也没时间了，
+        // 再等一次只会让"已完成"通知白白晚到（间隔 60s 时就是 60 秒）。
+        if (!rc.shouldRun(ITimer::now())) break;
+
         if (!timer.wait(rc.clampWait(ITimer::Duration{gapMs}, ITimer::now()), st)) break;
     }
 
