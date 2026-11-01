@@ -113,6 +113,7 @@ set(HEADERS
         src/common/RunController.hpp
         src/managers/ThreadManager.hpp
         src/win32/Input.hpp
+        src/modules/Clicker.hpp
         # 在这里添加 .h 文件
 )
 
