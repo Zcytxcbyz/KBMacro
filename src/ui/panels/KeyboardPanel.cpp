@@ -247,6 +247,13 @@ void KeyboardPanel::onStop(wxCommandEvent &) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void KeyboardPanel::startWithCurrentParams() {
     const KeyboardParams p = collectParams();
+
+    if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
+        // TODO(接线): 换成状态栏提示 + i18n 资源
+        LOG_WARN("keyboard: start ignored, no key configured");
+        return;
+    }
+
     LOG_INFO("keyboard: start requested (interval={}ms, key='{}', run={})",
              p.intervalMs,
              utils::ToUtf8(utils::hotkeyToString(p.hotkey)),
