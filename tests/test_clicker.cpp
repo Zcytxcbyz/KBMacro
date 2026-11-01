@@ -117,7 +117,7 @@ TEST(Run, GapDeductsHoldTime) {
     FakeTimer timer;
     const ClickerParams p = makeParams(RunMode::Counted, 2);
 
-    clicker::run(p, timer, std::stop_token{});
+    EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
     // intervalMs = 100、holdMs = 5 → 轮间隔 95，不是 100
     EXPECT_EQ(timer.countWaits(kGap), 1u);
@@ -128,7 +128,7 @@ TEST(Run, WheelUsesFullInterval) {
     FakeTimer timer;
     const ClickerParams p = makeParams(RunMode::Counted, 2, ClickType::WheelUp);
 
-    clicker::run(p, timer, std::stop_token{});
+    EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
     // 滚轮没有按住，等待就是完整间隔；整个测试里只有这一次等待
     EXPECT_EQ(timer.waitCalls(), 1);
