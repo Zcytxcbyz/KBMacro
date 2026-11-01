@@ -77,6 +77,7 @@ set(SOURCES
         src/common/RunController.cpp
         src/managers/ThreadManager.cpp
         src/win32/Input.cpp
+        src/modules/Clicker.cpp
         # 在这里添加 .cpp 文件
 )
 
