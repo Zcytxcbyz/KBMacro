@@ -20,6 +20,9 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/common/Utils.cpp
         ${CMAKE_SOURCE_DIR}/src/common/Timer.cpp
         ${CMAKE_SOURCE_DIR}/src/common/RunController.cpp
+        # 连点器模块：依赖 win32/Input.cpp 里的 input::click/wheel/moveTo
+        ${CMAKE_SOURCE_DIR}/src/modules/Clicker.cpp
+        ${CMAKE_SOURCE_DIR}/src/win32/Input.cpp
 )
 
 # 测试文件
@@ -31,6 +34,7 @@ set(TEST_SOURCES
         test_runcontroller.cpp
         test_hotkey_text.cpp
         test_utf8.cpp
+        test_clicker.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})
@@ -56,6 +60,9 @@ target_compile_definitions(KBMacroTests
         _USE_MATH_DEFINES
         NOMINMAX
         WIN32_LEAN_AND_MEAN
+        # 必须：让 win32/Input.cpp 在测试里编译成干跑版本，
+        # 否则单测会真的往当前桌面发鼠标事件。
+        KBMACRO_DRY_RUN
 )
 
 # 与主目标一致的 MSVC 架构宏补丁（winnt.h 需要）
