@@ -100,6 +100,7 @@ struct RunSpec {
     RunMode mode = RunMode::Infinite;
     int durationSec = 10;   // mode == Timed 时有效
     int count = 100;        // mode == Counted 时有效
+    int startDelayMs = 0;   // 线程启动后先等这么久再执行第一个动作（与 mode 无关）
 };
 
 // 序列化：按 mode 精简
@@ -117,6 +118,9 @@ inline void to_json(nlohmann::json &j, const RunSpec &r) {
             j["count"] = r.count;
             break;
     }
+
+    // 开始延迟与 mode 无关；为 0 时不写，避免每个参数文件都多一行噪声
+    if (r.startDelayMs > 0) j["startDelayMs"] = r.startDelayMs;
 }
 
 inline void from_json(const nlohmann::json &j, RunSpec &r) {
@@ -124,6 +128,7 @@ inline void from_json(const nlohmann::json &j, RunSpec &r) {
     r.mode = runModeFromString(j.value("mode", std::string{"Infinite"}));
     r.durationSec = j.value("durationSec", 10);
     r.count = j.value("count", 100);
+    r.startDelayMs = j.value("startDelayMs", 0);
 }
 
 // ============================================================

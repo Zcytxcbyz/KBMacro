@@ -153,3 +153,32 @@ TEST(Run, InfiniteStopsOnThirdRound) {
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 3);
     EXPECT_EQ(timer.countWaits(kHold), 3u);
 }
+
+// ---- 开始延迟 ----
+
+TEST(Run, StartDelayHappensBeforeFirstAction) {
+    ClickerParams p = makeParams(RunMode::Counted, 2);
+    p.run.startDelayMs = 300;
+
+    FakeTimer timer;
+    EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
+
+    // 第一次等待就是开始延迟，之后的按住/间隔不受影响
+    const auto &w = timer.waited();
+    ASSERT_EQ(w.size(), 4u);   // 1 次延迟 + 2 次按住 + 1 次轮间隔
+    EXPECT_EQ(w[0], ITimer::Duration{300});
+    EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
+    EXPECT_EQ(timer.countWaits(kHold), 2u);
+    EXPECT_EQ(timer.countWaits(kGap), 1u);
+}
+
+TEST(Run, StartDelayInterruptedByStop) {
+    ClickerParams p = makeParams(RunMode::Infinite, 0);
+    p.run.startDelayMs = 500;
+
+    FakeTimer timer(1);   // 第 1 次 wait 就是开始延迟，直接被打断
+    EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 0);
+    EXPECT_EQ(timer.waitCalls(), 1);
+    ASSERT_EQ(timer.waited().size(), 1u);
+    EXPECT_EQ(timer.waited()[0], ITimer::Duration{500});
+}

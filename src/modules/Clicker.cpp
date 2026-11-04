@@ -48,6 +48,16 @@ int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) 
     // 滚轮没有"按住"，等待就是完整间隔。
     const int gapMs = wheel ? p.intervalMs : std::max(0, p.intervalMs - p.holdMs);
 
+    // 开始延迟：按下热键后还要松手、切窗口，先等一会儿再动。
+    // 必须在 RunController 构造之前 —— 它的起点是"第一轮动作开始"的时刻，
+    // 把延迟算进起点会让定时模式被白吃（5 秒延迟 + 定时 5 秒 = 立刻结束）。
+    if (const int startDelayMs = std::max(0, p.run.startDelayMs); startDelayMs > 0) {
+        if (!timer.wait(ITimer::Duration{startDelayMs}, st)) {
+            LOG_DEBUG("clicker: start delay interrupted, executed=0");
+            return 0;
+        }
+    }
+
     RunController rc(p.run, ITimer::now());
     int executed = 0;
 

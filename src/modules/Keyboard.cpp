@@ -13,6 +13,14 @@ namespace keyboard {
         // 轮间等待：intervalMs 是整个周期，按住时间从里面扣
         const int gapMs = std::max(0, p.intervalMs - p.holdMs);
 
+        // 开始延迟必须先于 RunController 构造（它的起点是第一轮动作的时刻）
+        if (const int startDelayMs = std::max(0, p.run.startDelayMs); startDelayMs > 0) {
+            if (!timer.wait(ITimer::Duration{startDelayMs}, st)) {
+                LOG_DEBUG("keyboard: start delay interrupted, executed=0");
+                return 0;
+            }
+        }
+
         RunController rc(p.run, ITimer::now());
         int executed = 0;
 

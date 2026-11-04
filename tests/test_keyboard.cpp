@@ -91,3 +91,37 @@ TEST(KeyboardRun, EmptyHotkeyIsNotRejected) {
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 1);
     EXPECT_EQ(timer.countWaits(kHold), 1u);
 }
+
+// ---- 开始延迟 ----
+
+TEST(KeyboardRun, StartDelayHappensBeforeFirstAction) {
+    KeyboardParams p;
+    p.hotkey = Hotkey{.modifiers = 0, .vk = 65};   // 'A'
+    p.intervalMs = 100;
+    p.holdMs = 5;
+    p.run = RunSpec{.mode = RunMode::Counted, .count = 2};
+    p.run.startDelayMs = 300;
+
+    FakeTimer timer;
+    EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 2);
+
+    const auto &w = timer.waited();
+    ASSERT_EQ(w.size(), 4u);   // 1 次延迟 + 2 次按住 + 1 次轮间隔
+    EXPECT_EQ(w[0], ITimer::Duration{300});
+    EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
+    EXPECT_EQ(timer.countWaits(ITimer::Duration{5}), 2u);
+    EXPECT_EQ(timer.countWaits(ITimer::Duration{95}), 1u);
+}
+
+TEST(KeyboardRun, StartDelayInterruptedByStop) {
+    KeyboardParams p;
+    p.hotkey = Hotkey{.modifiers = 0, .vk = 65};
+    p.intervalMs = 100;
+    p.holdMs = 5;
+    p.run = RunSpec{.mode = RunMode::Infinite, .count = 0};
+    p.run.startDelayMs = 500;
+
+    FakeTimer timer(1);
+    EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 0);
+    EXPECT_EQ(timer.waitCalls(), 1);
+}
