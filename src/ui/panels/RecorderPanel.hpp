@@ -93,6 +93,7 @@ private:
     wxChoice *m_choiceRunMode{};
     wxSpinCtrl *m_spinDuration{};
     wxSpinCtrl *m_spinCount{};
+    wxSpinCtrl *m_spinStartDelay{};
 
     wxButton *m_btnStartPlayback{};
     wxButton *m_btnStopPlayback{};

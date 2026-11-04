@@ -171,6 +171,9 @@ void RecorderPanel::buildUi() {
         m_spinCount = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                      wxDefaultPosition, wxDefaultSize,
                                      wxSP_ARROW_KEYS, 1, 999999, 100);
+        m_spinStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                  wxDefaultPosition, wxDefaultSize,
+                                  wxSP_ARROW_KEYS, 0, 5000, 0);
 
         form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)),
                   0, wxALIGN_CENTER_VERTICAL);
@@ -183,6 +186,10 @@ void RecorderPanel::buildUi() {
         form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)),
                   0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinCount, 1, wxEXPAND);
+
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)),
+          0, wxALIGN_CENTER_VERTICAL);
+        form->Add(m_spinStartDelay, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
 
@@ -252,6 +259,7 @@ RunSpec RecorderPanel::collectRunSpec() const {
     }
     run.durationSec = m_spinDuration->GetValue();
     run.count = m_spinCount->GetValue();
+    run.startDelayMs = m_spinStartDelay->GetValue();
 
     return run;
 }
@@ -267,6 +275,7 @@ void RecorderPanel::applyRunSpec(const RunSpec &run) {
     }
     m_spinDuration->SetValue(run.durationSec);
     m_spinCount->SetValue(run.count);
+    m_spinStartDelay->SetValue(run.startDelayMs);
     refreshEnableStates();
 }
 
