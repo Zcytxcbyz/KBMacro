@@ -2,11 +2,15 @@
 
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
+#include <stop_token>
 
 #include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
+
+#include "win32/Input.hpp"
+#include "managers/ThreadManager.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
@@ -21,9 +25,11 @@ namespace {
     constexpr int kKeyboardParamsVersion = 1;
 }
 
-KeyboardPanel::KeyboardPanel(wxWindow *parent)
-    : wxPanel(parent, wxID_ANY) {
+KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
+                             std::shared_ptr<ITimer> &timerRef)
+    : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr), m_timerRef(timerRef) {
     buildUi();
+    setRunning(false);
 }
 
 void KeyboardPanel::buildUi() {
@@ -231,9 +237,23 @@ void KeyboardPanel::onSendOnce(wxCommandEvent &) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void KeyboardPanel::sendOnce() {
     const KeyboardParams p = collectParams();
+
     LOG_INFO("keyboard: send once requested (key='{}')",
              utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
-    // TODO: win32::SendInput 发送一次 p.hotkey
+
+    if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
+        LOG_WARN("keyboard: send once ignored, no key configured");
+        return;
+    }
+
+    // 一次性发送不走线程、不经过 ThreadManager，没有异常接收方，
+    // 所以必须自己兜住：让 SendInputError 穿透 wx 事件循环会直接 terminate
+    try {
+        // 空 stop_token：一次性发送没有"中途停止"的语义，必定等满 holdMs
+        static_cast<void>(input::pressKey(p.hotkey, p.holdMs, *m_timerRef, std::stop_token{}));
+    } catch (const std::exception &e) {
+        LOG_ERROR("keyboard: send once failed: {}", e.what());
+    }
 }
 
 void KeyboardPanel::onStart(wxCommandEvent &) {
@@ -258,13 +278,20 @@ void KeyboardPanel::startWithCurrentParams() {
              p.intervalMs,
              utils::ToUtf8(utils::hotkeyToString(p.hotkey)),
              runModeToString(p.run.mode));
-    // TODO: ThreadManager::StartKeyboard(p)
+
+    // 已在跑时 ThreadManager 会忽略这次请求，所以不看返回值直接切按钮
+    m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
+        setRunning(false);
+        LOG_INFO("keyboard: finished, reason={}, executed={}",
+                 static_cast<int>(res.reason), res.executed);
+    });
+    setRunning(true);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void KeyboardPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+void KeyboardPanel::stop() {
     LOG_INFO("keyboard: stop requested");
-    // TODO: ThreadManager::StopKeyboard()
+    m_threadMgr.StopKeyboard();
+    setRunning(false);
 }
 
 void KeyboardPanel::onImport(wxCommandEvent &) {
@@ -352,4 +379,12 @@ void KeyboardPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == kRunModeTimed);
     m_spinCount->Enable(runMode == kRunModeCounted);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void KeyboardPanel::setRunning(const bool running) {
+    // 运行中改参数不影响已启动的任务（参数在 StartKeyboard 时已快照），
+    // 只切按钮；"发送一次"是无状态的，运行中也允许点
+    if (m_btnStart != nullptr) m_btnStart->Enable(!running);
+    if (m_btnStop != nullptr) m_btnStop->Enable(running);
 }

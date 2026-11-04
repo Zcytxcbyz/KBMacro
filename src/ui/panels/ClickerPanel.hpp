@@ -4,14 +4,15 @@
 
 #include "common/ClickerParams.hpp"
 
+class ThreadManager;
+
 // 鼠标连点器面板。
 //
-// 与 ThreadManager 的对接在模块落地后补。本阶段：
-//   - 提供公开方法（供热键路径调用）
-//   - 支持参数的导入 / 导出（*.clicker.json）
+//   - 参数在本面板组装（collectParams / applyParams），启动时快照给 ThreadManager
+//   - 是否真在跑由 ThreadManager 的 Slot 状态决定，面板只按结果切按钮
 class ClickerPanel : public wxPanel {
 public:
-    explicit ClickerPanel(wxWindow *parent);
+    ClickerPanel(wxWindow *parent, ThreadManager &threadMgr);
 
     // 供 MainFrame 从热键路径调用，与用户点击"开始"/"停止"按钮等价。
     // 从当前控件值组装 ClickerParams，交给 ThreadManager 启动。
@@ -20,6 +21,9 @@ public:
     void stop();
 
 private:
+    // 切换"运行中"的按钮状态：运行中禁用开始、启用停止
+    void setRunning(bool running);
+
     void buildUi();
 
     // 从控件组装 ClickerParams
@@ -45,6 +49,8 @@ private:
     void onRunModeChanged(wxCommandEvent &event);
     void onCoordChar(wxKeyEvent &event);
     [[nodiscard]] bool isWheelTypeSelected() const;
+
+    ThreadManager &m_threadMgr;
 
     // ---- 坐标 ----
     wxTextCtrl *m_x{};

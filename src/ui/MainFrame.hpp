@@ -16,6 +16,7 @@ class KeyboardPanel;
 class RecorderPanel;
 class SettingsPanel;
 class AboutPanel;
+class ThreadManager;
 
 // 主窗口。
 //
@@ -59,6 +60,10 @@ private:
     // 声明位置有讲究：接线阶段 m_threadMgr 拿的是这个 shared_ptr 的引用，
     // 所以它必须排在 m_threadMgr 之前（析构顺序反过来，先停线程再放计时器）。
     std::shared_ptr<ITimer> m_timer;
+
+    // ---- 线程与任务 ----
+    // 必须声明在 m_timer 之后：析构逆序，先停线程再放计时器（线程里还拿着计时器引用）
+    std::unique_ptr<ThreadManager> m_threadMgr;
 
     // ---- 服务 ----
     std::unique_ptr<HotkeyManager> m_hotkeyMgr;

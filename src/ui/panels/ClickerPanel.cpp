@@ -7,6 +7,7 @@
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
+#include "managers/ThreadManager.hpp"
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
 
@@ -24,9 +25,10 @@ namespace {
     constexpr int kClickerParamsVersion = 1;
 }
 
-ClickerPanel::ClickerPanel(wxWindow *parent)
-    : wxPanel(parent, wxID_ANY) {
+ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
+    : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr) {
     buildUi();
+    setRunning(false);
 }
 
 void ClickerPanel::buildUi() {
@@ -255,10 +257,10 @@ void ClickerPanel::onCapturePos(wxCommandEvent &) {
     new ScreenCaptureOverlay(this,
         [this](const bool captured, const wxPoint pos) {
             if (!captured) {
-                LOG_DEBUG("clicker: capture position cancelled");
+                LOG_DEBUG("clicker: capture position cancelled"); // NOLINT(*-lambda-function-name)
                 return;
             }
-            LOG_DEBUG("clicker: captured position ({}, {})", pos.x, pos.y);
+            LOG_DEBUG("clicker: captured position ({}, {})", pos.x, pos.y); // NOLINT(*-lambda-function-name)
             m_x->SetValue(wxString::Format("%d", pos.x));
             m_y->SetValue(wxString::Format("%d", pos.y));
         });
@@ -266,6 +268,7 @@ void ClickerPanel::onCapturePos(wxCommandEvent &) {
     refreshEnableStates();
 }
 
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void ClickerPanel::onIgnorePos(wxCommandEvent &event) {
     LOG_DEBUG("clicker: ignore position = {}", event.IsChecked());
     refreshEnableStates();
@@ -312,16 +315,25 @@ void ClickerPanel::onStop(wxCommandEvent &) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ClickerPanel::startWithCurrentParams() {
     const ClickerParams p = collectParams();
+
     LOG_INFO("clicker: start requested (interval={}ms, type={}, run={})",
              p.intervalMs, static_cast<int>(p.clickType),
              runModeToString(p.run.mode));
-    // TODO: ThreadManager::StartClicker(p)
+
+    // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
+    // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
+    m_threadMgr.StartClicker(p, [this](const TaskResult res) {
+        setRunning(false);
+        LOG_INFO("clicker: finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
+                 static_cast<int>(res.reason), res.executed);
+    });
+    setRunning(true);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void ClickerPanel::stop() { // NOLINT(*-convert-member-functions-to-static)
+void ClickerPanel::stop() {
     LOG_INFO("clicker: stop requested");
-    // TODO: ThreadManager::StopClicker()
+    m_threadMgr.StopClicker();
+    setRunning(false);
 }
 
 void ClickerPanel::onImport(wxCommandEvent &) {
@@ -423,4 +435,12 @@ void ClickerPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == kRunModeTimed);
     m_spinCount->Enable(runMode == kRunModeCounted);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void ClickerPanel::setRunning(const bool running) {
+    // 运行中改参数不会影响已启动的任务（参数在 StartClicker 时已快照进闭包），
+    // 所以这里只切按钮，不去禁用输入控件
+    if (m_btnStart != nullptr) m_btnStart->Enable(!running);
+    if (m_btnStop != nullptr) m_btnStop->Enable(running);
 }

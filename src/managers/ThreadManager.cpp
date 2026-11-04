@@ -11,6 +11,8 @@
 #include <wx/thread.h>
 
 #include "common/Log.hpp"
+#include "modules/Clicker.hpp"
+#include "modules/Keyboard.hpp"
 
 // ============================================================
 // 实现要点
@@ -69,17 +71,11 @@ void ThreadManager::StartClicker(const ClickerParams &p, FinishCallback onFinish
     // timer 与参数都在这里按 UI 线程快照进闭包：
     // m_timerRef 只被读这一次，之后切计时器模式不影响已启动的任务
     launch(TaskKind::Clicker, std::move(onFinished),
-           // ReSharper disable once CppLambdaCaptureNeverUsed
            [timer = m_timerRef, p](const std::stop_token& st) {
-               // TODO(接线)：换成 modules/Clicker 的循环
-               //   RunController rc(p.run, ITimer::now());
-               //   while (rc.shouldRun(ITimer::now())) {
-               //       发一次点击（win32/SendInput：每次记日志 + 检查返回值）；
-               //       rc.noteIteration();
-               //       if (!timer->wait(rc.clampWait(Duration(p.intervalMs), ITimer::now()), st)) break;
-               //   }
-               LOG_WARN("clicker: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
+               // 循环骨架在 modules/Clicker 里；这里只把参数与计时器交过去。
+               // 命中 stop 时 clicker::run 会自己收尾（把按下补抬起）再返回。
+               const int executed = clicker::run(p, *timer, st);
+               return TaskResult{.executed = executed};
            });
 }
 
@@ -96,11 +92,10 @@ void ThreadManager::StartKeyboard(const KeyboardParams &p, FinishCallback onFini
     wxASSERT_MSG(wxIsMainThread(), "ThreadManager::StartKeyboard must be called from the UI thread");
 
     launch(TaskKind::Keyboard, std::move(onFinished),
-           // ReSharper disable once CppLambdaCaptureNeverUsed
            [timer = m_timerRef, p](const std::stop_token& st) {
-               // TODO(接线)：换成 modules/Keyboard 的循环（与连点器同骨架，动作换成按下/抬起）
-               LOG_WARN("keyboard: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
+               // 每轮：按下 → 等 holdMs → 抬起；被 stop 打断时 pressKey 内部已补发抬起
+               const int executed = keyboard::run(p, *timer, st);
+               return TaskResult{.executed = executed};
            });
 }
 

@@ -1,18 +1,24 @@
 #pragma once
 
+#include <memory>
+
 #include <wx/wx.h>
 
+#include "common/ITimer.hpp"
 #include "common/KeyboardParams.hpp"
 #include "common/Types.hpp"
 
+class ThreadManager;
+
 // 键盘模拟器面板。
 //
-// 与 ThreadManager 的对接在模块落地后补。本阶段：
-//   - 提供公开方法（供热键路径调用）
-//   - 支持参数的导入 / 导出（*.keyboard.json）
+//   - 参数在本面板组装（collectParams / applyParams），启动时快照给 ThreadManager
+//   - 计时器从 MainFrame 借用（引用 shared_ptr 本身，切换模式后自动跟着换新的）
+//   - "发送一次"是同步的一次性动作，不走线程也不经过 ThreadManager
 class KeyboardPanel : public wxPanel {
 public:
-    explicit KeyboardPanel(wxWindow *parent);
+    KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
+                  std::shared_ptr<ITimer> &timerRef);
 
     // 供 MainFrame 从热键路径调用，与用户点击"开始"/"停止"按钮等价。
     void startWithCurrentParams();
@@ -23,6 +29,9 @@ public:
     void sendOnce();
 
 private:
+    // 切换"运行中"的按钮状态：运行中禁用开始、启用停止
+    void setRunning(bool running);
+
     void buildUi();
 
     // 从控件组装 KeyboardParams
@@ -48,6 +57,9 @@ private:
 
     // 刷新按键显示框
     void refreshKeyDisplay();
+
+    ThreadManager &m_threadMgr;
+    std::shared_ptr<ITimer> &m_timerRef;
 
     // ---- 按键 ----
     Hotkey m_hotkey;

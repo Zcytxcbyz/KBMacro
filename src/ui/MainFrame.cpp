@@ -11,6 +11,7 @@
 #include "managers/ConfigManager.hpp"
 #include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
+#include "managers/ThreadManager.hpp"
 
 #include "win32/Input.hpp"
 
@@ -132,15 +133,19 @@ MainFrame::MainFrame()
         });
     Bind(wxEVT_HOTKEY, &MainFrame::onHotkey, this);
 
+    // ---- 1.5 创建 ThreadManager：面板构造时要注入它的引用，必须早于面板 ----
+    // 它内部持 m_timer 的引用，所以必须排在 createTimer() 之后
+    m_threadMgr = std::make_unique<ThreadManager>(m_timer, *this);
+
     // ---- 2. 组装 UI ----
     m_notebook = new wxNotebook(this, wxID_ANY);
 
     // 标签页1：鼠标连点器
-    m_clickerPanel = new ClickerPanel(m_notebook);
+    m_clickerPanel = new ClickerPanel(m_notebook, *m_threadMgr);
     m_notebook->AddPage(m_clickerPanel, TR(IDS_TAB_CLICKER));
 
     // 标签页2：键盘模拟器
-    m_keyboardPanel = new KeyboardPanel(m_notebook);
+    m_keyboardPanel = new KeyboardPanel(m_notebook, *m_threadMgr, m_timer);
     m_notebook->AddPage(m_keyboardPanel, TR(IDS_TAB_KEYBOARD));
 
     // 标签页3：录制与编排
@@ -190,7 +195,13 @@ MainFrame::MainFrame()
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::onClose, this);
 }
 
-MainFrame::~MainFrame() = default;
+MainFrame::~MainFrame() {
+    // 先停掉所有任务（阻塞 join），再清掉还在队列里的通知事件。
+    // 不清的话：worker 退出前 CallAfter 的事件会一直挂到 ~wxEvtHandler 才被删，
+    // 那时面板早已析构，lambda 里捕获的面板指针就是悬垂的。
+    m_threadMgr.reset();
+    DeletePendingEvents();
+}
 
 void MainFrame::rebuildTimer() {
     m_timer = createTimer();
