@@ -74,6 +74,7 @@ private:
     wxChoice *m_choiceRunMode{};
     wxSpinCtrl *m_spinDuration{};
     wxSpinCtrl *m_spinCount{};
+    wxSpinCtrl *m_spinStartDelay{};
 
     // ---- 操作 ----
     wxButton *m_btnSendOnce{};

@@ -137,6 +137,9 @@ void ClickerPanel::buildUi() {
         m_spinCount = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                      wxDefaultPosition, wxDefaultSize,
                                      wxSP_ARROW_KEYS, 1, 999999, 100);
+        m_spinStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                  wxDefaultPosition, wxDefaultSize,
+                                  wxSP_ARROW_KEYS, 0, 5000, 0);
 
         form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)),
                   0, wxALIGN_CENTER_VERTICAL);
@@ -149,6 +152,10 @@ void ClickerPanel::buildUi() {
         form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)),
                   0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinCount, 1, wxEXPAND);
+
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)),
+          0, wxALIGN_CENTER_VERTICAL);
+        form->Add(m_spinStartDelay, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
 
@@ -221,6 +228,7 @@ ClickerParams ClickerPanel::collectParams() const {
     }
     p.run.durationSec = m_spinDuration->GetValue();
     p.run.count = m_spinCount->GetValue();
+    p.run.startDelayMs = m_spinStartDelay->GetValue();
 
     return p;
 }
@@ -243,6 +251,7 @@ void ClickerPanel::applyParams(const ClickerParams &p) {
     }
     m_spinDuration->SetValue(p.run.durationSec);
     m_spinCount->SetValue(p.run.count);
+    m_spinStartDelay->SetValue(p.run.startDelayMs);
 
     refreshEnableStates();
 }

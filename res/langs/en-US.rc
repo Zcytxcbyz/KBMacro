@@ -23,6 +23,7 @@ BEGIN
     L(IDS_COMMON_LABEL_RUNMODE)      "Run mode:"
     L(IDS_COMMON_LABEL_DURATION)     "Duration (s):"
     L(IDS_COMMON_LABEL_COUNT)        "Count:"
+    L(IDS_COMMON_LABEL_START_DELAY)  "Start delay (ms):"
     L(IDS_COMMON_GROUP_RUNMODE)      "Run Mode"
     L(IDS_COMMON_GROUP_ACTIONS)      "Actions"
 

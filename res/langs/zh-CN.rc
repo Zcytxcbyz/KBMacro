@@ -23,6 +23,7 @@ BEGIN
     L(IDS_COMMON_LABEL_RUNMODE)      "运行模式："
     L(IDS_COMMON_LABEL_DURATION)     "时长 (秒)："
     L(IDS_COMMON_LABEL_COUNT)        "次数："
+    L(IDS_COMMON_LABEL_START_DELAY)  "开始延迟 (ms)："
     L(IDS_COMMON_GROUP_RUNMODE)      "运行模式"
     L(IDS_COMMON_GROUP_ACTIONS)      "操作"
 
