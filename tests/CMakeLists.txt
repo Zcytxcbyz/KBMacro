@@ -24,6 +24,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/modules/Clicker.cpp
         ${CMAKE_SOURCE_DIR}/src/win32/Input.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Keyboard.cpp
+        ${CMAKE_SOURCE_DIR}/src/modules/Playback.cpp
 )
 
 # 测试文件
@@ -37,6 +38,7 @@ set(TEST_SOURCES
         test_utf8.cpp
         test_clicker.cpp
         test_keyboard.cpp
+        test_playback.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})
