@@ -13,6 +13,7 @@
 #include "common/Log.hpp"
 #include "modules/Clicker.hpp"
 #include "modules/Keyboard.hpp"
+#include "modules/Playback.hpp"
 
 // ============================================================
 // 实现要点
@@ -150,11 +151,9 @@ void ThreadManager::StartPlayback(std::vector<Action> actions, const RunSpec &ru
     // actions 按值收下后 move 进闭包：调用方（面板）的 m_actions 不受影响
     launch(TaskKind::Playback, std::move(onFinished),
            // ReSharper disable once CppLambdaCaptureNeverUsed
-           [timer = m_timerRef, actions = std::move(actions), run](const std::stop_token& st) {
-               // TODO(接线)：换成 modules/Recorder 的回放端（RunController + timer->wait + SendInput）；
-               //             actions / run / timer 已经快照进来，直接用
-               LOG_WARN("playback: body not wired yet, finishing immediately"); // NOLINT(*-lambda-function-name)
-               return TaskResult{};   // 非录制任务：没有产物，executed 留在 0
+           [timer = m_timerRef, actions = std::move(actions), run](const std::stop_token &st) {
+               const int executed = playback::run(actions, run, *timer, st);
+               return TaskResult{.executed = executed};
            });
 }
 

@@ -149,7 +149,7 @@ MainFrame::MainFrame()
     m_notebook->AddPage(m_keyboardPanel, TR(IDS_TAB_KEYBOARD));
 
     // 标签页3：录制与编排
-    m_recorderPanel = new RecorderPanel(m_notebook);
+    m_recorderPanel = new RecorderPanel(m_notebook, *m_threadMgr);
     m_notebook->AddPage(m_recorderPanel, TR(IDS_TAB_RECORDER));
 
     // 标签页4：设置（注入 HotkeyManager）

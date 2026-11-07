@@ -8,6 +8,8 @@
 #include "common/Action.hpp"
 #include "common/Types.hpp"
 
+class ThreadManager;
+
 // 录制与编排面板。
 //
 // 当前为过渡期：面板自己持有 std::vector<Action> 作为数据源，
@@ -18,7 +20,7 @@
 //   - 支持宏脚本的导入 / 导出（*.macro.json，整体替换语义）
 class RecorderPanel : public wxPanel {
 public:
-    explicit RecorderPanel(wxWindow *parent);
+    RecorderPanel(wxWindow *parent, ThreadManager &threadMgr);
 
     // 供 MainFrame 从热键路径调用，与用户点击对应按钮等价。
     // 录制与回放互斥，由 ThreadManager 内部保证；面板只管发起请求。
@@ -75,8 +77,12 @@ private:
     void selectRow(long row);
     [[nodiscard]] long getSelectedRow() const;
 
+    // 切换回放按钮状态；同时按"列表是否为空"决定能不能开始
+    void setRunning(bool running);
+
     // ---- 数据 ----
     std::vector<Action> m_actions;
+    ThreadManager &m_threadMgr;
 
     // ---- 控件 ----
     wxButton *m_btnStartRecord{};

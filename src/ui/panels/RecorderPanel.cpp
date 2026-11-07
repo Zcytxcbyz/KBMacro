@@ -15,6 +15,7 @@
 #include "common/CoordAdapt.hpp"
 #include "managers/ConfigManager.hpp"
 #include "managers/LanguageManager.hpp"
+#include "managers/ThreadManager.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
 
 namespace {
@@ -92,9 +93,10 @@ namespace {
     constexpr int kMacroVersion = 1;
 } // namespace
 
-RecorderPanel::RecorderPanel(wxWindow *parent)
-    : wxPanel(parent, wxID_ANY) {
+RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
+    : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr) {
     buildUi();
+    setRunning(false);
 }
 
 void RecorderPanel::buildUi() {
@@ -316,6 +318,8 @@ void RecorderPanel::refreshButtonStates() {
     m_btnMoveUp->Enable(hasSelection && row > 0);
     m_btnMoveDown->Enable(hasSelection && row < total - 1);
     m_btnClear->Enable(hasItems);
+    // 列表变化后同步回放按钮（空列表不允许开始）
+    setRunning(m_threadMgr.IsRunning(TaskKind::Playback));
 }
 
 void RecorderPanel::selectRow(const long row) {
@@ -466,13 +470,28 @@ void RecorderPanel::startPlayback() {
     const RunSpec run = collectRunSpec();
     LOG_INFO("recorder: start playback requested (actions={}, mode={})",
              m_actions.size(), runModeToString(run.mode));
-    // TODO: ThreadManager::StartPlayback(m_actions, run)
+
+    // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
+    // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
+    m_threadMgr.StartPlayback(m_actions, run, [this](const TaskResult res) {
+        setRunning(false);
+        LOG_INFO("recorder: playback finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
+                 static_cast<int>(res.reason), res.executed);
+    });
+    setRunning(true);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::stopPlayback() { // NOLINT(*-convert-member-functions-to-static)
+void RecorderPanel::stopPlayback() {
     LOG_INFO("recorder: stop playback requested");
-    // TODO: ThreadManager::StopPlayback()
+    m_threadMgr.StopPlayback();
+    setRunning(false);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::setRunning(const bool running) {
+    // 空列表时不允许开始：否则会起一个"一条动作都不播"的线程
+    m_btnStartPlayback->Enable(!running && !m_actions.empty());
+    m_btnStopPlayback->Enable(running);
 }
 
 // ============================================================
