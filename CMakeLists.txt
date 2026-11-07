@@ -79,6 +79,7 @@ set(SOURCES
         src/win32/Input.cpp
         src/modules/Clicker.cpp
         src/modules/Keyboard.cpp
+        src/modules/Playback.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -117,6 +118,7 @@ set(HEADERS
         src/win32/Input.hpp
         src/modules/Clicker.hpp
         src/modules/Keyboard.hpp
+        src/modules/Playback.hpp
         # 在这里添加 .h 文件
 )
 
