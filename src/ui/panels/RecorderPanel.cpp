@@ -12,6 +12,7 @@
 #include "common/Hotkey.hpp"
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
+#include "common/CoordAdapt.hpp"
 #include "managers/ConfigManager.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
@@ -546,8 +547,8 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
             return;
         }
         if (choice == AdaptChoice::Adapt) {
-            // TODO(T2): 按比例调整 imported 里的 x/y
-            LOG_INFO("recorder: user chose to adapt (algorithm TODO, T2)");
+            coord::adaptActions(imported, scriptSpec, currentSpec);
+            LOG_INFO("recorder: user chose to adapt coordinates");
         } else {
             LOG_INFO("recorder: user chose to keep original coordinates");
         }

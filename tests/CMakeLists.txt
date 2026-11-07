@@ -25,6 +25,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/win32/Input.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Keyboard.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Playback.cpp
+        ${CMAKE_SOURCE_DIR}/src/common/CoordAdapt.cpp
 )
 
 # 测试文件
@@ -39,6 +40,7 @@ set(TEST_SOURCES
         test_clicker.cpp
         test_keyboard.cpp
         test_playback.cpp
+        test_coordadapt.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})
