@@ -26,12 +26,12 @@ namespace {
     // 正好落在 down 与 up 之间 —— 不补就会卡键。
     void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held) {
         int released = 0;
-        for (auto &entry : held) {
-            HeldKey &item = entry.second;
-            if (item.count <= 0) continue;
+        for (auto &val: held | std::views::values) {
+            auto &[hotkey, count] = val;
+            if (count <= 0) continue;
 
-            input::keyUp(item.hotkey);
-            item.count = 0;
+            input::keyUp(hotkey);
+            count = 0;
             ++released;
         }
 
