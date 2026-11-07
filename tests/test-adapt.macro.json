@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "screen": { "width": 1280, "height": 720, "dpi": 96 },
+    "run": { "mode": "Counted", "count": 1 },
+    "actions": [
+        { "type": "MouseMove",  "x": 640, "y": 360, "delayMs": 0 },
+        { "type": "MouseClick", "button": "Left", "x": 320, "y": 180, "holdMs": 50, "delayMs": 600 },
+        { "type": "MouseMove",  "x": 1280, "y": 720, "delayMs": 600 }
+    ]
+}

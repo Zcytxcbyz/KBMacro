@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "screen": { "width": 2560, "height": 1440, "dpi": 120 },
+    "run": { "mode": "Infinite" },
+    "actions": [
+        { "type": "Keyboard", "key": { "modifiers": [], "vk": "A" }, "event": "Down", "delayMs": 0 },
+        { "type": "MouseMove", "x": 900, "y": 500, "delayMs": 5000 },
+        { "type": "Keyboard", "key": { "modifiers": [], "vk": "A" }, "event": "Up", "delayMs": 100 }
+    ]
+}

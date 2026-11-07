@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "screen": { "width": 2560, "height": 1440, "dpi": 120 },
+  "run": { "mode": "Counted", "count": 2 },
+  "actions": [
+    { "type": "MouseMove",  "x": 400, "y": 300, "delayMs": 0 },
+    { "type": "MouseClick", "button": "Left", "x": 400, "y": 300, "holdMs": 50, "delayMs": 500 },
+    { "type": "Keyboard", "key": { "modifiers": [], "vk": "A" }, "event": "Down", "delayMs": 300 },
+    { "type": "Keyboard", "key": { "modifiers": [], "vk": "A" }, "event": "Up", "delayMs": 200 },
+    { "type": "MouseWheel", "direction": "Up", "steps": 3, "delayMs": 300 },
+    { "type": "MouseMove",  "x": 800, "y": 300, "delayMs": 200 }
+  ]
+}
