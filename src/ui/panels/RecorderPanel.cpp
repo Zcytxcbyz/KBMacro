@@ -28,6 +28,8 @@ namespace {
             case ActionType::MouseClick: return {TR(IDS_ACTION_TYPE_MOUSE_CLICK)};
             case ActionType::MouseWheel: return {TR(IDS_ACTION_TYPE_MOUSE_WHEEL)};
             case ActionType::Keyboard:   return {TR(IDS_ACTION_TYPE_KEYBOARD)};
+            case ActionType::MouseDown:  return {TR(IDS_ACTION_TYPE_MOUSE_DOWN)};
+            case ActionType::MouseUp:    return {TR(IDS_ACTION_TYPE_MOUSE_UP)};
         }
         return {};
     }
@@ -69,6 +71,10 @@ namespace {
                                      : wxString(TR(IDS_ACTION_KEY_UP));
                 return wxString::Format("%s [%s]", key, evt);
             }
+            case ActionType::MouseDown:
+            case ActionType::MouseUp:
+                // 类型列已经写明"按下/松开"，这里只补按键和坐标
+                return wxString::Format("%s (%d, %d)", mouseButtonText(a.button), a.x, a.y);
         }
         return {};
     }

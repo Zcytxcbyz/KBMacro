@@ -160,3 +160,41 @@ TEST(PlaybackRun, StartDelayInterruptedReturnsZero) {
     EXPECT_EQ(playback::run(actions, run, timer, std::stop_token{}), 0);
     EXPECT_EQ(timer.waitCalls(), 1);
 }
+
+// ---- 拖动：MouseDown / MouseUp 是独立的原子动作 ----
+
+TEST(Playback, MouseDownUpCountsTwoActions) {
+    const std::vector<Action> actions{
+        Action{.type = ActionType::MouseDown,
+               .x = 100, .y = 200, .button = MouseButton::Left, .delayMs = 0},
+        Action{.type = ActionType::MouseUp,
+               .x = 300, .y = 400, .button = MouseButton::Left, .delayMs = kDelay.count()},
+    };
+
+    FakeTimer timer;
+    EXPECT_EQ(playback::run(actions, countedRun(1), timer, std::stop_token{}), 2);
+    EXPECT_EQ(timer.countWaits(kDelay), 1u);
+}
+
+TEST(Playback, MouseDownWithoutUpDoesNotHang) {
+    const std::vector<Action> actions{
+        Action{.type = ActionType::MouseDown,
+               .x = 50, .y = 60, .button = MouseButton::Right, .delayMs = 0},
+    };
+
+    FakeTimer timer;
+    EXPECT_EQ(playback::run(actions, countedRun(1), timer, std::stop_token{}), 1);
+}
+
+TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
+    const std::vector<Action> actions{
+        Action{.type = ActionType::MouseDown,
+               .x = 50, .y = 60, .button = MouseButton::Left, .delayMs = 0},
+        Action{.type = ActionType::MouseMove, .x = 80, .y = 90, .delayMs = kDelay.count()},
+    };
+
+    FakeTimer timer;
+    // 3 轮 × 2 条动作
+    EXPECT_EQ(playback::run(actions, countedRun(3), timer, std::stop_token{}), 6);
+    EXPECT_EQ(timer.countWaits(kDelay), 3u);
+}

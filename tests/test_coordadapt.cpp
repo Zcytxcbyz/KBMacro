@@ -116,3 +116,18 @@ TEST(CoordAdapt, NegativeCoordinatesScale) {
     EXPECT_EQ(actions[0].x, -200);
     EXPECT_EQ(actions[0].y, -100);
 }
+
+TEST(CoordAdapt, AdaptsDragEndpoints) {
+    std::vector<Action> actions{
+        Action{.type = ActionType::MouseDown, .x = 100, .y = 50, .button = MouseButton::Left},
+        Action{.type = ActionType::MouseUp, .x = 300, .y = 150, .button = MouseButton::Left},
+    };
+
+    coord::adaptActions(actions, ScreenSpec{.width = 1000, .height = 1000, .dpi = 96},
+                        ScreenSpec{.width = 2000, .height = 2000, .dpi = 96});
+
+    EXPECT_EQ(actions[0].x, 200);
+    EXPECT_EQ(actions[0].y, 100);
+    EXPECT_EQ(actions[1].x, 600);
+    EXPECT_EQ(actions[1].y, 300);
+}

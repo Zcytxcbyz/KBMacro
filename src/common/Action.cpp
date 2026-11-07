@@ -32,6 +32,13 @@ void to_json(nlohmann::json &j, const Action &a) {
             j["event"] = keyEventTypeToString(a.keyEvent);
             j["delayMs"] = a.delayMs;
             break;
+        case ActionType::MouseDown:
+        case ActionType::MouseUp:
+            j["button"] = mouseButtonToString(a.button);
+            j["x"] = a.x;
+            j["y"] = a.y;
+            j["delayMs"] = a.delayMs;
+            break;
     }
 }
 
@@ -65,6 +72,12 @@ void from_json(const nlohmann::json &j, Action &a) {
                 a.hotkey = j["key"].get<Hotkey>();
             }
             a.keyEvent = keyEventTypeFromString(j.value("event", std::string{"Down"}));
+            break;
+        case ActionType::MouseDown:
+        case ActionType::MouseUp:
+            a.button = mouseButtonFromString(j.value("button", std::string{"Left"}));
+            a.x = j.value("x", 0);
+            a.y = j.value("y", 0);
             break;
     }
 }

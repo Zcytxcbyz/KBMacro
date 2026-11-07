@@ -178,6 +178,8 @@ BEGIN
     L(IDS_ACTION_TYPE_MOUSE_CLICK)     "Mouse Click"
     L(IDS_ACTION_TYPE_MOUSE_WHEEL)     "Mouse Wheel"
     L(IDS_ACTION_TYPE_KEYBOARD)        "Keyboard"
+    L(IDS_ACTION_TYPE_MOUSE_DOWN)      "Mouse Down"
+    L(IDS_ACTION_TYPE_MOUSE_UP)        "Mouse Up"
     L(IDS_ACTION_PARAM_BUTTON)         "Button"
     L(IDS_ACTION_PARAM_X)              "X"
     L(IDS_ACTION_PARAM_Y)              "Y"

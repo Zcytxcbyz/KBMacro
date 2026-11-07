@@ -17,7 +17,12 @@ namespace coord {
         if (from.width == to.width && from.height == to.height) return;
 
         for (Action &action : actions) {
-            if (action.type != ActionType::MouseMove && action.type != ActionType::MouseClick) continue;
+            // 拖动两端也带坐标，一起换算
+            const bool hasCoords = (action.type == ActionType::MouseMove ||
+                                    action.type == ActionType::MouseClick ||
+                                    action.type == ActionType::MouseDown ||
+                                    action.type == ActionType::MouseUp);
+            if (!hasCoords) continue;
 
             action.x = ::MulDiv(action.x, to.width, from.width);
             action.y = ::MulDiv(action.y, to.height, from.height);

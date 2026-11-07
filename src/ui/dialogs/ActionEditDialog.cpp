@@ -46,6 +46,17 @@ namespace {
         c.Add(TR(IDS_ACTION_KEY_UP),   static_cast<int>(KeyEventType::Up));
         return c;
     }
+
+    // 带鼠标按键的动作类型
+    [[nodiscard]] bool hasButton(const ActionType t) noexcept {
+        return t == ActionType::MouseClick || t == ActionType::MouseDown ||
+               t == ActionType::MouseUp;
+    }
+
+    // 带坐标的动作类型：拖动两端也要坐标
+    [[nodiscard]] bool hasCoordinates(const ActionType t) noexcept {
+        return t == ActionType::MouseMove || hasButton(t);
+    }
 }
 
 ActionEditDialog::ActionEditDialog(wxWindow *parent, const wxString &title,
@@ -69,7 +80,9 @@ void ActionEditDialog::buildUi() {
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_CLICK));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_WHEEL));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_KEYBOARD));
-        m_choiceType->SetSelection(static_cast<int>(m_action.type));
+        m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_DOWN));
+        m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_UP));
+        m_choiceType->SetSelection(static_cast<int>(m_action.type));   // 顺序必须与 enum 一致
 
         row->Add(m_choiceType, 1, wxALIGN_CENTER_VERTICAL);
         root->Add(row, 0, wxEXPAND | wxALL, 12);
@@ -144,47 +157,47 @@ void ActionEditDialog::onTypeChanged(wxCommandEvent &) {
 void ActionEditDialog::rebuildParamGrid() {
     m_grid->Clear();
 
-    switch (m_action.type) {
-        case ActionType::MouseMove: {
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_X), kPropX, m_action.x));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_Y), kPropY, m_action.y));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
-            break;
-        }
-        case ActionType::MouseClick: {
-            wxPGChoices buttonChoices = makeButtonChoices();
-            m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_BUTTON), kPropButton,
-                                              buttonChoices,
-                                              static_cast<int>(m_action.button)));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_X), kPropX, m_action.x));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_Y), kPropY, m_action.y));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_HOLD), kPropHold, m_action.holdMs));
-            break;
-        }
-        case ActionType::MouseWheel: {
-            wxPGChoices dirChoices = makeWheelDirChoices();
-            m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_WHEEL_DIR), kPropWheelDir,
-                                              dirChoices,
-                                              static_cast<int>(m_action.wheelDirection)));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_WHEEL_STEPS), kPropWheelSteps,
-                                             m_action.wheelSteps));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
-            break;
-        }
-        case ActionType::Keyboard: {
-            auto *keyProp = new wxStringProperty(TR(IDS_ACTION_PARAM_KEY), kPropKey,
-                                                 wxString(utils::hotkeyToString(m_action.hotkey)));
-            keyProp->ChangeFlag(wxPG_PROP_READONLY, true);
-            m_grid->Append(keyProp);
+    const bool withButton = hasButton(m_action.type);
+    const bool withCoords = hasCoordinates(m_action.type);
 
-            wxPGChoices eventChoices = makeKeyEventChoices();
-            m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_KEY_EVENT), kPropKeyEvent,
-                                              eventChoices,
-                                              static_cast<int>(m_action.keyEvent)));
-            m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
-            break;
-        }
+    // 顺序固定：按键 → 坐标 → 滚轮 → 键 → 延时 → 按住。
+    // 各类型原有的字段相对顺序都能被这个序列表达，切换类型时视觉位置不跳。
+    if (withButton) {
+        wxPGChoices buttonChoices = makeButtonChoices();
+        m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_BUTTON), kPropButton, buttonChoices,
+                                          static_cast<int>(m_action.button)));
+    }
+
+    if (withCoords) {
+        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_X), kPropX, m_action.x));
+        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_Y), kPropY, m_action.y));
+    }
+
+    if (m_action.type == ActionType::MouseWheel) {
+        wxPGChoices dirChoices = makeWheelDirChoices();
+        m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_WHEEL_DIR), kPropWheelDir,
+                                          dirChoices,
+                                          static_cast<int>(m_action.wheelDirection)));
+        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_WHEEL_STEPS), kPropWheelSteps,
+                                         m_action.wheelSteps));
+    }
+
+    if (m_action.type == ActionType::Keyboard) {
+        auto *keyProp = new wxStringProperty(TR(IDS_ACTION_PARAM_KEY), kPropKey,
+                                             wxString(utils::hotkeyToString(m_action.hotkey)));
+        keyProp->ChangeFlag(wxPG_PROP_READONLY, true);
+        m_grid->Append(keyProp);
+
+        wxPGChoices eventChoices = makeKeyEventChoices();
+        m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_KEY_EVENT), kPropKeyEvent,
+                                          eventChoices,
+                                          static_cast<int>(m_action.keyEvent)));
+    }
+
+    m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
+
+    if (m_action.type == ActionType::MouseClick) {
+        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_HOLD), kPropHold, m_action.holdMs));
     }
 }
 
@@ -199,28 +212,30 @@ void ActionEditDialog::collectFromGrid() {
         return 0;
     };
 
-    switch (m_action.type) {
-        case ActionType::MouseMove:
-            m_action.x = get(kPropX);
-            m_action.y = get(kPropY);
-            break;
-        case ActionType::MouseClick:
-            m_action.button = static_cast<MouseButton>(get(kPropButton));
-            m_action.x = get(kPropX);
-            m_action.y = get(kPropY);
-            m_action.holdMs = get(kPropHold);
-            break;
-        case ActionType::MouseWheel:
-            m_action.wheelDirection = static_cast<WheelDirection>(get(kPropWheelDir));
-            m_action.wheelSteps = get(kPropWheelSteps);
-            break;
-        case ActionType::Keyboard:
-            m_action.keyEvent = static_cast<KeyEventType>(get(kPropKeyEvent));
-            // hotkey 由"设置按键"按钮单独更新，网格里只是显示
-            break;
+    if (hasButton(m_action.type)) {
+        m_action.button = static_cast<MouseButton>(get(kPropButton));
+    }
+
+    if (hasCoordinates(m_action.type)) {
+        m_action.x = get(kPropX);
+        m_action.y = get(kPropY);
+    }
+
+    if (m_action.type == ActionType::MouseWheel) {
+        m_action.wheelDirection = static_cast<WheelDirection>(get(kPropWheelDir));
+        m_action.wheelSteps = get(kPropWheelSteps);
+    }
+
+    if (m_action.type == ActionType::Keyboard) {
+        m_action.keyEvent = static_cast<KeyEventType>(get(kPropKeyEvent));
+        // hotkey 由"设置按键"按钮单独更新，网格里只是显示
     }
 
     m_action.delayMs = get(kPropDelay);
+
+    if (m_action.type == ActionType::MouseClick) {
+        m_action.holdMs = get(kPropHold);
+    }
 }
 
 // ============================================================
@@ -228,12 +243,8 @@ void ActionEditDialog::collectFromGrid() {
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ActionEditDialog::refreshAuxButtons() {
-    const bool hasPos = (m_action.type == ActionType::MouseMove ||
-                         m_action.type == ActionType::MouseClick);
-    const bool hasKey = (m_action.type == ActionType::Keyboard);
-
-    m_btnCapturePos->Enable(hasPos);
-    m_btnSetKey->Enable(hasKey);
+    m_btnCapturePos->Enable(hasCoordinates(m_action.type));
+    m_btnSetKey->Enable(m_action.type == ActionType::Keyboard);
 }
 
 // ============================================================

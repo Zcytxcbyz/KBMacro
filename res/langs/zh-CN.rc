@@ -178,6 +178,8 @@ BEGIN
     L(IDS_ACTION_TYPE_MOUSE_CLICK)     "鼠标点击"
     L(IDS_ACTION_TYPE_MOUSE_WHEEL)     "鼠标滚轮"
     L(IDS_ACTION_TYPE_KEYBOARD)        "键盘"
+    L(IDS_ACTION_TYPE_MOUSE_DOWN)      "鼠标按下"
+    L(IDS_ACTION_TYPE_MOUSE_UP)        "鼠标松开"
     L(IDS_ACTION_PARAM_BUTTON)         "按键"
     L(IDS_ACTION_PARAM_X)              "X"
     L(IDS_ACTION_PARAM_Y)              "Y"

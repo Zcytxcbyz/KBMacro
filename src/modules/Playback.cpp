@@ -38,39 +38,77 @@ namespace {
         if (released > 0) LOG_WARN("playback: released {} stuck key(s)", released);
     }
 
+    // 鼠标按键配对表：MouseDown 记账、MouseUp 销账。
+    // 键是按键本身，值是按下次数（脚本重复 down 同一键也不会提前松开）。
+    void pressHeldButton(std::unordered_map<MouseButton, int> &held, const MouseButton button) {
+        ++held[button];
+    }
+
+    // 把所有还按着的鼠标键放掉（每轮结束、线程退出各一次）。
+    void releaseHeldButtons(std::unordered_map<MouseButton, int> &held) {
+        int released = 0;
+        for (auto &[button, count]: held) {
+            if (count <= 0) continue;
+
+            input::buttonUp(button);
+            count = 0;
+            ++released;
+        }
+
+        if (released > 0) LOG_WARN("playback: released {} stuck mouse button(s)", released);
+    }
+
     // 执行一条动作。返回 false = 被 stop 打断（只有 click 的按住等待会）。
     bool applyAction(const Action &action, const ITimer &timer, const std::stop_token &st,
-                     std::unordered_map<unsigned, HeldKey> &held) {
+                     std::unordered_map<unsigned, HeldKey> &held,
+                     std::unordered_map<MouseButton, int> &heldButtons) {
         switch (action.type) {
-        case ActionType::MouseMove:
-            input::moveTo(action.x, action.y);
-            return true;
+            case ActionType::MouseMove:
+                input::moveTo(action.x, action.y);
+                return true;
 
-        case ActionType::MouseClick:
-            // 录制产物自带前置 MouseMove，但手写或编辑过的脚本可能只有一条 click，
-            // 所以这里自己先就位（坐标本来就在 Action 里）。
-            input::moveTo(action.x, action.y);
-            return input::click(action.button, action.holdMs, timer, st);
+            case ActionType::MouseClick:
+                // 录制产物自带前置 MouseMove，但手写或编辑过的脚本可能只有一条 click，
+                // 所以这里自己先就位（坐标本来就在 Action 里）。
+                input::moveTo(action.x, action.y);
+                return input::click(action.button, action.holdMs, timer, st);
 
-        case ActionType::MouseWheel:
-            input::wheel(action.wheelDirection, action.wheelSteps);
-            return true;
+            case ActionType::MouseWheel:
+                input::wheel(action.wheelDirection, action.wheelSteps);
+                return true;
 
-        case ActionType::Keyboard: {
-            if (action.keyEvent == KeyEventType::Down) {
-                input::keyDown(action.hotkey);
-                auto &item = held[heldKeyOf(action.hotkey)];
-                item.hotkey = action.hotkey;
-                ++item.count;
-            } else {
-                input::keyUp(action.hotkey);
-                if (const auto it = held.find(heldKeyOf(action.hotkey));
-                    it != held.end() && it->second.count > 0) {
-                    --it->second.count;
+            case ActionType::MouseDown:
+                // 拖动起点也要就位（与 MouseClick 同理）
+                input::moveTo(action.x, action.y);
+                input::buttonDown(action.button);
+                pressHeldButton(heldButtons, action.button);
+                return true;
+
+            case ActionType::MouseUp:
+                // 先移动到松开点，否则终点会偏回按下时的位置
+                input::moveTo(action.x, action.y);
+                input::buttonUp(action.button);
+                if (const auto it = heldButtons.find(action.button);
+                    it != heldButtons.end() && it->second > 0) {
+                    --it->second;
+                    }
+                return true;
+
+            case ActionType::Keyboard: {
+                if (action.keyEvent == KeyEventType::Down) {
+                    input::keyDown(action.hotkey);
+                    auto &item = held[heldKeyOf(action.hotkey)];
+                    item.hotkey = action.hotkey;
+                    ++item.count;
+                } else {
+                    input::keyUp(action.hotkey);
+                    if (const auto it = held.find(heldKeyOf(action.hotkey));
+                        it != held.end() && it->second.count > 0) {
+                        --it->second.count;
+                    }
                 }
+                return true;
             }
-            return true;
-        }
         }
 
         // 未知类型（将来的相对坐标）按无操作处理
@@ -100,6 +138,7 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
     RunController rc(run, ITimer::now());
 
     std::unordered_map<unsigned, HeldKey> held;
+    std::unordered_map<MouseButton, int> heldButtons;
     int executed = 0;
     bool interrupted = false;
 
@@ -117,7 +156,7 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
                 break;
             }
 
-            if (!applyAction(action, timer, st, held)) {
+            if (!applyAction(action, timer, st, held, heldButtons)) {
                 interrupted = true;
                 break;
             }
@@ -129,13 +168,15 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
 
         // 每轮结束补平，保证下一轮从"所有键都松开"开始。
         releaseHeldKeys(held);
+        releaseHeldButtons(heldButtons);
         rc.noteIteration();
 
         if (st.stop_requested()) break;
     }
 
-    // 退出兜底：被 stop 打断时可能正按着键
+    // 退出兜底：被 stop 打断时可能正按着键/鼠标键
     releaseHeldKeys(held);
+    releaseHeldButtons(heldButtons);
 
     LOG_DEBUG("playback: run finished, executed={}", executed);
     return executed;

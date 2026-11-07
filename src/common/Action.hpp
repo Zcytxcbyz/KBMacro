@@ -17,6 +17,10 @@ enum class ActionType {
     MouseClick,
     MouseWheel,
     Keyboard,
+    // 拖动用的两个原子动作：Down 之后可以夹任意多条 MouseMove，最后 Up。
+    // 原地点击仍然产出 MouseClick（一条搞定）；只有真的拖起来才拆成 Down/Move…/Up。
+    MouseDown,
+    MouseUp,
 };
 
 // 鼠标按键
@@ -56,6 +60,8 @@ inline constexpr ActionTypeEntry kActionTypeEntries[] = {
     {.value = ActionType::MouseClick, .name = "MouseClick"},
     {.value = ActionType::MouseWheel, .name = "MouseWheel"},
     {.value = ActionType::Keyboard,   .name = "Keyboard"},
+    {.value = ActionType::MouseDown,  .name = "MouseDown"},
+    {.value = ActionType::MouseUp,    .name = "MouseUp"},
 };
 
 struct MouseButtonEntry {
