@@ -327,3 +327,38 @@ TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
         EXPECT_TRUE(e);
     }
 }
+
+TEST(ConfigRoundTrip, RecorderSettings) {
+    Config c;
+    c.recordMoveIntervalMs = 40;
+    c.recordIgnoreInjected = true;
+    c.recordStartDelayMs = 500;
+    c.recordMaxActions = 5000;
+
+    const auto j = nlohmann::json(c);
+    const auto back = j.get<Config>();
+
+    EXPECT_EQ(back.recordMoveIntervalMs, 40);
+    EXPECT_EQ(back.recordIgnoreInjected, true);
+    EXPECT_EQ(back.recordStartDelayMs, 500);
+    EXPECT_EQ(back.recordMaxActions, 5000);
+}
+
+TEST(ConfigRoundTrip, RecorderSettingsAreClamped) {
+    auto j = nlohmann::json(Config{});
+    j["recordMoveIntervalMs"] = 9999;
+    j["recordStartDelayMs"] = -5;
+    j["recordMaxActions"] = 2000000;
+
+    const auto back = j.get<Config>();
+    EXPECT_EQ(back.recordMoveIntervalMs, kRecordMoveIntervalMsMax);
+    EXPECT_EQ(back.recordStartDelayMs, kRecordStartDelayMsMin);
+    EXPECT_EQ(back.recordMaxActions, kRecordMaxActionsMax);
+
+    // 字段整体缺失 → 全走默认值
+    const auto empty = nlohmann::json::object().get<Config>();
+    EXPECT_EQ(empty.recordMoveIntervalMs, kRecordMoveIntervalMsDefault);
+    EXPECT_EQ(empty.recordIgnoreInjected, false);
+    EXPECT_EQ(empty.recordStartDelayMs, kRecordStartDelayMsDefault);
+    EXPECT_EQ(empty.recordMaxActions, kRecordMaxActionsDefault);
+}

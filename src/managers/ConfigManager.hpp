@@ -53,6 +53,11 @@ public:
     // 混合计时器的末尾忙等时长（毫秒），越界会被夹到
     // kTimerHybridSpinMsMin/Max
     void setTimerHybridSpinMs(int ms);
+    // 录制设置，越界的值会被夹到对应 kRecord*Min/Max
+    void setRecordMoveIntervalMs(int ms);
+    void setRecordIgnoreInjected(bool v);
+    void setRecordStartDelayMs(int ms);
+    void setRecordMaxActions(int n);
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
     void setHotkeyEnabled(int index, bool enabled);

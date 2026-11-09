@@ -37,6 +37,23 @@ inline constexpr int kTimerHybridSpinMsMin = 1;
 inline constexpr int kTimerHybridSpinMsMax = 50;
 inline constexpr int kTimerHybridSpinMsDefault = 10;
 
+// 录制相关设置的取值范围与默认值。
+//   recordMoveIntervalMs —— WH_MOUSE_LL 的移动采样间隔：小于该间隔的移动直接丢弃。
+//                          0 表示不采样（全部记录），1000 表示每秒最多一条。
+//   recordStartDelayMs   —— 开始录制后先等这么久再采集，用来躲开开始热键自身的按键。
+//   recordMaxActions     —— 单次录制的动作条数上限，达到即自动停止。0 = 不限。
+inline constexpr int kRecordMoveIntervalMsMin = 0;
+inline constexpr int kRecordMoveIntervalMsMax = 1000;
+inline constexpr int kRecordMoveIntervalMsDefault = 16;
+
+inline constexpr int kRecordStartDelayMsMin = 0;
+inline constexpr int kRecordStartDelayMsMax = 2000;
+inline constexpr int kRecordStartDelayMsDefault = 200;
+
+inline constexpr int kRecordMaxActionsMin = 0;
+inline constexpr int kRecordMaxActionsMax = 1000000;
+inline constexpr int kRecordMaxActionsDefault = 100000;
+
 struct Config {
     // 界面语言代码（"zh-CN" / "en-US"）。
     // 空串表示"用户从未主动选择过"，启动时回退到系统语言且不写回。
@@ -47,6 +64,21 @@ struct Config {
     // 混合计时器（TimerMode::Hybrid）末尾忙等的毫秒数，范围见
     // kTimerHybridSpinMsMin/Max。其它两种模式不使用该值。
     int timerHybridSpinMs = kTimerHybridSpinMsDefault;
+
+    // ---- 录制设置（下一次开始录制时生效）----
+
+    // 鼠标移动采样间隔（毫秒），范围见 kRecordMoveIntervalMsMin/Max
+    int recordMoveIntervalMs = kRecordMoveIntervalMsDefault;
+
+    // 是否连其它程序（AutoHotkey、输入法等）注入的事件也不录。
+    // 本程序自己注入的事件（dwExtraInfo == 'KBMR'）永远不录，与此开关无关。
+    bool recordIgnoreInjected = false;
+
+    // 开始录制前的等待（毫秒），用于过滤开始热键自身的按键
+    int recordStartDelayMs = kRecordStartDelayMsDefault;
+
+    // 单次录制的动作上限，0 = 不限
+    int recordMaxActions = kRecordMaxActionsDefault;
 
     bool alwaysOnTop = false;
 
@@ -89,6 +121,10 @@ struct Config {
 //     "language": "zh-CN",
 //     "timerMode": "sleep",
 //     "timerHybridSpinMs": 10,
+//     "recordMoveIntervalMs": 16,
+//     "recordIgnoreInjected": false,
+//     "recordStartDelayMs": 200,
+//     "recordMaxActions": 100000,
 //     "alwaysOnTop": false,
 //     "tabIndex": 0,
 //     "hotkeys": [ {...}, ... ],

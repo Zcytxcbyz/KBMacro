@@ -21,6 +21,10 @@ void to_json(nlohmann::json &j, const Config &c) {
     j["language"] = c.language;
     j["timerMode"] = timerModeToString(c.timerMode);
     j["timerHybridSpinMs"] = c.timerHybridSpinMs;
+    j["recordMoveIntervalMs"] = c.recordMoveIntervalMs;
+    j["recordIgnoreInjected"] = c.recordIgnoreInjected;
+    j["recordStartDelayMs"] = c.recordStartDelayMs;
+    j["recordMaxActions"] = c.recordMaxActions;
     j["alwaysOnTop"] = c.alwaysOnTop;
     j["tabIndex"] = c.tabIndex;
 
@@ -56,6 +60,16 @@ void from_json(const nlohmann::json &j, Config &c) {
     c.timerHybridSpinMs = std::clamp(
         j.value("timerHybridSpinMs", kTimerHybridSpinMsDefault),
         kTimerHybridSpinMsMin, kTimerHybridSpinMsMax);
+    c.recordMoveIntervalMs = std::clamp(
+    j.value("recordMoveIntervalMs", kRecordMoveIntervalMsDefault),
+    kRecordMoveIntervalMsMin, kRecordMoveIntervalMsMax);
+    c.recordIgnoreInjected = j.value("recordIgnoreInjected", false);
+    c.recordStartDelayMs = std::clamp(
+        j.value("recordStartDelayMs", kRecordStartDelayMsDefault),
+        kRecordStartDelayMsMin, kRecordStartDelayMsMax);
+    c.recordMaxActions = std::clamp(
+        j.value("recordMaxActions", kRecordMaxActionsDefault),
+        kRecordMaxActionsMin, kRecordMaxActionsMax);
     c.alwaysOnTop = j.value("alwaysOnTop", false);
     c.tabIndex = j.value("tabIndex", 0);
 

@@ -85,6 +85,37 @@ void ConfigManager::setTimerHybridSpinMs(const int ms) {
     LOG_DEBUG("config: timerHybridSpinMs set to {}ms", clamped);
 }
 
+void ConfigManager::setRecordMoveIntervalMs(const int ms) {
+    const int clamped = std::clamp(ms, kRecordMoveIntervalMsMin, kRecordMoveIntervalMsMax);
+    if (m_config.recordMoveIntervalMs == clamped) return;
+    m_config.recordMoveIntervalMs = clamped;
+    save();
+    LOG_DEBUG("config: recordMoveIntervalMs set to {}ms", clamped);
+}
+
+void ConfigManager::setRecordIgnoreInjected(const bool v) {
+    if (m_config.recordIgnoreInjected == v) return;
+    m_config.recordIgnoreInjected = v;
+    save();
+    LOG_DEBUG("config: recordIgnoreInjected set to {}", v);
+}
+
+void ConfigManager::setRecordStartDelayMs(const int ms) {
+    const int clamped = std::clamp(ms, kRecordStartDelayMsMin, kRecordStartDelayMsMax);
+    if (m_config.recordStartDelayMs == clamped) return;
+    m_config.recordStartDelayMs = clamped;
+    save();
+    LOG_DEBUG("config: recordStartDelayMs set to {}ms", clamped);
+}
+
+void ConfigManager::setRecordMaxActions(const int n) {
+    const int clamped = std::clamp(n, kRecordMaxActionsMin, kRecordMaxActionsMax);
+    if (m_config.recordMaxActions == clamped) return;
+    m_config.recordMaxActions = clamped;
+    save();
+    LOG_DEBUG("config: recordMaxActions set to {}", clamped);
+}
+
 void ConfigManager::setAlwaysOnTop(const bool on) {
     if (m_config.alwaysOnTop == on) return;
     m_config.alwaysOnTop = on;
