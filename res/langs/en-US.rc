@@ -101,6 +101,14 @@ BEGIN
     L(IDS_RECORDER_LIST_COL_DELAY)       "Delay (ms)"
     L(IDS_RECORDER_LIST_COL_HOLD)        "Hold (ms)"
 
+    // ---- Recorder delivery ----
+    L(IDS_MSG_RECORD_EMPTY)      "No action was recorded."
+    L(IDS_MSG_RECORD_FAILED)     "Recording failed. See the log for details."
+    L(IDS_MSG_RECORD_DELIVER)    "%d action(s) recorded, but the list already has content. Replace, append, or discard this recording?"
+    L(IDS_MSG_RECORD_REPLACE)    "Replace"
+    L(IDS_MSG_RECORD_APPEND)     "Append"
+    L(IDS_MSG_RECORD_CANCEL)     "Discard"
+
     // ---- Settings panel ----
     L(IDS_SETTINGS_GROUP_GENERAL)          "General"
     L(IDS_SETTINGS_LABEL_LANGUAGE)         "Language:"

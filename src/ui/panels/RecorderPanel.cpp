@@ -103,6 +103,7 @@ RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
     : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr) {
     buildUi();
     setRunning(false);
+    setRecording(false);
 }
 
 void RecorderPanel::buildUi() {
@@ -316,15 +317,16 @@ void RecorderPanel::refreshButtonStates() {
     const long row = getSelectedRow();
     const long total = m_listCtrl->GetItemCount();
 
+    const bool editable = !m_recording;
     const bool hasSelection = (row >= 0);
     const bool hasItems = (total > 0);
 
-    m_btnEdit->Enable(hasSelection);
-    m_btnDelete->Enable(hasSelection);
-    m_btnMoveUp->Enable(hasSelection && row > 0);
-    m_btnMoveDown->Enable(hasSelection && row < total - 1);
-    m_btnClear->Enable(hasItems);
-    // 列表变化后同步回放按钮（空列表不允许开始）
+    m_btnEdit->Enable(editable && hasSelection);
+    m_btnDelete->Enable(editable && hasSelection);
+    m_btnMoveUp->Enable(editable && hasSelection && row > 0);
+    m_btnMoveDown->Enable(editable && hasSelection && row < total - 1);
+    m_btnClear->Enable(editable && hasItems);
+    // 列表变化后同步回放按钮（空列表不允许开始、录制中不允许开始）
     setRunning(m_threadMgr.IsRunning(TaskKind::Playback));
 }
 
@@ -460,15 +462,43 @@ void RecorderPanel::onStopPlayback(wxCommandEvent &) {
     stopPlayback();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::startRecording() { // NOLINT(*-convert-member-functions-to-static)
-    LOG_INFO("recorder: start recording requested");
-    // TODO: ThreadManager::StartRecord()
+void RecorderPanel::startRecording() {
+    const auto &cfg = ConfigManager::instance().config();
+
+    recorder::RecordOptions opts;
+    opts.startDelayMs   = cfg.recordStartDelayMs;
+    opts.moveIntervalMs = cfg.recordMoveIntervalMs;
+    opts.ignoreInjected = cfg.recordIgnoreInjected;
+    opts.maxActions     = cfg.recordMaxActions;
+
+    // 开始/停止热键的主键要过滤掉：它只能用来触发，没理由出现在产物里。
+    //   修饰键不在这里传（那靠归一化阶段的头尾剔除），
+    //   否则用户正常按的 Ctrl+C 会被吃掉 Ctrl。
+    const auto &startKey = cfg.hotkeys[static_cast<int>(HotkeyAction::StartRecord)];
+    const auto &stopKey  = cfg.hotkeys[static_cast<int>(HotkeyAction::StopRecord)];
+    opts.startKeyVk = startKey.vk;
+    opts.startMods  = startKey.modifiers;
+    opts.stopKeyVk  = stopKey.vk;
+    opts.stopMods   = stopKey.modifiers;
+
+    LOG_INFO("recorder: start recording requested (delay={}ms, moveInterval={}ms, "
+             "ignoreInjected={}, maxActions={})",
+             opts.startDelayMs, opts.moveIntervalMs, opts.ignoreInjected, opts.maxActions);
+
+    m_threadMgr.StartRecord(opts, [this](const TaskResult& res) { onRecordFinished(res); });
+
+    // 回放正在跑时 ThreadManager 会拒绝这次请求（不回调、不打按钮），
+    // 所以按权威状态校正，免得界面切到"录制中"却什么都没发生
+    setRecording(m_threadMgr.IsRunning(TaskKind::Record));
 }
-// ReSharper disable once CppMemberFunctionMayBeStatic
-void RecorderPanel::stopRecording() { // NOLINT(*-convert-member-functions-to-static)
+
+void RecorderPanel::stopRecording() {
     LOG_INFO("recorder: stop recording requested");
-    // TODO: ThreadManager::StopRecord()
+
+    // 阻塞 join，返回时采集线程确实已经退出（钩子也卸了）。
+    //   产物走队列里的回调：稍后 onRecordFinished 再问"替换/追加/丢弃"
+    m_threadMgr.StopRecord();
+    setRecording(false);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -479,7 +509,7 @@ void RecorderPanel::startPlayback() {
 
     // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
     // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
-    m_threadMgr.StartPlayback(m_actions, run, [this](const TaskResult res) {
+    m_threadMgr.StartPlayback(m_actions, run, [this](const TaskResult& res) {
         setRunning(false);
         LOG_INFO("recorder: playback finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
                  static_cast<int>(res.reason), res.executed);
@@ -496,8 +526,86 @@ void RecorderPanel::stopPlayback() {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::setRunning(const bool running) {
     // 空列表时不允许开始：否则会起一个"一条动作都不播"的线程
-    m_btnStartPlayback->Enable(!running && !m_actions.empty());
+    // 录制中也不允许：录制与回放互斥，ThreadManager 会拒绝，界面就别给入口
+    m_btnStartPlayback->Enable(!running && !m_recording && !m_actions.empty());
     m_btnStopPlayback->Enable(running);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::setRecording(const bool recording) {
+    m_recording = recording;
+
+    m_btnStartRecord->Enable(!recording);
+    m_btnStopRecord->Enable(recording);
+
+    // 录制期间锁住"会改动列表"的入口：停止后要拿录到的内容和当前列表做交付选择，
+    //   中途改了列表，那个"替换还是追加"的提问就失去意义了
+    m_btnAdd->Enable(!recording);
+    m_btnImportScript->Enable(!recording);
+    m_btnExportScript->Enable(!recording);
+
+    // 编辑类按钮按"选中 + 非录制中"统一刷新
+    refreshButtonStates();
+}
+
+void RecorderPanel::onRecordFinished(const TaskResult &res) {
+    setRecording(false);
+
+    LOG_INFO("recorder: recording finished, reason={}, actions={}", // NOLINT(*-lambda-function-name)
+             static_cast<int>(res.reason),
+             res.recorded ? static_cast<int>(res.recorded->size()) : -1);
+
+    // 没有产物只有一种情况：录制线程异常结束（钩子装不上等），launch 已经记了 ERROR
+    if (!res.recorded) {
+        if (res.reason == FinishReason::Failed) {
+            wxMessageBox(TR(IDS_MSG_RECORD_FAILED), TR(IDS_APP_TITLE),
+                         wxOK | wxICON_ERROR, this);
+        }
+        return;
+    }
+
+    if (res.recorded->empty()) {
+        wxMessageBox(TR(IDS_MSG_RECORD_EMPTY), TR(IDS_APP_TITLE),
+                     wxOK | wxICON_INFORMATION, this);
+        return;
+    }
+
+    deliverRecording(*res.recorded);
+}
+
+void RecorderPanel::deliverRecording(const std::vector<Action> &actions) {
+    const auto count = static_cast<int>(actions.size());
+
+    // 列表本来就是空的：直接装进去，没必要问"替换还是追加"
+    if (m_actions.empty()) {
+        m_actions = actions;
+        refreshList();
+        selectRow(static_cast<long>(m_actions.size()) - 1);
+        LOG_INFO("recorder: {} action(s) delivered (list was empty)", count);
+        return;
+    }
+
+    wxMessageDialog dlg(this,
+                        wxString::Format(wxString(TR(IDS_MSG_RECORD_DELIVER)), count),
+                        TR(IDS_APP_TITLE),
+                        wxYES_NO | wxCANCEL | wxICON_QUESTION);
+
+    switch (dlg.ShowModal()) {
+        case wxID_YES:
+            m_actions = actions;
+            LOG_INFO("recorder: {} action(s) delivered (replaced)", count);
+            break;
+        case wxID_NO:
+            m_actions.insert(m_actions.end(), actions.begin(), actions.end());
+            LOG_INFO("recorder: {} action(s) delivered (appended)", count);
+            break;
+        default:
+            LOG_INFO("recorder: {} recorded action(s) discarded by user", count);
+            return;
+    }
+
+    refreshList();
+    selectRow(static_cast<long>(m_actions.size()) - 1);
 }
 
 // ============================================================

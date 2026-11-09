@@ -101,6 +101,14 @@ BEGIN
     L(IDS_RECORDER_LIST_COL_DELAY)       "延时 (ms)"
     L(IDS_RECORDER_LIST_COL_HOLD)        "保持 (ms)"
 
+    // ---- Recorder 交付 ----
+    L(IDS_MSG_RECORD_EMPTY)      "没有录到动作。"
+    L(IDS_MSG_RECORD_FAILED)     "录制异常结束，请查看日志。"
+    L(IDS_MSG_RECORD_DELIVER)    "已录到 %d 条动作，当前列表已有内容。替换、追加，还是丢弃这次录制？"
+    L(IDS_MSG_RECORD_REPLACE)    "替换"
+    L(IDS_MSG_RECORD_APPEND)     "追加"
+    L(IDS_MSG_RECORD_CANCEL)     "丢弃"
+
     // ---- Settings 面板 ----
     L(IDS_SETTINGS_GROUP_GENERAL)          "通用"
     L(IDS_SETTINGS_LABEL_LANGUAGE)         "语言："

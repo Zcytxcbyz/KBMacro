@@ -8,7 +8,7 @@
 #include "common/Action.hpp"
 #include "common/Types.hpp"
 
-class ThreadManager;
+#include "managers/ThreadManager.hpp"
 
 // 录制与编排面板。
 //
@@ -80,8 +80,16 @@ private:
     // 切换回放按钮状态；同时按"列表是否为空"决定能不能开始
     void setRunning(bool running);
 
+    // 切换录制按钮状态；录制期间同时锁住列表编辑、导入导出与回放
+    void setRecording(bool recording);
+
+    // 录制线程结束（停止或达到上限）后的交付：空表提示、非空走三选一弹窗
+    void onRecordFinished(const TaskResult &res);
+    void deliverRecording(const std::vector<Action> &actions);
+
     // ---- 数据 ----
     std::vector<Action> m_actions;
+    bool m_recording = false;
     ThreadManager &m_threadMgr;
 
     // ---- 控件 ----

@@ -110,6 +110,14 @@
 #define IDS_RECORDER_LIST_COL_DELAY         4023
 #define IDS_RECORDER_LIST_COL_HOLD          4024
 
+// ---- Recorder 交付 ----
+#define IDS_MSG_RECORD_EMPTY                4030
+#define IDS_MSG_RECORD_FAILED               4031
+#define IDS_MSG_RECORD_DELIVER              4032
+#define IDS_MSG_RECORD_REPLACE              4033
+#define IDS_MSG_RECORD_APPEND               4034
+#define IDS_MSG_RECORD_CANCEL               4035
+
 // ---- Settings 面板 ----
 #define IDS_SETTINGS_GROUP_GENERAL                  5001
 #define IDS_SETTINGS_LABEL_LANGUAGE                 5002
