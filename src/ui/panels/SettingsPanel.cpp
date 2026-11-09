@@ -59,6 +59,7 @@ void SettingsPanel::buildUi() {
     buildGeneralGroup(root);
     buildHotkeyGroup(root);
     buildConfigGroup(root);
+    buildRecorderGroup(root);
     buildResetGroup(root);
 
     SetSizer(root);
