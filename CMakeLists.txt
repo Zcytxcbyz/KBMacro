@@ -126,6 +126,7 @@ set(HEADERS
         src/modules/RecorderNormalize.hpp
         src/modules/Recorder.hpp
         src/common/RateLimiter.hpp
+        src/modules/Recorder.hpp
         # 在这里添加 .h 文件
 )
 

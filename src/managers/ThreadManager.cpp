@@ -109,7 +109,7 @@ void ThreadManager::StopKeyboard() {
 // 录制
 // ------------------------------------------------------------
 
-void ThreadManager::StartRecord(FinishCallback onFinished) {
+void ThreadManager::StartRecord(const recorder::RecordOptions &opts, FinishCallback onFinished) {
     wxASSERT_MSG(wxIsMainThread(), "ThreadManager::StartRecord must be called from the UI thread");
 
     // 录制与回放互斥：后来者被拒绝，不抢占（正在回放的东西被顶掉更让人意外）
@@ -118,15 +118,19 @@ void ThreadManager::StartRecord(FinishCallback onFinished) {
         return;
     }
 
-    launch(TaskKind::Record, std::move(onFinished), [](const std::stop_token& st) {
-        // TODO(接线)：换成 modules/Recorder 的采集端
-        //   起 WH_KEYBOARD_LL / WH_MOUSE_LL 钩子 → 回调只入列 ConcurrentQueue →
-        //   消费端（本线程）出列、算 delayMs/holdMs、
-        //   退出前必须 drain 光队列，再 return
-        // 返回非空表：录制任务即使一个动作都没录到也要交回"空表"（见 TaskResult 注释）
-        LOG_WARN("recorder: body not wired yet, finishing with empty result"); // NOLINT(*-lambda-function-name)
-        return TaskResult{.recorded = std::make_shared<std::vector<Action>>()};
-    });
+    // opts 按值捕获：它是调用方（面板）的局部对象，而线程比调用栈活得久
+    launch(TaskKind::Record, std::move(onFinished),
+           [timer = m_timerRef, opts](const std::stop_token &st) {
+               // 录制没有"自然结束"：要么用户按停止，要么达到动作上限。
+               //   executed 对录制恒为 0（没有"轮"的概念），动作序列在 recorded 里：
+               //   非空指针 + 空表 = 录了但一个动作都没录到（面板据此提示）
+               //   钩子装不上时 recorder::run 抛异常，由 launch 记 Failed + 面板"异常结束"
+               std::vector<Action> actions = recorder::run(opts, *timer, st);
+               const auto count = static_cast<int>(actions.size());
+               LOG_DEBUG("threadmanager: record finished, {} action(s)", count); // NOLINT(*-lambda-function-name)
+               return TaskResult{
+                   .recorded = std::make_shared<std::vector<Action>>(std::move(actions))};
+           });
 }
 
 void ThreadManager::StopRecord() {

@@ -14,6 +14,8 @@
 #include "common/KeyboardParams.hpp"
 #include "common/Types.hpp"
 
+#include "modules/Recorder.hpp"
+
 // 只存引用、只在 .cpp 里调 CallAfter，头文件不需要 wx 的完整定义
 class wxEvtHandler;
 
@@ -98,8 +100,10 @@ public:
     void StopKeyboard();
 
     // ---- 录制 ----
+    // opts 由 UI 线程读好（配置四项 + 开始/停止热键的 vk/mods）后传进来：
+    //   线程里不读 ConfigManager（单例、非线程安全），也不碰 HotkeyManager。
     // 回放正在跑 → 拒绝：打 LOG_WARN，不启动也不回调
-    void StartRecord(FinishCallback onFinished);
+    void StartRecord(const recorder::RecordOptions &opts, FinishCallback onFinished);
     void StopRecord();
 
     // ---- 回放 ----
