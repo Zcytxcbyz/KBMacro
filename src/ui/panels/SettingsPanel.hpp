@@ -2,6 +2,7 @@
 
 #include <wx/wx.h>
 #include <wx/listctrl.h>
+#include <wx/scrolwin.h>
 #include <wx/spinctrl.h>
 
 // ============================================================
@@ -17,7 +18,7 @@
 
 class HotkeyManager;
 
-class SettingsPanel : public wxPanel {
+class SettingsPanel : public wxScrolledWindow {
 public:
     SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr);
 

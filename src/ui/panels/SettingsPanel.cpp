@@ -45,9 +45,15 @@ namespace {
 }
 
 SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
-    : wxPanel(parent, wxID_ANY),
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL),
       m_hotkeyMgr(hotkeyMgr) {
     buildUi();
+
+    // 五个分组比一屏高：竖向滚动，步长一行 ≈ 10 DIP；
+    // 横向不滚（0 = 关闭），标签文字靠 sizer 的 growable col 自适应
+    SetScrollRate(0, FromDIP(10));
+    wxWindowBase::FitInside();
+
     refreshFromConfig();
     refreshHotkeyList();
     refreshConfigPathText();
