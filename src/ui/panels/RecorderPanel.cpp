@@ -590,6 +590,10 @@ void RecorderPanel::deliverRecording(const std::vector<Action> &actions) {
                         TR(IDS_APP_TITLE),
                         wxYES_NO | wxCANCEL | wxICON_QUESTION);
 
+    dlg.SetYesNoCancelLabels(wxString(TR(IDS_MSG_RECORD_REPLACE)),
+                         wxString(TR(IDS_MSG_RECORD_APPEND)),
+                         wxString(TR(IDS_MSG_RECORD_CANCEL)));
+
     switch (dlg.ShowModal()) {
         case wxID_YES:
             m_actions = actions;
