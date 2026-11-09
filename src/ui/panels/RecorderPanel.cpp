@@ -100,16 +100,17 @@ namespace {
 } // namespace
 
 RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL),
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                       wxVSCROLL | wxHSCROLL),
       m_threadMgr(threadMgr) {
     buildUi();
     setRunning(false);
     setRecording(false);
 
-    // 页面级滚动：窗口装不下时才出现。
-    // 动作列表自己带滚动条（行数可变），这里不做"撑满"处理。
-    SetScrollRate(0, FromDIP(10));
-    FitInside();
+    // 页面双向滚动：横向管"窗口太窄、控件排不下"，竖向管"窗口太矮"。
+    // 动作列表自己还有一套滚动条（行数可变、列宽固定），那是列表自己的范围。
+    SetScrollRate(FromDIP(10), FromDIP(10));
+    wxWindowBase::FitInside();
 }
 
 void RecorderPanel::buildUi() {
