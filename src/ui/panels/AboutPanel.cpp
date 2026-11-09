@@ -79,11 +79,12 @@ namespace {
 } // namespace
 
 AboutPanel::AboutPanel(wxWindow *parent)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                       wxVSCROLL | wxHSCROLL) {
     buildUi();
 
-    // 页面级滚动：内容不多，正常尺寸下看不到滚动条
-    SetScrollRate(0, FromDIP(10));
+    // 页面级双向滚动：正常尺寸都看不到，窗口太窄时出横向滚条
+    SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 }
 
