@@ -37,6 +37,9 @@ private:
     // 重填热键列表（数据源：ConfigManager::config().hotkeys）
     void refreshHotkeyList();
 
+    // 把热键列表高度撑到能放下全部行（避免页面滚动条 + 列表滚动条两层嵌套）
+    void fitHotkeyListHeight();
+
     // 刷新配置文件路径显示
     void refreshConfigPathText();
 

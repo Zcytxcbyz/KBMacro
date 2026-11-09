@@ -343,6 +343,25 @@ void SettingsPanel::refreshHotkeyList() {
                                         : wxString(s));
         m_hotkeyList->CheckItem(row, cfg.hotkeyEnabled[i]);
     }
+
+    fitHotkeyListHeight();
+}
+
+// 热键列表是固定 11 行，整体显示即可：外层页面滚动负责，内层不出滚动条。
+// 高度 = 最后一行底边 + 一点余量（GetItemRect 的 y 已经含表头高度）。
+void SettingsPanel::fitHotkeyListHeight() {
+    const int count = m_hotkeyList->GetItemCount();
+    if (count <= 0) return;
+
+    wxRect last;
+    if (!m_hotkeyList->GetItemRect(count - 1, last)) return;
+
+    const int height = last.GetBottom() + FromDIP(6);
+    if (height == m_hotkeyList->GetMinSize().GetHeight()) return;
+
+    m_hotkeyList->SetMinSize(wxSize(-1, height));
+    Layout();
+    FitInside();   // 页面虚拟尺寸跟着变，滚动条范围才对
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
