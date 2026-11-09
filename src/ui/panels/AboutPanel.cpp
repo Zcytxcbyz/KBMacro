@@ -7,6 +7,7 @@
 #include <wx/statbox.h>
 
 #include "managers/LanguageManager.hpp"
+#include "ui/dialogs/DialogButtons.hpp"
 
 // ============================================================
 // 版本 / 主页由 CMake 注入
@@ -181,6 +182,8 @@ void AboutPanel::onShowLicense(wxCommandEvent &event) {
 
     root->Add(text, 1, wxEXPAND | wxALL, 8);
     root->Add(dlg.CreateButtonSizer(wxOK), 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
+
+    uibtn::localize(&dlg);
 
     dlg.SetSizer(root);
     dlg.CentreOnParent();

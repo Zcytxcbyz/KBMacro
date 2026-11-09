@@ -4,6 +4,7 @@
 #include <wx/statbox.h>
 #include <utility>
 
+#include "DialogButtons.hpp"
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
 #include "common/Utils.hpp"   // ToUtf8
@@ -36,6 +37,8 @@ HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
     // ---- 标准按钮行：确定/取消 ----
     auto *btnSizer = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     root->Add(btnSizer, 0, wxEXPAND | wxALL, 12);
+
+    uibtn::localize(this);   // 标准按钮文案换成本地化文案（wx 不带语言文件）
 
     SetSizerAndFit(root);
     wxTopLevelWindowBase::SetMinSize(wxSize(FromDIP(400), -1));

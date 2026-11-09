@@ -24,6 +24,10 @@
 #define IDS_COMMON_BTN_STOP              1102
 #define IDS_COMMON_BTN_IMPORT            1103
 #define IDS_COMMON_BTN_EXPORT            1104
+#define IDS_COMMON_BTN_OK                1105
+#define IDS_COMMON_BTN_CANCEL            1106
+#define IDS_COMMON_BTN_YES               1107
+#define IDS_COMMON_BTN_NO                1108
 #define IDS_COMMON_RUNMODE_INFINITE      1110
 #define IDS_COMMON_RUNMODE_TIMED         1111
 #define IDS_COMMON_RUNMODE_COUNTED       1112

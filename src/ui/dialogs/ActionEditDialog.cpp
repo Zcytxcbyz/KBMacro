@@ -2,6 +2,7 @@
 
 #include <wx/statbox.h>
 
+#include "DialogButtons.hpp"
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"
@@ -114,6 +115,8 @@ void ActionEditDialog::buildUi() {
 
     // ---- 标准按钮行 ----
     root->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, 12);
+
+    uibtn::localize(this);
 
     SetSizerAndFit(root);
     SetMinSize(FromDIP(wxSize(500, 420)));
