@@ -27,14 +27,15 @@ namespace {
 
 KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
                              std::shared_ptr<ITimer> &timerRef)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL),
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                   wxVSCROLL | wxHSCROLL),
       m_threadMgr(threadMgr), m_timerRef(timerRef) {
     buildUi();
     setRunning(false);
 
     // 页面级滚动：窗口装不下时才出现，正常尺寸下看不到滚动条
-    SetScrollRate(0, FromDIP(10));
-    FitInside();
+    SetScrollRate(FromDIP(10), FromDIP(10));
+    wxWindowBase::FitInside();
 }
 
 void KeyboardPanel::buildUi() {
