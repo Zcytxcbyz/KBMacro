@@ -26,6 +26,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/modules/Keyboard.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Playback.cpp
         ${CMAKE_SOURCE_DIR}/src/common/CoordAdapt.cpp
+        ${CMAKE_SOURCE_DIR}/src/modules/RecorderNormalize.cpp
 )
 
 # 测试文件
@@ -41,6 +42,7 @@ set(TEST_SOURCES
         test_keyboard.cpp
         test_playback.cpp
         test_coordadapt.cpp
+        test_recorder_normalize.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})

@@ -81,6 +81,7 @@ set(SOURCES
         src/modules/Keyboard.cpp
         src/modules/Playback.cpp
         src/common/CoordAdapt.cpp
+        src/modules/RecorderNormalize.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -121,6 +122,7 @@ set(HEADERS
         src/modules/Keyboard.hpp
         src/modules/Playback.hpp
         src/common/CoordAdapt.hpp
+        src/modules/RecorderNormalize.hpp
         # 在这里添加 .h 文件
 )
 
