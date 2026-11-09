@@ -9,12 +9,12 @@
 #include <string_view>
 
 #define LANG_DEFAULT_BASE LANG_ZH_CN_BASE
-#define LANG_DEFAULT Lang::ZH_CN
-#define LANG_DEFAULT_CODE "zh-CN"
+#define LANG_DEFAULT Lang::EN_US
+#define LANG_DEFAULT_CODE "en-US"
 
 enum class Lang {
-    ZH_CN,
     EN_US,
+    ZH_CN,
     COUNT
 };
 
@@ -26,8 +26,8 @@ struct LangInfo {
 };
 
 inline constexpr LangInfo kLangs[] = {
-    {.id = Lang::ZH_CN, .baseResId = LANG_ZH_CN_BASE, .code = "zh-CN", .displayName = L"简体中文"},
     {.id = Lang::EN_US, .baseResId = LANG_EN_US_BASE, .code = "en-US", .displayName = L"English"},
+    {.id = Lang::ZH_CN, .baseResId = LANG_ZH_CN_BASE, .code = "zh-CN", .displayName = L"简体中文"},
 };
 
 static_assert(std::size(kLangs) == static_cast<std::size_t>(Lang::COUNT),
