@@ -1,14 +1,14 @@
 #pragma once
 
-#define LANG_ZH_CN_BASE  10000
-#define LANG_EN_US_BASE  20000
+#define LANG_EN_US_BASE  10000
+#define LANG_ZH_CN_BASE  20000
 
 #ifndef RC_INVOKED
 
 #include <iterator>
 #include <string_view>
 
-#define LANG_DEFAULT_BASE LANG_ZH_CN_BASE
+#define LANG_DEFAULT_BASE LANG_EN_US_BASE
 #define LANG_DEFAULT Lang::EN_US
 #define LANG_DEFAULT_CODE "en-US"
 
