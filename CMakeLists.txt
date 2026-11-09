@@ -82,6 +82,7 @@ set(SOURCES
         src/modules/Playback.cpp
         src/common/CoordAdapt.cpp
         src/modules/RecorderNormalize.cpp
+        src/common/RateLimiter.hpp
         # 在这里添加 .cpp 文件
 )
 
