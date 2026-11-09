@@ -118,7 +118,7 @@ struct Config {
 // JSON 形态：
 //   {
 //     "version": 1,
-//     "language": "zh-CN",
+//     "language": "en-US",
 //     "timerMode": "sleep",
 //     "timerHybridSpinMs": 10,
 //     "recordMoveIntervalMs": 16,
