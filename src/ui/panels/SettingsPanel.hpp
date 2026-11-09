@@ -26,6 +26,7 @@ private:
 
     void buildGeneralGroup(wxSizer *parent);
     void buildHotkeyGroup(wxSizer *parent);
+    void buildRecorderGroup(wxSizer *parent);
     void buildConfigGroup(wxSizer *parent);
     void buildResetGroup(wxSizer *parent);
 
@@ -41,6 +42,10 @@ private:
     void onLanguageChanged(wxCommandEvent &event);
     void onTimerModeChanged(const wxCommandEvent &event);
     void onHybridSpinChanged(wxCommandEvent &event);
+    void onRecorderMoveIntervalChanged(wxCommandEvent &event);
+    void onRecorderIgnoreInjectedToggled(wxCommandEvent &event);
+    void onRecorderStartDelayChanged(wxCommandEvent &event);
+    void onRecorderMaxActionsChanged(wxCommandEvent &event);
     void onAlwaysOnTopToggled(wxCommandEvent &event);
     void onModifyHotkey(wxCommandEvent &event);
     void onExportConfig(wxCommandEvent &event);
@@ -60,6 +65,12 @@ private:
     // 混合模式的末尾忙等时长；仅 Hybrid 时启用
     wxSpinCtrl *m_spinHybridMs{};
     wxCheckBox *m_chkAlwaysOnTop{};
+
+    // ---- 录制 ----
+    wxSpinCtrl *m_spinRecMoveInterval{};
+    wxSpinCtrl *m_spinRecStartDelay{};
+    wxSpinCtrl *m_spinRecMaxActions{};
+    wxCheckBox *m_chkRecIgnoreInjected{};
 
     // ---- 热键 ----
     wxListCtrl *m_hotkeyList{};

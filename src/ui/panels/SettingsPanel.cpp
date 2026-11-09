@@ -77,6 +77,14 @@ void SettingsPanel::buildUi() {
     m_btnClearSpinConfirm->Bind(wxEVT_BUTTON, &SettingsPanel::onClearSpinConfirm, this);
     m_btnResetDefaults->Bind(wxEVT_BUTTON, &SettingsPanel::onResetDefaults, this);
     m_btnDeletePortableConfig->Bind(wxEVT_BUTTON, &SettingsPanel::onDeletePortableConfig, this);
+    // 录制四项：spins 同样要 SPINCTRL + TEXT 双绑（手输走 TEXT）
+    m_spinRecMoveInterval->Bind(wxEVT_SPINCTRL, &SettingsPanel::onRecorderMoveIntervalChanged, this);
+    m_spinRecMoveInterval->Bind(wxEVT_TEXT, &SettingsPanel::onRecorderMoveIntervalChanged, this);
+    m_spinRecStartDelay->Bind(wxEVT_SPINCTRL, &SettingsPanel::onRecorderStartDelayChanged, this);
+    m_spinRecStartDelay->Bind(wxEVT_TEXT, &SettingsPanel::onRecorderStartDelayChanged, this);
+    m_spinRecMaxActions->Bind(wxEVT_SPINCTRL, &SettingsPanel::onRecorderMaxActionsChanged, this);
+    m_spinRecMaxActions->Bind(wxEVT_TEXT, &SettingsPanel::onRecorderMaxActionsChanged, this);
+    m_chkRecIgnoreInjected->Bind(wxEVT_CHECKBOX, &SettingsPanel::onRecorderIgnoreInjectedToggled, this);
 }
 
 // ============================================================
@@ -205,6 +213,62 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
 }
 
 // ============================================================
+// 分组：录制
+// ============================================================
+void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
+    auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_RECORD));
+    auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
+
+    auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
+    form->AddGrowableCol(1, 1);
+
+    // 鼠标移动采样间隔：0 = 不采样
+    m_spinRecMoveInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                           wxDefaultPosition, FromDIP(wxSize(80, -1)),
+                                           wxSP_ARROW_KEYS,
+                                           kRecordMoveIntervalMsMin, kRecordMoveIntervalMsMax,
+                                           kRecordMoveIntervalMsDefault);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_MOVE_INTERVAL)),
+              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(m_spinRecMoveInterval, 0, wxALIGN_CENTER_VERTICAL);
+    form->AddSpacer(0);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MOVE_INTERVAL)),
+              1, wxEXPAND);
+
+    // 开始延迟：过滤开始热键自身的按键
+    m_spinRecStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                         wxDefaultPosition, FromDIP(wxSize(80, -1)),
+                                         wxSP_ARROW_KEYS,
+                                         kRecordStartDelayMsMin, kRecordStartDelayMsMax,
+                                         kRecordStartDelayMsDefault);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_START_DELAY)),
+              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(m_spinRecStartDelay, 0, wxALIGN_CENTER_VERTICAL);
+
+    // 动作上限：0 = 不限
+    m_spinRecMaxActions = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
+                                         wxDefaultPosition, FromDIP(wxSize(110, -1)),
+                                         wxSP_ARROW_KEYS,
+                                         kRecordMaxActionsMin, kRecordMaxActionsMax,
+                                         kRecordMaxActionsDefault);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_MAX_ACTIONS)),
+              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(m_spinRecMaxActions, 0, wxALIGN_CENTER_VERTICAL);
+    form->AddSpacer(0);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MAX_ACTIONS)),
+              1, wxEXPAND);
+
+    box->Add(form, 0, wxEXPAND | wxALL, 8);
+
+    // 注入事件过滤（自家注入的永远不录，这个开关管的是"别的程序注入的"）
+    m_chkRecIgnoreInjected = new wxCheckBox(staticBox, wxID_ANY,
+                                            TR(IDS_SETTINGS_CHK_REC_IGNORE_INJECTED));
+    box->Add(m_chkRecIgnoreInjected, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
+
+    parent->Add(box, 0, wxEXPAND | wxALL, 8);
+}
+
+// ============================================================
 // 分组四：重置
 // ============================================================
 void SettingsPanel::buildResetGroup(wxSizer *parent) {
@@ -250,6 +314,12 @@ void SettingsPanel::refreshFromConfig() {
 
     // 窗口置顶
     m_chkAlwaysOnTop->SetValue(cfg.alwaysOnTop);
+
+    // 录制四项：只影响"下一次开始录制"（RecordOptions 在点开始时才组装）
+    m_spinRecMoveInterval->SetValue(cfg.recordMoveIntervalMs);
+    m_spinRecStartDelay->SetValue(cfg.recordStartDelayMs);
+    m_spinRecMaxActions->SetValue(cfg.recordMaxActions);
+    m_chkRecIgnoreInjected->SetValue(cfg.recordIgnoreInjected);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -409,6 +479,63 @@ void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
     if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
         frame->rebuildTimer();
     }
+}
+
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onRecorderMoveIntervalChanged(wxCommandEvent &event) {
+    (void)event;   // SPINCTRL 与 TEXT 共用，统一读控件当前值
+
+    const int ms = m_spinRecMoveInterval->GetValue();
+    auto &cfgMgr = ConfigManager::instance();
+
+    // 手输时每敲一个字符发一次，值没变就什么都不做
+    if (ms == cfgMgr.config().recordMoveIntervalMs) return;
+
+    LOG_DEBUG("settings: record move interval = {}ms", ms);
+    cfgMgr.setRecordMoveIntervalMs(ms);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+void SettingsPanel::onRecorderIgnoreInjectedToggled(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
+    const bool on = event.IsChecked();
+    auto &cfgMgr = ConfigManager::instance();
+
+    if (on == cfgMgr.config().recordIgnoreInjected) return;
+
+    LOG_DEBUG("settings: record ignore injected = {}", on);
+    cfgMgr.setRecordIgnoreInjected(on);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onRecorderStartDelayChanged(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
+    (void)event;
+
+    const int ms = m_spinRecStartDelay->GetValue();
+    auto &cfgMgr = ConfigManager::instance();
+
+    if (ms == cfgMgr.config().recordStartDelayMs) return;
+
+    LOG_DEBUG("settings: record start delay = {}ms", ms);
+    cfgMgr.setRecordStartDelayMs(ms);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+// ReSharper disable once CppMemberFunctionMayBeConst
+void SettingsPanel::onRecorderMaxActionsChanged(wxCommandEvent &event) {
+    (void)event;
+
+    const int n = m_spinRecMaxActions->GetValue();
+    auto &cfgMgr = ConfigManager::instance();
+
+    if (n == cfgMgr.config().recordMaxActions) return;
+
+    LOG_DEBUG("settings: record max actions = {}", n);
+    cfgMgr.setRecordMaxActions(n);
 }
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
