@@ -7,7 +7,7 @@
 #include <wx/statbox.h>
 
 #include "managers/LanguageManager.hpp"
-#include "ui/dialogs/DialogButtons.hpp"
+#include "../DialogButtons.hpp"
 
 // ============================================================
 // 版本 / 主页由 CMake 注入
