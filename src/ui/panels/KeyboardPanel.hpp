@@ -3,6 +3,7 @@
 #include <memory>
 
 #include <wx/wx.h>
+#include <wx/scrolwin.h>
 
 #include "common/ITimer.hpp"
 #include "common/KeyboardParams.hpp"
@@ -15,7 +16,7 @@ class ThreadManager;
 //   - 参数在本面板组装（collectParams / applyParams），启动时快照给 ThreadManager
 //   - 计时器从 MainFrame 借用（引用 shared_ptr 本身，切换模式后自动跟着换新的）
 //   - "发送一次"是同步的一次性动作，不走线程也不经过 ThreadManager
-class KeyboardPanel : public wxPanel {
+class KeyboardPanel : public wxScrolledWindow {
 public:
     KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
                   std::shared_ptr<ITimer> &timerRef);

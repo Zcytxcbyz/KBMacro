@@ -26,9 +26,14 @@ namespace {
 }
 
 ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
-    : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr) {
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL),
+      m_threadMgr(threadMgr) {
     buildUi();
     setRunning(false);
+
+    // 页面级滚动：窗口装不下时才出现，正常尺寸下看不到滚动条
+    SetScrollRate(0, FromDIP(10));
+    wxWindowBase::FitInside();
 }
 
 void ClickerPanel::buildUi() {

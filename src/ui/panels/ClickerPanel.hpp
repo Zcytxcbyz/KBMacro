@@ -1,6 +1,7 @@
 #pragma once
 
 #include <wx/wx.h>
+#include <wx/scrolwin.h>
 
 #include "common/ClickerParams.hpp"
 
@@ -10,7 +11,7 @@ class ThreadManager;
 //
 //   - 参数在本面板组装（collectParams / applyParams），启动时快照给 ThreadManager
 //   - 是否真在跑由 ThreadManager 的 Slot 状态决定，面板只按结果切按钮
-class ClickerPanel : public wxPanel {
+class ClickerPanel : public wxScrolledWindow {
 public:
     ClickerPanel(wxWindow *parent, ThreadManager &threadMgr);
 

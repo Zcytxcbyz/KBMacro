@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <wx/wx.h>
+#include <wx/scrolwin.h>
 #include <wx/listctrl.h>
 
 #include "common/Action.hpp"
@@ -18,7 +19,7 @@
 // 本阶段：
 //   - 提供公开方法（供热键路径调用）
 //   - 支持宏脚本的导入 / 导出（*.macro.json，整体替换语义）
-class RecorderPanel : public wxPanel {
+class RecorderPanel : public wxScrolledWindow {
 public:
     RecorderPanel(wxWindow *parent, ThreadManager &threadMgr);
 

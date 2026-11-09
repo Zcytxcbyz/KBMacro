@@ -100,10 +100,16 @@ namespace {
 } // namespace
 
 RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
-    : wxPanel(parent, wxID_ANY), m_threadMgr(threadMgr) {
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL),
+      m_threadMgr(threadMgr) {
     buildUi();
     setRunning(false);
     setRecording(false);
+
+    // 页面级滚动：窗口装不下时才出现。
+    // 动作列表自己带滚动条（行数可变），这里不做"撑满"处理。
+    SetScrollRate(0, FromDIP(10));
+    FitInside();
 }
 
 void RecorderPanel::buildUi() {
