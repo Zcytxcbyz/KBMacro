@@ -124,6 +124,7 @@ set(HEADERS
         src/modules/Playback.hpp
         src/common/CoordAdapt.hpp
         src/modules/RecorderNormalize.hpp
+        src/modules/Recorder.hpp
         # 在这里添加 .h 文件
 )
 
