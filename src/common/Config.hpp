@@ -98,8 +98,8 @@ struct Config {
     struct Window {
         int x = -1;
         int y = -1;
-        int width = 650;
-        int height = 720;
+        int width = 750;
+        int height = 850;
         bool maximized = false;
     } window;
 
