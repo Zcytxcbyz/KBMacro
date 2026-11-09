@@ -43,6 +43,7 @@ set(TEST_SOURCES
         test_playback.cpp
         test_coordadapt.cpp
         test_recorder_normalize.cpp
+        test_ratelimiter.cpp
 )
 
 add_executable(KBMacroTests ${TEST_SOURCES} ${TESTED_SOURCES})
