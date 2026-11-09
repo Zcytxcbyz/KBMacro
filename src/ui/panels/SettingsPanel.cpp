@@ -356,7 +356,7 @@ void SettingsPanel::fitHotkeyListHeight() {
     wxRect last;
     if (!m_hotkeyList->GetItemRect(count - 1, last)) return;
 
-    const int height = last.GetBottom() + FromDIP(6);
+    const int height = last.GetBottom() + FromDIP(8);
     if (height == m_hotkeyList->GetMinSize().GetHeight()) return;
 
     m_hotkeyList->SetMinSize(wxSize(-1, height));
