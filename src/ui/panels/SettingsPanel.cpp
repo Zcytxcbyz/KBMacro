@@ -405,6 +405,12 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     root->Add(text, 0, wxALL, FromDIP(16));
     root->Add(btnRow, 0, wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(12));
 
+    // wxDialog 只自动 EndModal 肯定按钮（默认 wxID_OK）与退出按钮（默认 wxID_CANCEL），
+    // wxID_YES / wxID_NO 不在其中，所以显式绑定，否则点了没反应。
+    btnNow->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_YES); });
+    btnLater->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_NO); });
+    btnCancel->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_CANCEL); });
+
     dlg.SetSizerAndFit(root);
     dlg.CentreOnParent();
     btnNow->SetDefault();        // 回车 = 立即重启
