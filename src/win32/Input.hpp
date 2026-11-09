@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <stop_token>
+#include <cstdint>
 
 #include "common/Action.hpp"   // MouseButton / WheelDirection
 #include "common/ITimer.hpp"   // 复合层的按住等待
@@ -40,6 +41,10 @@ class SendInputError : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
 };
+
+// 注入事件的身份标记（'KBMR'）。写进 INPUT::dwExtraInfo，
+// 录制端的低级钩子靠它认出"这是我们自己发的"，从而不把自己录进去。
+inline constexpr std::uintptr_t kInjectedSignature = 0x4B424D52u;
 
 // 启动时调一次：把虚拟屏幕 rect 与 DPI 记一条 LOG_DEBUG。
 // 纯粹是日志（排查"坐标偏"时用来复算归一化），不建立任何状态。

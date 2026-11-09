@@ -28,8 +28,9 @@
 // ============================================================
 
 namespace {
-    // 'KBMR'。注入事件的身份标记，Recorder 的钩子用同一个值过滤。
-    constexpr ULONG_PTR kInjectedSignature = 0x4B424D52u;
+    // 与 win32/Input.hpp 中的公开常量是同一个值；这里只是取个别名，
+    // 让下面的 makeMouse / makeKeyboard 不用每次写限定名。
+    constexpr ULONG_PTR kInjectedSignature = input::kInjectedSignature;
 
     // 干跑模式：打开 ENABLE_DRY_RUN 时只记日志、不调 SendInput——
     // 连那次调用都不会编进去，所以对整个系统零影响。
