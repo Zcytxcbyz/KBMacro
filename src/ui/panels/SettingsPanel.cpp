@@ -386,13 +386,28 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     // 用户切回当前语言：什么也不做
     if (newLang == curLang) return;
 
-    // 询问对话框：立即重启 / 稍后重启 / 取消
-    wxMessageDialog dlg(this,
-                        TR(IDS_SETTINGS_MSG_RESTART_ASK),
-                        TR(IDS_APP_TITLE),
-                        wxYES_NO | wxCANCEL | wxICON_QUESTION);
-    dlg.SetYesNoLabels(TR(IDS_SETTINGS_BTN_RESTART_NOW).data(),
-                       TR(IDS_SETTINGS_BTN_RESTART_LATER).data());
+    // 三选一：立即重启 / 稍后重启 / 取消。
+    // 不用 wxMessageDialog：它的父类只提供 SetOKLabel / SetYesNoLabels /
+    // SetYesNoCancelLabels，没有 SetCancelLabel，取消按钮会一直是英文 Cancel。
+    wxDialog dlg(this, wxID_ANY, TR(IDS_APP_TITLE));
+
+    auto *text = new wxStaticText(&dlg, wxID_ANY, TR(IDS_SETTINGS_MSG_RESTART_ASK));
+    auto *btnNow = new wxButton(&dlg, wxID_YES, TR(IDS_SETTINGS_BTN_RESTART_NOW));
+    auto *btnLater = new wxButton(&dlg, wxID_NO, TR(IDS_SETTINGS_BTN_RESTART_LATER));
+    auto *btnCancel = new wxButton(&dlg, wxID_CANCEL, TR(IDS_COMMON_BTN_CANCEL));
+
+    auto *btnRow = new wxBoxSizer(wxHORIZONTAL);
+    btnRow->Add(btnNow, 0, wxRIGHT, FromDIP(8));
+    btnRow->Add(btnLater, 0, wxRIGHT, FromDIP(8));
+    btnRow->Add(btnCancel, 0);
+
+    auto *root = new wxBoxSizer(wxVERTICAL);
+    root->Add(text, 0, wxALL, FromDIP(16));
+    root->Add(btnRow, 0, wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(12));
+
+    dlg.SetSizerAndFit(root);
+    dlg.CentreOnParent();
+    btnNow->SetDefault();        // 回车 = 立即重启
     const int ret = dlg.ShowModal();
 
     if (ret == wxID_CANCEL) {
