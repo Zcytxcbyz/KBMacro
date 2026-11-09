@@ -79,8 +79,12 @@ namespace {
 } // namespace
 
 AboutPanel::AboutPanel(wxWindow *parent)
-    : wxPanel(parent, wxID_ANY) {
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL) {
     buildUi();
+
+    // 页面级滚动：内容不多，正常尺寸下看不到滚动条
+    SetScrollRate(0, FromDIP(10));
+    wxWindowBase::FitInside();
 }
 
 void AboutPanel::buildUi() {
@@ -138,22 +142,39 @@ void AboutPanel::buildUi() {
 
         box->Add(m_libList, 0, wxEXPAND | wxALL, 8);
 
+        // 许可证全文不在这里展开，单独开对话框查看
+        auto *btnRow = new wxBoxSizer(wxHORIZONTAL);
+        m_btnLicense = new wxButton(staticBox, wxID_ANY, TR(IDS_ABOUT_BTN_LICENSE));
+        m_btnLicense->Bind(wxEVT_BUTTON, &AboutPanel::onShowLicense, this);
+        btnRow->AddStretchSpacer(1);
+        btnRow->Add(m_btnLicense, 0, wxALL, 4);
+        box->Add(btnRow, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 4);
+
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组三：许可证全文 ----
-    {
-        auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_ABOUT_GROUP_LICENSE));
-        auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
-
-        auto *text = new wxTextCtrl(staticBox, wxID_ANY,
-                                    BuildLicenseText(),
-                                    wxDefaultPosition, FromDIP(wxSize(-1, 200)),
-                                    wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
-        box->Add(text, 1, wxEXPAND | wxALL, 8);
-
-        root->Add(box, 1, wxEXPAND | wxALL, 8);
-    }
-
     SetSizer(root);
+}
+
+// 许可证全文放进模态对话框看：内容就是一段长文本 + 确定按钮，
+// 不值得为它单开一个类。文本上千行，所以用 wxTE_RICH2 保证滚动流畅。
+void AboutPanel::onShowLicense(wxCommandEvent &event) {
+    (void)event;
+
+    wxDialog dlg(this, wxID_ANY, TR(IDS_ABOUT_GROUP_LIBS), wxDefaultPosition,
+                 FromDIP(wxSize(720, 600)), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+
+    auto *root = new wxBoxSizer(wxVERTICAL);
+
+    auto *text = new wxTextCtrl(&dlg, wxID_ANY, BuildLicenseText(), wxDefaultPosition,
+                                wxDefaultSize,
+                                wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
+    text->SetInsertionPoint(0);   // 打开时停在开头，而不是末尾
+
+    root->Add(text, 1, wxEXPAND | wxALL, 8);
+    root->Add(dlg.CreateButtonSizer(wxOK), 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
+
+    dlg.SetSizer(root);
+    dlg.CentreOnParent();
+    dlg.ShowModal();
 }

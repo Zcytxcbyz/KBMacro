@@ -185,6 +185,7 @@
 #define IDS_ABOUT_LIST_COL_VERSION     6012
 #define IDS_ABOUT_LIST_COL_LICENSE     6013
 #define IDS_ABOUT_GROUP_LICENSE        6020
+#define IDS_ABOUT_BTN_LICENSE          6021
 
 // ---- 热键捕获对话框 ----
 #define IDS_HOTKEY_DIALOG_HINT          7001
