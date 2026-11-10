@@ -21,11 +21,25 @@ namespace uifit {
             return;
         }
 
-        list->SetMinSize(wxSize(wxDefaultCoord, lastRow.GetBottom() + 6));
+        const int height = lastRow.GetBottom() + list->FromDIP(6);
+        if (height == list->GetMinSize().GetHeight()) {
+            return;   // 高度没变就别再 Layout，避免刷新时界面抖动
+        }
 
-        // SetMinSize 只改约束，必须让父窗口重新布局才会真的变高
-        if (wxWindow *parent = list->GetParent()) {
-            parent->Layout();
+        list->SetMinSize(wxSize(wxDefaultCoord, height));
+
+        wxWindow *parent = list->GetParent();
+        if (parent == nullptr) {
+            return;
+        }
+        parent->Layout();
+
+        // 滚动页的虚拟尺寸要跟着更新，否则滚动范围还是旧的
+        for (wxWindow *w = parent; w != nullptr; w = w->GetParent()) {
+            if (auto *page = wxDynamicCast(w, wxScrolledWindow)) {
+                page->FitInside();
+                break;
+            }
         }
     }
 
