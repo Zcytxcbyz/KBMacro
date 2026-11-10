@@ -66,11 +66,27 @@ namespace {
         }
     }
 
+    // 内容实际需要多大：取各页 sizer 最小尺寸的最大值。
+    // 各页都是 wxScrolledWindow，它们自己的 GetBestSize() 不反映内容（实测 66x205），
+    // 所以不能再用 frame->GetBestSize()。
+    wxSize contentSizeOf(const std::initializer_list<wxWindow *> pages) {
+        wxSize content{0, 0};
+        for (const wxWindow *page: pages) {
+            if (page == nullptr) continue;
+            if (wxSizer *sizer = page->GetSizer()) {
+                content.IncTo(sizer->GetMinSize());
+            } else {
+                content.IncTo(page->GetBestSize());
+            }
+        }
+        return content;
+    }
+
     // 初始几何 = max(配置值, 内容 best size)，再夹到"窗口将要放的那个显示器"
     // 的可用区（已扣任务栏）的 90%。
     //
     // 必须在五个面板建好、SetSizer 之后调用 —— 那时 GetBestSize() 才是完整的。
-    void applyInitialGeometry(wxFrame *frame) {
+    void applyInitialGeometry(wxFrame *frame, wxSize contentClient) {
         const auto &w = ConfigManager::instance().config().window;
 
         // 用窗口将要放置的显示器；配置里没有位置时用主显示器
@@ -90,7 +106,9 @@ namespace {
         // GetBestSize() 是**客户区**尺寸，而 saveWindowState() 存的是 GetSize()
         // 的**窗口**尺寸；这里统一换成窗口尺寸再比较，否则每次启动都会
         // 把非客户区（标题栏 + 边框 + 状态栏）重复算进高度，窗口逐次变大。
-        const wxSize content = frame->ClientToWindowSize(frame->GetBestSize());
+        // sizer 报的是客户区尺寸，换成窗口尺寸才能和配置里的 GetSize() 比较
+        if (contentClient == wxDefaultSize) contentClient = frame->GetBestSize();
+        const wxSize content = frame->ClientToWindowSize(contentClient);
 
         // 配置值兜底（用户手动调过就尊重），但不能小于内容、也不能超出屏幕
         wxSize target(std::max(w.width, std::min(content.x, maxW)),
@@ -180,7 +198,8 @@ MainFrame::MainFrame()
     m_statusBar->SetMessage(TR(IDS_STATUS_READY));
 
     // ---- 5. 按内容与屏幕确定初始几何（必须在面板建好、SetSizer 之后）----
-    applyInitialGeometry(this);
+    applyInitialGeometry(this, contentSizeOf({m_clickerPanel, m_keyboardPanel, m_recorderPanel,
+                                              m_settingsPanel, m_aboutPanel}));
 
     // ---- 6. 如果配置里记着"最大化"，最大化 ----
     if (ConfigManager::instance().config().window.maximized) {
