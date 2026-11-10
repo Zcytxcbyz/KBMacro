@@ -17,6 +17,9 @@ namespace coord {
         if (from.width == to.width && from.height == to.height) return;
 
         for (Action &action : actions) {
+            // 相对坐标是"偏移量"，跟分辨率无关，不参与换算
+            if (action.relative) continue;
+
             // 拖动两端也带坐标，一起换算
             const bool hasCoords = (action.type == ActionType::MouseMove ||
                                     action.type == ActionType::MouseClick ||

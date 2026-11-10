@@ -131,3 +131,27 @@ TEST(CoordAdapt, AdaptsDragEndpoints) {
     EXPECT_EQ(actions[1].x, 600);
     EXPECT_EQ(actions[1].y, 300);
 }
+
+TEST(CoordAdapt, SkipsRelativeActions) {
+    std::vector<Action> actions{
+        Action{.type = ActionType::MouseMove, .x = 640, .y = 360},
+        Action{.type = ActionType::MouseMove, .x = 640, .y = 360, .relative = true},
+        Action{.type = ActionType::MouseClick,
+               .x = -20,
+               .y = 10,
+               .relative = true,
+               .button = MouseButton::Left,
+               .holdMs = 50},
+    };
+
+    coord::adaptActions(actions, spec(1280, 720), spec(2560, 1440));
+
+    // 绝对动作翻倍
+    EXPECT_EQ(actions[0].x, 1280);
+    EXPECT_EQ(actions[0].y, 720);
+    // 相对动作是偏移量，原样保留
+    EXPECT_EQ(actions[1].x, 640);
+    EXPECT_EQ(actions[1].y, 360);
+    EXPECT_EQ(actions[2].x, -20);
+    EXPECT_EQ(actions[2].y, 10);
+}

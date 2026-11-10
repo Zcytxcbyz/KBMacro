@@ -198,3 +198,35 @@ TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
     EXPECT_EQ(playback::run(actions, countedRun(3), timer, std::stop_token{}), 6);
     EXPECT_EQ(timer.countWaits(kDelay), 3u);
 }
+
+TEST(PlaybackRun, DelayActsAsPureWait) {
+    const std::vector<Action> script{
+        Action{.type = ActionType::Delay, .delayMs = 200},
+    };
+
+    FakeTimer timer;
+    EXPECT_EQ(playback::run(script, countedRun(1), timer, std::stop_token{}), 1);
+
+    // 延迟动作只产生一次等待，不产生任何输入事件
+    ASSERT_EQ(timer.waited().size(), 1u);
+    EXPECT_EQ(timer.waited()[0], ITimer::Duration{200});
+}
+
+TEST(PlaybackRun, RelativeClickKeepsHoldWait) {
+    const std::vector<Action> script{
+        Action{.type = ActionType::MouseClick,
+               .x = 30,
+               .y = -12,
+               .relative = true,
+               .button = MouseButton::Left,
+               .holdMs = 40,
+               .delayMs = 0},
+    };
+
+    FakeTimer timer;
+    EXPECT_EQ(playback::run(script, countedRun(1), timer, std::stop_token{}), 1);
+
+    // 相对点击 = 相对偏移 + 按住等待；waited() 里只有那一次 holdMs
+    ASSERT_EQ(timer.waited().size(), 1u);
+    EXPECT_EQ(timer.waited()[0], ITimer::Duration{40});
+}

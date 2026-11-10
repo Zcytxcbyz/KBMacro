@@ -58,19 +58,30 @@ namespace {
         if (released > 0) LOG_WARN("playback: released {} stuck mouse button(s)", released);
     }
 
+    // 把光标挪到动作指定的位置：
+    //   relative == true  → 相对当前位置偏移（moveBy，不参与坐标适配）
+    //   relative == false → 虚拟桌面绝对坐标（moveTo）
+    void positionCursor(const Action &action) {
+        if (action.relative) {
+            input::moveBy(action.x, action.y);
+        } else {
+            input::moveTo(action.x, action.y);
+        }
+    }
+
     // 执行一条动作。返回 false = 被 stop 打断（只有 click 的按住等待会）。
     bool applyAction(const Action &action, const ITimer &timer, const std::stop_token &st,
                      std::unordered_map<unsigned, HeldKey> &held,
                      std::unordered_map<MouseButton, int> &heldButtons) {
         switch (action.type) {
             case ActionType::MouseMove:
-                input::moveTo(action.x, action.y);
+                positionCursor(action);
                 return true;
 
             case ActionType::MouseClick:
                 // 录制产物自带前置 MouseMove，但手写或编辑过的脚本可能只有一条 click，
                 // 所以这里自己先就位（坐标本来就在 Action 里）。
-                input::moveTo(action.x, action.y);
+                positionCursor(action);
                 return input::click(action.button, action.holdMs, timer, st);
 
             case ActionType::MouseWheel:
@@ -79,14 +90,14 @@ namespace {
 
             case ActionType::MouseDown:
                 // 拖动起点也要就位（与 MouseClick 同理）
-                input::moveTo(action.x, action.y);
+                positionCursor(action);
                 input::buttonDown(action.button);
                 pressHeldButton(heldButtons, action.button);
                 return true;
 
             case ActionType::MouseUp:
                 // 先移动到松开点，否则终点会偏回按下时的位置
-                input::moveTo(action.x, action.y);
+                positionCursor(action);
                 input::buttonUp(action.button);
                 if (const auto it = heldButtons.find(action.button);
                     it != heldButtons.end() && it->second > 0) {
@@ -109,9 +120,16 @@ namespace {
                 }
                 return true;
             }
+
+            case ActionType::Delay:
+                // 纯等待：时长就是 delayMs，而 delayMs 在循环里已经作为
+                // "动作前等待"执行过了，所以这里无事可做。
+                // 单独成一种类型的意义是它在动作列表里是一条可见的行 ——
+                // 插停顿不用去改相邻动作的延时值。
+                return true;
         }
 
-        // 未知类型（将来的相对坐标）按无操作处理
+        // 所有类型都已覆盖，这里只是兜底
         return true;
     }
 
