@@ -36,6 +36,8 @@ private:
 
     void onOk(wxCommandEvent &event);
 
+    void onRelativeToggled(wxCommandEvent &event);
+
     // 按 m_action.type 重建参数表
     void rebuildParamGrid();
 
@@ -47,6 +49,7 @@ private:
 
     Action m_action;
     wxChoice *m_choiceType{};
+    wxCheckBox *m_chkRelative{};
     wxPropertyGrid *m_grid{};
     wxButton *m_btnCapturePos{};
     wxButton *m_btnSetKey{};

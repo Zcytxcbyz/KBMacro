@@ -30,6 +30,7 @@ namespace {
             case ActionType::Keyboard:   return {TR(IDS_ACTION_TYPE_KEYBOARD)};
             case ActionType::MouseDown:  return {TR(IDS_ACTION_TYPE_MOUSE_DOWN)};
             case ActionType::MouseUp:    return {TR(IDS_ACTION_TYPE_MOUSE_UP)};
+            case ActionType::Delay:      return {TR(IDS_ACTION_TYPE_DELAY)};
         }
         return {};
     }
@@ -55,13 +56,18 @@ namespace {
         return {};
     }
 
+    // 相对动作在参数列末尾标一下，一眼能区分绝对/相对
+    wxString relativeSuffix(const Action &a) {
+        return a.relative ? wxString(" ") + wxString(TR(IDS_ACTION_RELATIVE_SUFFIX)) : wxString{};
+    }
+
     wxString actionParamText(const Action &a) {
         switch (a.type) {
             case ActionType::MouseMove:
-                return wxString::Format("(%d, %d)", a.x, a.y);
+                return wxString::Format("(%d, %d)", a.x, a.y) + relativeSuffix(a);
             case ActionType::MouseClick:
-                return wxString::Format("%s (%d, %d)",
-                                        mouseButtonText(a.button), a.x, a.y);
+                return wxString::Format("%s (%d, %d)", mouseButtonText(a.button), a.x, a.y) +
+                       relativeSuffix(a);
             case ActionType::MouseWheel:
                 return wxString::Format("%s x%d", wheelDirText(a.wheelDirection), a.wheelSteps);
             case ActionType::Keyboard: {
@@ -74,7 +80,10 @@ namespace {
             case ActionType::MouseDown:
             case ActionType::MouseUp:
                 // 类型列已经写明"按下/松开"，这里只补按键和坐标
-                return wxString::Format("%s (%d, %d)", mouseButtonText(a.button), a.x, a.y);
+                return wxString::Format("%s (%d, %d)", mouseButtonText(a.button), a.x, a.y) +
+                       relativeSuffix(a);
+            case ActionType::Delay:
+                return {};
         }
         return {};
     }

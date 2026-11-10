@@ -211,6 +211,8 @@
 #define IDS_ACTION_TYPE_KEYBOARD        10004
 #define IDS_ACTION_TYPE_MOUSE_DOWN      10005
 #define IDS_ACTION_TYPE_MOUSE_UP        10006
+#define IDS_ACTION_TYPE_DELAY           10007
+#define IDS_ACTION_CHK_RELATIVE         10008
 
 #define IDS_ACTION_PARAM_BUTTON         10010
 #define IDS_ACTION_PARAM_X              10011
@@ -236,6 +238,9 @@
 #define IDS_ACTION_DIALOG_BTN_SET_KEY   10043
 #define IDS_ACTION_GROUP_PARAMS         10044
 #define IDS_ACTION_LABEL_TYPE           10045
+#define IDS_ACTION_PARAM_X_REL          10046
+#define IDS_ACTION_PARAM_Y_REL          10047
+#define IDS_ACTION_RELATIVE_SUFFIX      10048
 
 // Next default values for new objects
 //

@@ -83,10 +83,20 @@ void ActionEditDialog::buildUi() {
         m_choiceType->Append(TR(IDS_ACTION_TYPE_KEYBOARD));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_DOWN));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_UP));
+        m_choiceType->Append(TR(IDS_ACTION_TYPE_DELAY));
         m_choiceType->SetSelection(static_cast<int>(m_action.type));   // 顺序必须与 enum 一致
 
         row->Add(m_choiceType, 1, wxALIGN_CENTER_VERTICAL);
         root->Add(row, 0, wxEXPAND | wxALL, 12);
+    }
+
+    // ---- 相对坐标（只对带坐标的类型有意义）----
+    {
+        auto *row = new wxBoxSizer(wxHORIZONTAL);
+        m_chkRelative = new wxCheckBox(this, wxID_ANY, TR(IDS_ACTION_CHK_RELATIVE));
+        m_chkRelative->SetValue(m_action.relative);
+        row->Add(m_chkRelative, 0, wxALIGN_CENTER_VERTICAL);
+        root->Add(row, 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
     }
 
     // ---- 参数表（PropertyGrid） ----
@@ -123,6 +133,7 @@ void ActionEditDialog::buildUi() {
 
     // ---- 事件绑定 ----
     m_choiceType->Bind(wxEVT_CHOICE, &ActionEditDialog::onTypeChanged, this);
+    m_chkRelative->Bind(wxEVT_CHECKBOX, &ActionEditDialog::onRelativeToggled, this);
     m_btnCapturePos->Bind(wxEVT_BUTTON, &ActionEditDialog::onCapturePosition, this);
     m_btnSetKey->Bind(wxEVT_BUTTON, &ActionEditDialog::onSetKey, this);
     Bind(wxEVT_BUTTON, &ActionEditDialog::onOk, this, wxID_OK);
@@ -155,6 +166,16 @@ void ActionEditDialog::onTypeChanged(wxCommandEvent &) {
 }
 
 // ============================================================
+// 勾选/取消"相对坐标"：X/Y 的标签跟着变，值保留
+// ============================================================
+void ActionEditDialog::onRelativeToggled(wxCommandEvent &) {
+    collectFromGrid();                                   // 先读回当前值
+    m_action.relative = m_chkRelative->GetValue();
+    rebuildParamGrid();                                  // 标签要从"X/Y"变"X 偏移/Y 偏移"
+    refreshAuxButtons();
+}
+
+// ============================================================
 // 重建参数表
 // ============================================================
 void ActionEditDialog::rebuildParamGrid() {
@@ -172,8 +193,12 @@ void ActionEditDialog::rebuildParamGrid() {
     }
 
     if (withCoords) {
-        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_X), kPropX, m_action.x));
-        m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_Y), kPropY, m_action.y));
+        const auto labelX = m_action.relative ? TR(IDS_ACTION_PARAM_X_REL)
+                                              : TR(IDS_ACTION_PARAM_X);
+        const auto labelY = m_action.relative ? TR(IDS_ACTION_PARAM_Y_REL)
+                                              : TR(IDS_ACTION_PARAM_Y);
+        m_grid->Append(new wxIntProperty(labelX, kPropX, m_action.x));
+        m_grid->Append(new wxIntProperty(labelY, kPropY, m_action.y));
     }
 
     if (m_action.type == ActionType::MouseWheel) {
@@ -246,7 +271,14 @@ void ActionEditDialog::collectFromGrid() {
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ActionEditDialog::refreshAuxButtons() {
-    m_btnCapturePos->Enable(hasCoordinates(m_action.type));
+    const bool withCoords = hasCoordinates(m_action.type);
+    const bool absolute = withCoords && !m_action.relative;
+
+    m_chkRelative->Enable(withCoords);
+    m_chkRelative->SetValue(m_action.relative);
+
+    // 捕捉坐标只对绝对坐标有意义（相对动作要的是偏移量，不是屏幕上的点）
+    m_btnCapturePos->Enable(absolute);
     m_btnSetKey->Enable(m_action.type == ActionType::Keyboard);
 }
 
