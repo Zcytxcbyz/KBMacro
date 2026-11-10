@@ -497,8 +497,9 @@ void RecorderPanel::startRecording() {
     opts.stopMods   = stopKey.modifiers;
 
     LOG_INFO("recorder: start recording requested (delay={}ms, moveInterval={}ms, "
-             "ignoreInjected={}, maxActions={})",
-             opts.startDelayMs, opts.moveIntervalMs, opts.ignoreInjected, opts.maxActions);
+             "ignoreInjected={}, maxActions={}, ignoredKeys={})",
+             opts.startDelayMs, opts.moveIntervalMs, opts.ignoreInjected, opts.maxActions,
+             opts.ignoredKeys.size());
 
     m_threadMgr.StartRecord(opts, [this](const TaskResult& res) { onRecordFinished(res); });
 
