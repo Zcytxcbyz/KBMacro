@@ -478,11 +478,13 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
         wxRichMessageDialog dlg(this,
                                 TR(IDS_SETTINGS_MSG_SPIN_WARNING),
                                 TR(IDS_APP_TITLE),
-                                wxOK | wxCANCEL | wxICON_WARNING);
+                                wxYES_NO | wxICON_WARNING);              // wxOK|wxCANCEL → wxYES_NO
+        // ↓ 新增这一行，让两个按钮也跟着语言走
+        dlg.SetYesNoLabels(uibtn::label(IDS_COMMON_BTN_YES), uibtn::label(IDS_COMMON_BTN_NO));
         dlg.ShowCheckBox(TR(IDS_SETTINGS_CHK_SPIN_DONT_ASK));
         const int ret = dlg.ShowModal();
 
-        if (ret != wxID_OK) {
+        if (ret != wxID_YES) {
             // 用户取消：控件回退到当前生效的模式，配置不动
             m_choiceTimerMode->SetSelection(timerModeToIndex(cfgMgr.config().timerMode));
             return;
@@ -666,11 +668,11 @@ void SettingsPanel::onExportConfig(wxCommandEvent &) {
     if (ConfigManager::instance().exportToPortable()) {
         // 成功：路径已切到便携文件，刷新显示
         refreshConfigPathText();
-        wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
     } else {
         // 失败：状态不变（仍是 APPDATA），路径显示不动
-        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
     }
 }
@@ -678,10 +680,10 @@ void SettingsPanel::onExportConfig(wxCommandEvent &) {
 void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
     LOG_DEBUG("settings: clear adaptation clicked");
 
-    const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM),
+    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM),
                                  TR(IDS_APP_TITLE),
-                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret != wxOK) return;
+                                 wxYES_NO | wxICON_QUESTION, this);
+    if (ret != wxID_YES) return;
 
     ConfigManager::instance().setAdaptationPreference(AdaptationPreference::Ask);
     LOG_INFO("settings: adaptation preference reset to Ask");
@@ -690,10 +692,10 @@ void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
 void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {
     LOG_DEBUG("settings: clear spin confirmation clicked");
 
-    const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM),
+    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM),
                                  TR(IDS_APP_TITLE),
-                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret != wxOK) return;
+                                 wxYES_NO | wxICON_QUESTION, this);
+    if (ret != wxID_YES) return;
 
     ConfigManager::instance().clearSpinWarning();
 }
@@ -701,10 +703,10 @@ void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {
 void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     LOG_DEBUG("settings: reset defaults clicked");
 
-    const int ret = wxMessageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM),
+    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM),
                                  TR(IDS_APP_TITLE),
-                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret != wxOK) return;
+                                 wxYES_NO | wxICON_QUESTION, this);
+    if (ret != wxID_YES) return;
 
     ConfigManager::instance().resetToDefaults();
 
@@ -732,7 +734,7 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: delete portable config clicked");
 
     if (!ConfigManager::instance().isPortable()) {
-        wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE),
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE),
                      TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
         return;
@@ -740,18 +742,18 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
 
     const wxString msg = TR(IDS_SETTINGS_MSG_DELETE_CONFIRM)
                          + L"\n\n" + ConfigManager::instance().currentPath().wstring();
-    const int ret = wxMessageBox(msg, TR(IDS_APP_TITLE),
-                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret != wxOK) return;
+    const int ret = uibtn::messageBox(msg, TR(IDS_APP_TITLE),
+                                 wxYES_NO | wxICON_QUESTION, this);
+    if (ret != wxID_YES) return;
 
     if (ConfigManager::instance().deletePortable()) {
         // 成功：路径已切回 APPDATA，刷新显示
         refreshConfigPathText();
-        wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
     } else {
         // 失败：状态不变（仍是便携），路径显示不动
-        wxMessageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
     }
 }

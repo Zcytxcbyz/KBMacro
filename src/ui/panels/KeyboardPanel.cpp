@@ -323,7 +323,7 @@ void KeyboardPanel::onImport(wxCommandEvent &) {
 
     nlohmann::json j;
     if (!jsonio::loadFrom(path, j)) {
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -332,14 +332,14 @@ void KeyboardPanel::onImport(wxCommandEvent &) {
         fileVer > kKeyboardParamsVersion) {
         LOG_WARN("keyboard: import version {} > supported {}",
                  fileVer, kKeyboardParamsVersion);
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
     if (!j.contains("params") || !j["params"].is_object()) {
         LOG_WARN("keyboard: import missing 'params' object");
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -348,12 +348,12 @@ void KeyboardPanel::onImport(wxCommandEvent &) {
         applyParams(j["params"].get<KeyboardParams>());
     } catch (const std::exception &e) {
         LOG_WARN("keyboard: import deserialize failed: {}", e.what());
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
-    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("keyboard: params imported from {}",
              utils::ToUtf8(path.wstring()));
@@ -375,12 +375,12 @@ void KeyboardPanel::onExport(wxCommandEvent &) {
     j["params"] = collectParams();
 
     if (!jsonio::saveTo(path, j)) {
-        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
-    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("keyboard: params exported to {}",
              utils::ToUtf8(path.wstring()));

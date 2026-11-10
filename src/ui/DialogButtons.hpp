@@ -50,7 +50,7 @@ namespace uibtn {
         return { wxMessageDialogBase::ButtonLabel(wxString(TR(resId))) };
     }
 
-    [[nodiscard]] inline int messageBox(const wxString &text, const wxString &caption,
+    inline int messageBox(const wxString &text, const wxString &caption,
                                         const long style = wxOK | wxICON_INFORMATION,
                                         wxWindow *parent = nullptr) {
         wxMessageDialog dlg(parent, text, caption, style);

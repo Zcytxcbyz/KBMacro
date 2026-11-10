@@ -94,7 +94,7 @@ void HotkeyCaptureDialog::onClear(wxCommandEvent &) {
 
 void HotkeyCaptureDialog::onOk(wxCommandEvent &event) {
     if (!utils::isValidHotkey(m_hotkey, m_requireMainKey)) {
-        wxMessageBox(TR(IDS_HOTKEY_DIALOG_MSG_INVALID),
+        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_INVALID),
                      GetTitle(),
                      wxOK | wxICON_WARNING, this);
         return;
@@ -103,7 +103,7 @@ void HotkeyCaptureDialog::onOk(wxCommandEvent &event) {
     // 冲突检查：空热键（清除）不参与
     const bool isEmpty = (m_hotkey.vk == 0 && m_hotkey.modifiers == 0);
     if (!isEmpty && m_checkConflict && m_checkConflict(m_hotkey)) {
-        wxMessageBox(TR(IDS_HOTKEY_DIALOG_MSG_CONFLICT),
+        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_CONFLICT),
                      GetTitle(),
                      wxOK | wxICON_WARNING, this);
         return;

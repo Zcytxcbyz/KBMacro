@@ -365,7 +365,7 @@ void ClickerPanel::onImport(wxCommandEvent &) {
 
     nlohmann::json j;
     if (!jsonio::loadFrom(path, j)) {
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -375,14 +375,14 @@ void ClickerPanel::onImport(wxCommandEvent &) {
         fileVer > kClickerParamsVersion) {
         LOG_WARN("clicker: import version {} > supported {}",
                  fileVer, kClickerParamsVersion);
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
     if (!j.contains("params") || !j["params"].is_object()) {
         LOG_WARN("clicker: import missing 'params' object");
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -391,12 +391,12 @@ void ClickerPanel::onImport(wxCommandEvent &) {
         applyParams(j["params"].get<ClickerParams>());
     } catch (const std::exception &e) {
         LOG_WARN("clicker: import deserialize failed: {}", e.what());
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
-    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("clicker: params imported from {}",
              utils::ToUtf8(path.wstring()));
@@ -418,12 +418,12 @@ void ClickerPanel::onExport(wxCommandEvent &) {
     j["params"] = collectParams();
 
     if (!jsonio::saveTo(path, j)) {
-        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
-    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("clicker: params exported to {}",
              utils::ToUtf8(path.wstring()));

@@ -584,14 +584,14 @@ void RecorderPanel::onRecordFinished(const TaskResult &res) {
     // 没有产物只有一种情况：录制线程异常结束（钩子装不上等），launch 已经记了 ERROR
     if (!res.recorded) {
         if (res.reason == FinishReason::Failed) {
-            wxMessageBox(TR(IDS_MSG_RECORD_FAILED), TR(IDS_APP_TITLE),
+            uibtn::messageBox(TR(IDS_MSG_RECORD_FAILED), TR(IDS_APP_TITLE),
                          wxOK | wxICON_ERROR, this);
         }
         return;
     }
 
     if (res.recorded->empty()) {
-        wxMessageBox(TR(IDS_MSG_RECORD_EMPTY), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_RECORD_EMPTY), TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
         return;
     }
@@ -655,7 +655,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
 
     nlohmann::json j;
     if (!jsonio::loadFrom(path, j)) {
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -663,14 +663,14 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
     if (const int fileVer = j.value("version", 1); fileVer > kMacroVersion) {
         LOG_WARN("recorder: import version {} > supported {}",
                  fileVer, kMacroVersion);
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
     if (!j.contains("actions") || !j["actions"].is_array()) {
         LOG_WARN("recorder: import missing 'actions' array");
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -680,7 +680,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         imported = j["actions"].get<std::vector<Action>>();
     } catch (const std::exception &e) {
         LOG_WARN("recorder: import deserialize failed: {}", e.what());
-        wxMessageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
@@ -718,10 +718,10 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
     }
 
     // 替换确认
-    const int ret = wxMessageBox(TR(IDS_MSG_MACRO_REPLACE_CONFIRM),
+    const int ret = uibtn::messageBox(TR(IDS_MSG_MACRO_REPLACE_CONFIRM),
                                  TR(IDS_APP_TITLE),
-                                 wxOK | wxCANCEL | wxICON_QUESTION, this);
-    if (ret != wxOK) {
+                                 wxYES_NO | wxICON_QUESTION, this);
+    if (ret != wxID_YES) {
         LOG_DEBUG("recorder: import cancelled by user");
         return;
     }
@@ -734,7 +734,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         applyRunSpec(j["run"].get<RunSpec>());
     }
 
-    wxMessageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("recorder: imported {} actions from {}",
              m_actions.size(), utils::ToUtf8(path.wstring()));
@@ -758,12 +758,12 @@ void RecorderPanel::onExportScript(wxCommandEvent &) {
     j["actions"] = m_actions;
 
     if (!jsonio::saveTo(path, j)) {
-        wxMessageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
         return;
     }
 
-    wxMessageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
+    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
                  wxOK | wxICON_INFORMATION, this);
     LOG_INFO("recorder: exported {} actions to {}",
              m_actions.size(), utils::ToUtf8(path.wstring()));
