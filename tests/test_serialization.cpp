@@ -318,8 +318,10 @@ TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
     EXPECT_EQ(b.timerMode, TimerMode::Sleep);
     EXPECT_EQ(b.alwaysOnTop, false);
     EXPECT_EQ(b.window.x, -1);
-    EXPECT_EQ(b.window.width, 650);   // 与 Config.hpp 一致
-    EXPECT_EQ(b.window.height, 720);
+    // 缺字段时回落到 Config 的默认值；这里引用默认值本身，
+    // 不再硬编码数字——否则改一次默认尺寸就会弄挂这条测试
+    EXPECT_EQ(b.window.width, Config{}.window.width);
+    EXPECT_EQ(b.window.height, Config{}.window.height);
     EXPECT_EQ(b.flags.spinWarningConfirmed, false);
     EXPECT_EQ(b.flags.adaptationPreference, AdaptationPreference::Ask);
     // hotkeyEnabled 默认全 true
