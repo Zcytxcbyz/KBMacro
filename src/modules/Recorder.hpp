@@ -28,7 +28,7 @@ namespace recorder {
 
     // 录制参数。全部由 UI 线程填好，录制线程里只读。
     struct RecordOptions {
-        int startDelayMs = 200;      // 装钩子前先等这么久，避开开始热键自身的按键
+        int startDelayMs = 0;      // 装钩子前先等这么久，避开开始热键自身的按键
         int moveIntervalMs = 16;     // 鼠标移动采样间隔；0 = 不采样（全记）
         bool ignoreInjected = false; // 连别的程序注入的事件也不录（自家的永远不录）
         int maxActions = 100000;     // 动作上限；0 = 不限

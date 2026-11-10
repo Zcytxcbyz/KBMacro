@@ -31,6 +31,26 @@ inline constexpr auto kHotkeyEnabledDefault = [] {
     return a;
 }();
 
+// 默认热键：单键 F1–F11，按 HotkeyAction 的顺序一一对应
+//   F1 开始连点 / F2 停止连点 / F3 开始键盘 / F4 停止键盘 / F5 单次发送
+//   F6 开始录制 / F7 停止录制 / F8 开始回放 / F9 停止回放
+//   F10 全部开始 / F11 停止全部
+//
+// vk 直接写数值，因为 Config.hpp 不包含 windows.h（VK_F1 == 0x70 … VK_F11 == 0x7A）。
+inline constexpr std::array<Hotkey, kHotkeyCount> kHotkeyDefault{{
+    {.modifiers = 0, .vk = 0x70},
+    {.modifiers = 0, .vk = 0x71},
+    {.modifiers = 0, .vk = 0x72},
+    {.modifiers = 0, .vk = 0x73},
+    {.modifiers = 0, .vk = 0x74},
+    {.modifiers = 0, .vk = 0x75},
+    {.modifiers = 0, .vk = 0x76},
+    {.modifiers = 0, .vk = 0x77},
+    {.modifiers = 0, .vk = 0x78},
+    {.modifiers = 0, .vk = 0x79},
+    {.modifiers = 0, .vk = 0x7A},
+}};
+
 // 混合计时器"末尾忙等时长"的取值范围与默认值（毫秒）。
 // 这里集中定义，避免设置页和各处校验各写一份魔数。
 inline constexpr int kTimerHybridSpinMsMin = 1;
@@ -48,7 +68,7 @@ inline constexpr int kRecordMoveIntervalMsDefault = 16;
 
 inline constexpr int kRecordStartDelayMsMin = 0;
 inline constexpr int kRecordStartDelayMsMax = 2000;
-inline constexpr int kRecordStartDelayMsDefault = 200;
+inline constexpr int kRecordStartDelayMsDefault = 0;
 
 inline constexpr int kRecordMaxActionsMin = 0;
 inline constexpr int kRecordMaxActionsMax = 1000000;
@@ -86,7 +106,7 @@ struct Config {
     int tabIndex = 0;
 
     // 全局热键，顺序与 HotkeyManager 的动作表一致。
-    std::array<Hotkey, kHotkeyCount> hotkeys{};
+    std::array<Hotkey, kHotkeyCount> hotkeys = kHotkeyDefault;
 
     // 各热键的启用开关，与 hotkeys 一一对应。
     // 禁用的热键不注册、不参与冲突检测；默认全开。
