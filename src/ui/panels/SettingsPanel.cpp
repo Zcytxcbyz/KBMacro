@@ -441,10 +441,15 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
 
         // 接下来走 ExitMainLoop，不会触发 wxEVT_CLOSE_WINDOW，
         // 而新进程紧接着就要读配置。所以主动保存一次窗口状态。
-        // 顺序很关键：保存 → 启动新进程 → 退出旧进程。
+        // 顺序很关键：保存 → 让出热键 → 启动新进程 → 退出旧进程。
         if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
             frame->saveWindowState();
         }
+
+        // 重启前必须先让出这 11 个全局热键：RegisterHotKey 是系统独占的，
+        // 新进程起来后几十毫秒内就会注册，旧进程还占着就会全部失败（1409）。
+        // 注销必须在启动新进程之前完成，顺序不能换。
+        m_hotkeyMgr.unregisterAll();
 
         if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
             // 新进程已启动。
@@ -456,8 +461,12 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
             wxTheApp->ExitMainLoop();
         } else {
             // 新进程启动失败：不退出，让用户继续用当前实例
-            // 配置已落盘，用户下次手动启动仍是新语言
+            // 配置已落盘，用户下次手动启动仍是新语言。
+            // 但热键刚被我们注销掉了，必须注册回来，否则当前实例的热键静默失效。
             LOG_ERROR("settings: failed to launch new instance");
+            m_hotkeyMgr.registerAll();
+            LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}",
+                     m_hotkeyMgr.failedCount());
         }
     }
     // wxID_NO = 稍后重启：什么都不做，配置已落盘
