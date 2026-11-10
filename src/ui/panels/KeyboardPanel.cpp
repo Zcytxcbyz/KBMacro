@@ -14,6 +14,7 @@
 #include "managers/LanguageManager.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
+#include "ui/DialogButtons.hpp"
 
 namespace {
     // 运行模式下拉框索引

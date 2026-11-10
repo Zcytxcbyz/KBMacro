@@ -19,6 +19,7 @@
 #include "managers/LanguageManager.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 #include "ui/MainFrame.hpp"
+#include "ui/DialogButtons.hpp"
 
 namespace {
     // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致

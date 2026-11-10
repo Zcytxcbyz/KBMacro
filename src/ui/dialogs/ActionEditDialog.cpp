@@ -2,7 +2,7 @@
 
 #include <wx/statbox.h>
 
-#include "../DialogButtons.hpp"
+#include "ui/DialogButtons.hpp"
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
 #include "managers/LanguageManager.hpp"

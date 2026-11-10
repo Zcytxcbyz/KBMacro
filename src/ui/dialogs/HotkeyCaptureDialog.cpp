@@ -4,7 +4,7 @@
 #include <wx/statbox.h>
 #include <utility>
 
-#include "../DialogButtons.hpp"
+#include "ui/DialogButtons.hpp"
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
 #include "common/Utils.hpp"   // ToUtf8

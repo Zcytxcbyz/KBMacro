@@ -10,6 +10,7 @@
 #include "managers/ThreadManager.hpp"
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
+#include "ui/DialogButtons.hpp"
 
 namespace {
     // 点击类型下拉框的索引：滚轮类的范围

@@ -17,6 +17,7 @@
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
+#include "ui/DialogButtons.hpp"
 
 namespace {
 
