@@ -21,6 +21,8 @@ enum class ActionType {
     // 原地点击仍然产出 MouseClick（一条搞定）；只有真的拖起来才拆成 Down/Move…/Up。
     MouseDown,
     MouseUp,
+    // 纯等待：不产生任何输入事件，只按 delayMs 停一会儿（delayMs 在这类动作里是时长）
+    Delay,
 };
 
 // 鼠标按键
@@ -62,6 +64,7 @@ inline constexpr ActionTypeEntry kActionTypeEntries[] = {
     {.value = ActionType::Keyboard,   .name = "Keyboard"},
     {.value = ActionType::MouseDown,  .name = "MouseDown"},
     {.value = ActionType::MouseUp,    .name = "MouseUp"},
+    {.value = ActionType::Delay,      .name = "Delay"},
 };
 
 struct MouseButtonEntry {
@@ -160,23 +163,24 @@ template <typename Entry, typename Enum>
                           s, KeyEventType::Down);
 }
 
-// ============================================================
-// 动作
-// ============================================================
-
-// 一个录制动作。
-//
 // 值类型：可拷贝、可移动。字段固定，由 type 决定哪些字段有意义：
-//   MouseMove : x, y, delayMs
-//   MouseClick: button, x, y, holdMs, delayMs
-//   MouseWheel: wheelDirection, wheelSteps, delayMs
-//   Keyboard  : hotkey, keyEvent, delayMs
+//   MouseMove  : x, y, delayMs
+//   MouseClick : button, x, y, holdMs, delayMs
+//   MouseWheel : wheelDirection, wheelSteps, delayMs
+//   Keyboard   : hotkey, keyEvent, delayMs
+//   MouseDown  : button, x, y, delayMs
+//   MouseUp    : button, x, y, delayMs
+//   Delay      : delayMs（这里的 delayMs 是等待时长，不是"动作前间隔"）
 struct Action {
     ActionType type = ActionType::MouseMove;
 
-    // MouseMove / MouseClick
+    // 鼠标动作的坐标。
+    //   relative == false：屏幕绝对坐标（虚拟桌面物理像素）
+    //   relative == true ：相对当前光标位置的偏移量（可负），此时 x/y 就是 dx/dy
+    // 录制永远产出绝对坐标；相对是手工编排时才用的能力。
     int x = 0;
     int y = 0;
+    bool relative = false;
 
     // MouseClick
     MouseButton button = MouseButton::Left;
@@ -197,14 +201,17 @@ struct Action {
 // ============================================================
 // Action 的 nlohmann ADL 序列化
 //
-// 形态：按 type 精简，只写有意义的字段
-//   MouseMove : {"type": "MouseMove", "x":..., "y":..., "delayMs":...}
-//   MouseClick: {"type": "MouseClick", "button":..., "x":..., "y":...,
-//                "holdMs":..., "delayMs":...}
-//   MouseWheel: {"type": "MouseWheel", "direction":..., "steps":...,
-//                "delayMs":...}
-//   Keyboard  : {"type": "Keyboard", "key": {...}, "event": "Down",
-//                "delayMs":...}
+// 形态：按 type 精简，只写有意义的字段；可选字段为默认值时不写
+//   MouseMove  : {"type": "MouseMove", "x":..., "y":..., "delayMs":...}
+//   MouseClick : {"type": "MouseClick", "button":..., "x":..., "y":...,
+//                 "holdMs":..., "delayMs":..., "relative": true(可选)}
+//   MouseWheel : {"type": "MouseWheel", "direction":..., "steps":...,
+//                 "delayMs":...}
+//   Keyboard   : {"type": "Keyboard", "key": {...}, "event": "Down",
+//                 "delayMs":...}
+//   MouseDown / MouseUp : {"type": ..., "button":..., "x":..., "y":...,
+//                          "delayMs":..., "relative": true(可选)}
+//   Delay      : {"type": "Delay", "delayMs":...}
 // ============================================================
 
 void to_json(nlohmann::json &j, const Action &a);

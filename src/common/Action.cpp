@@ -6,6 +6,11 @@ void to_json(nlohmann::json &j, const Action &a) {
     j = nlohmann::json::object();
     j["type"] = actionTypeToString(a.type);
 
+    // 相对坐标只对鼠标动作有意义；false 不写，旧脚本零影响
+    if (a.relative) {
+        j["relative"] = true;
+    }
+
     switch (a.type) {
         case ActionType::MouseMove:
             j["x"] = a.x;
@@ -39,6 +44,11 @@ void to_json(nlohmann::json &j, const Action &a) {
             j["y"] = a.y;
             j["delayMs"] = a.delayMs;
             break;
+
+        case ActionType::Delay:
+            // delayMs 在这里是等待时长
+            j["delayMs"] = a.delayMs;
+            break;
     }
 }
 
@@ -48,6 +58,7 @@ void from_json(const nlohmann::json &j, Action &a) {
     const std::string typeStr = j.value("type", std::string{"MouseMove"});
     a.type = actionTypeFromString(typeStr);
     a.delayMs = j.value("delayMs", 0);
+    a.relative = j.value("relative", false);
 
     switch (a.type) {
         case ActionType::MouseMove:
@@ -78,6 +89,10 @@ void from_json(const nlohmann::json &j, Action &a) {
             a.button = mouseButtonFromString(j.value("button", std::string{"Left"}));
             a.x = j.value("x", 0);
             a.y = j.value("y", 0);
+            break;
+
+        case ActionType::Delay:
+            // delayMs 已经在上面读过，不需要额外字段
             break;
     }
 }

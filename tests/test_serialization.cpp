@@ -362,3 +362,51 @@ TEST(ConfigRoundTrip, RecorderSettingsAreClamped) {
     EXPECT_EQ(empty.recordStartDelayMs, kRecordStartDelayMsDefault);
     EXPECT_EQ(empty.recordMaxActions, kRecordMaxActionsDefault);
 }
+
+TEST(ActionJson, RelativeIsWrittenOnlyWhenSet) {
+    Action relative;
+    relative.type = ActionType::MouseMove;
+    relative.x = -30;
+    relative.y = 12;
+    relative.relative = true;
+    relative.delayMs = 5;
+
+    const nlohmann::json j = relative;
+    EXPECT_EQ(j.at("relative").get<bool>(), true);
+
+    const auto back = j.get<Action>();
+    EXPECT_EQ(back.type, ActionType::MouseMove);
+    EXPECT_TRUE(back.relative);
+    EXPECT_EQ(back.x, -30);
+    EXPECT_EQ(back.y, 12);
+
+    Action absolute = relative;
+    absolute.relative = false;
+    const nlohmann::json j2 = absolute;
+    EXPECT_FALSE(j2.contains("relative")) << "false 不应写进 JSON";
+}
+
+TEST(ActionJson, DelayRoundTrips) {
+    Action delay;
+    delay.type = ActionType::Delay;
+    delay.delayMs = 250;
+
+    const nlohmann::json j = delay;
+    EXPECT_EQ(j.at("type").get<std::string>(), "Delay");
+    EXPECT_EQ(j.at("delayMs").get<int>(), 250);
+
+    const auto back = j.get<Action>();
+    EXPECT_EQ(back.type, ActionType::Delay);
+    EXPECT_EQ(back.delayMs, 250);
+}
+
+TEST(ActionJson, OldScriptWithoutRelativeStillParses) {
+    // 兼容性：没有 relative 字段的旧脚本按绝对坐标处理
+    const nlohmann::json j = {{"type", "MouseClick"}, {"button", "Left"},
+                              {"x", 100}, {"y", 200}, {"holdMs", 50},
+                              {"delayMs", 0}};
+    const auto a = j.get<Action>();
+    EXPECT_EQ(a.type, ActionType::MouseClick);
+    EXPECT_FALSE(a.relative);
+    EXPECT_EQ(a.x, 100);
+}
