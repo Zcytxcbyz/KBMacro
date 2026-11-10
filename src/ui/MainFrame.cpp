@@ -66,10 +66,8 @@ namespace {
         }
     }
 
-    // 初始几何 = max(配置值, 内容 best size)，再夹到"窗口将要放的那个显示器"
-    // 的可用区（已扣任务栏）的 90%。
-    //
-    // 必须在五个面板建好、SetSizer 之后调用 —— 那时 GetBestSize() 才是完整的。
+    // 初始几何：用配置里的尺寸，夹到"窗口将要放的那个显示器"可用区（已扣任务栏）的 90%。
+    // 内容装不下由各页的滚动条兜底，不在这里按内容撑开。
     void applyInitialGeometry(wxFrame *frame) {
         const auto &w = ConfigManager::instance().config().window;
 
@@ -86,12 +84,6 @@ namespace {
         const int maxW    = area.width * 9 / 10;
         const int maxH    = area.height * 9 / 10;
 
-        // 内容实际需要多少（已含当前 DPI 下的字体尺寸）。
-        // GetBestSize() 是**客户区**尺寸，而 saveWindowState() 存的是 GetSize()
-        // 的**窗口**尺寸；这里统一换成窗口尺寸再比较，否则每次启动都会
-        // 把非客户区（标题栏 + 边框 + 状态栏）重复算进高度，窗口逐次变大。
-        // sizer 报的是客户区尺寸，换成窗口尺寸才能和配置里的 GetSize() 比较
-        // 初始尺寸只看配置：五页都是滚动窗口，装不下就滚，不需要按内容撑开
         // 初始尺寸只看配置：五页都是滚动窗口，装不下就滚，不需要按内容撑开
         const wxSize target(std::min(w.width, maxW), std::min(w.height, maxH));
 
@@ -104,7 +96,7 @@ namespace {
         }
 
         LOG_DEBUG("mainframe: geometry config {}x{}, display {}x{}, window {}x{}",
-                  w.width, w.height, area.x, area.y, target.x, target.y);
+                  w.width, w.height, area.width, area.height, target.x, target.y);
     }
 
 } // namespace
