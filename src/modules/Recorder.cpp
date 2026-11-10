@@ -214,13 +214,12 @@ namespace {
             return false;
         }
 
-        // 3) 开始/停止热键的主键：它们只用来控制录制，产物里没有正当用途。
-        //    注意只滤主键、不滤修饰键：停止热键若含 Ctrl，全程滤 Ctrl 会把用户
-        //    正常按的 Ctrl+C 吃成"只按了个 C"。修饰键的残留由归一化阶段按
-        //    "头尾连续段"剔除。
+        // 3) 已启用的全局热键主键：录制期间它们已被热键系统消费、前台程序收不到，
+        //    录进产物只会在回放时反过来触发自己（F1 会启动连点器、F10 会全部开始）。
+        //    只滤主键、不滤修饰键：停止热键若含 Ctrl，全程滤 Ctrl 会把用户正常按
+        //    的 Ctrl+C 吃成"只按了个 C"。修饰键残留由归一化按"头尾连续段"剔除。
         if (keyboard && e.vk != 0 &&
-            ((opts.startKeyVk != 0 && e.vk == opts.startKeyVk) ||
-             (opts.stopKeyVk != 0 && e.vk == opts.stopKeyVk))) {
+            std::ranges::find(opts.ignoredKeys, e.vk) != opts.ignoredKeys.end()) {
             ++state.dropped.hotkey;
             return false;
         }

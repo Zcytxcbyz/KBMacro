@@ -478,9 +478,17 @@ void RecorderPanel::startRecording() {
     opts.ignoreInjected = cfg.recordIgnoreInjected;
     opts.maxActions     = cfg.recordMaxActions;
 
-    // 开始/停止热键的主键要过滤掉：它只能用来触发，没理由出现在产物里。
+    // 所有已启用的全局热键主键都过滤：录制期间它们已被热键系统消费、前台程序
+    // 收不到，录进产物只会在回放时反过来触发我们自己。
     //   修饰键不在这里传（那靠归一化阶段的头尾剔除），
     //   否则用户正常按的 Ctrl+C 会被吃掉 Ctrl。
+    for (int i = 0; i < kHotkeyCount; ++i) {
+        if (cfg.hotkeyEnabled[i] && cfg.hotkeys[i].vk != 0) {
+            opts.ignoredKeys.push_back(cfg.hotkeys[i].vk);
+        }
+    }
+
+    // 开始/停止热键的主键与修饰键：只给归一化阶段用于剔除产物头尾的修饰键段
     const auto &startKey = cfg.hotkeys[static_cast<int>(HotkeyAction::StartRecord)];
     const auto &stopKey  = cfg.hotkeys[static_cast<int>(HotkeyAction::StopRecord)];
     opts.startKeyVk = startKey.vk;

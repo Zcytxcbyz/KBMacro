@@ -33,7 +33,13 @@ namespace recorder {
         bool ignoreInjected = false; // 连别的程序注入的事件也不录（自家的永远不录）
         int maxActions = 100000;     // 动作上限；0 = 不限
 
-        // 开始/停止热键的主键与修饰键，用于把热键自身从产物里剔除（0 = 未配置）
+        // 录制期间要丢弃的主键：所有已启用的全局热键。
+        // 这些键在录制时已经被热键系统消费、前台程序根本收不到；录进产物只会在
+        // 回放时反过来触发我们自己（产物里有 F1，回放就会启动连点器）。
+        std::vector<unsigned> ignoredKeys;
+
+        // 开始/停止热键的主键与修饰键：只用于归一化阶段剔除产物头尾的修饰键段
+        // （0 = 未配置）。主键本身的过滤走上面的 ignoredKeys。
         unsigned startKeyVk = 0;
         unsigned startMods = 0;
         unsigned stopKeyVk = 0;
