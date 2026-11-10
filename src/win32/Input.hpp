@@ -52,6 +52,9 @@ void init();
 
 // ---- 原子层：只发事件、立即返回（回放用它精确重放事件流）----
 void moveTo(int x, int y);
+// 相对当前位置移动 dx/dy 个物理像素（可负）。不经过虚拟桌面归一化，
+// 也不需要 init() 提供的屏幕尺寸。
+void moveBy(int dx, int dy);
 void buttonDown(MouseButton button);
 void buttonUp(MouseButton button);
 void wheel(WheelDirection direction, int steps);   // steps 1–10，一条事件带 steps × WHEEL_DELTA

@@ -221,6 +221,13 @@ void moveTo(const int x, const int y) {
                std::move(what));
 }
 
+void moveBy(const int dx, const int dy) {
+    // 相对移动：只发 MOUSEEVENTF_MOVE，不带 ABSOLUTE / VIRTUALDESK，
+    // dx/dy 就是物理像素位移（系统会在屏幕边缘自动截断）。
+    sendEvents({makeMouse(MOUSEEVENTF_MOVE, dx, dy)},
+               "move by (" + std::to_string(dx) + ", " + std::to_string(dy) + ")");
+}
+
 void buttonDown(const MouseButton button) {
     const auto [down, up, data] = buttonFlags(button);
     // 按下失败时补一次抬起：无论是完全没按下去还是只落了一部分，抬起都无害。
