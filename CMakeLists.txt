@@ -127,6 +127,7 @@ set(HEADERS
         src/modules/Recorder.hpp
         src/common/RateLimiter.hpp
         src/ui/DialogButtons.hpp
+        src/ui/ListHelpers.hpp
         # 在这里添加 .h 文件
 )
 

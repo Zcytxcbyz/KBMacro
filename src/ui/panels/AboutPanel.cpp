@@ -7,7 +7,8 @@
 #include <wx/statbox.h>
 
 #include "managers/LanguageManager.hpp"
-#include "../DialogButtons.hpp"
+#include "ui/DialogButtons.hpp"
+#include "ui/ListHelpers.hpp"
 
 // ============================================================
 // 版本 / 主页由 CMake 注入
@@ -144,12 +145,10 @@ void AboutPanel::buildUi() {
 
         box->Add(m_libList, 0, wxEXPAND | wxALL, 8);
 
-        // 内容固定 7 行：按实际行高把列表撑到刚好放下，列表内部不出滚动条（滚动统一交给页面）
-        wxRect lastRow;
-        if (const long last = m_libList->GetItemCount() - 1;
-            last >= 0 && m_libList->GetItemRect(last, lastRow)) {
-            m_libList->SetMinSize(wxSize(-1, lastRow.GetBottom() + FromDIP(6)));
-            }
+        // 7 行全部撑开，列表内部不出滚动条（滚动统一交给页面）
+        uifit::fitListToRows(m_libList);
+        // 鼠标停在列表上也要能滚页面
+        uifit::forwardWheelToPage(m_libList);
 
         // 许可证全文不在这里展开，单独开对话框查看
         auto *btnRow = new wxBoxSizer(wxHORIZONTAL);

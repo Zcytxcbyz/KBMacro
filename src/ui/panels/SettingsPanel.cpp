@@ -20,6 +20,7 @@
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 #include "ui/MainFrame.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/ListHelpers.hpp"
 
 namespace {
     // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致
@@ -185,6 +186,9 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED,
                        &SettingsPanel::onHotkeyChecked, this);      // ← 新增
 
+    // 鼠标停在列表上也要能滚页面
+    uifit::forwardWheelToPage(m_hotkeyList);
+
     // 初始无选中 → 按钮禁用
     m_btnModifyHotkey->Enable(false);
 }
@@ -347,6 +351,8 @@ void SettingsPanel::refreshHotkeyList() {
     }
 
     fitHotkeyListHeight();
+    // 11 行全部撑开显示，列表内部不出滚动条（滚动统一交给页面）
+    uifit::fitListToRows(m_hotkeyList);
 }
 
 // 热键列表是固定 11 行，整体显示即可：外层页面滚动负责，内层不出滚动条。
