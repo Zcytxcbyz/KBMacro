@@ -32,8 +32,7 @@ END
 #include "langs/zh-CN.rc"
 #include "langs/en-US.rc"
 
-"KBMACRO_ICON"                  ICON   "resources/icon.ico"
-
+IDI_APP_ICON                    ICON   "resources/icon.ico"
 IDR_LICENSE_KBMACRO             RCDATA "licenses/KBMacro.txt"
 IDR_LICENSE_WXWIDGETS           RCDATA "licenses/wxWidgets.txt"
 IDR_LICENSE_SPDLOG              RCDATA "licenses/spdlog.txt"

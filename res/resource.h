@@ -2,6 +2,7 @@
 // Microsoft Visual C++ 生成的包含文件。
 // 供 resource.rc 使用
 
+#define IDI_APP_ICON                    101
 #define IDS_APP_TITLE                   1001
 #define IDS_TAB_CLICKER                 1010
 #define IDS_TAB_KEYBOARD                1011
