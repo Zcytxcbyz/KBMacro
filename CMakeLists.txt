@@ -198,7 +198,7 @@ target_compile_definitions(KBMacro PRIVATE
         NOMINMAX 
         WIN32_LEAN_AND_MEAN
         KBMACRO_VERSION="${PROJECT_VERSION}"
-        KBMACRO_HOMEPAGE="https://example.com/kbmacro"
+        KBMACRO_HOMEPAGE="https://github.com/Zcytxcbyz/KBMacro"
 )
 
 # ============================================================

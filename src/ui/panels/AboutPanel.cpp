@@ -17,7 +17,7 @@
 #define KBMACRO_VERSION "0.0.0"
 #endif
 #ifndef KBMACRO_HOMEPAGE
-#define KBMACRO_HOMEPAGE "https://example.com/kbmacro"
+#define KBMACRO_HOMEPAGE "https://github.com/Zcytxcbyz/KBMacro"
 #endif
 
 namespace {
