@@ -1,0 +1,69 @@
+# KBMacro C++ formatting rules.
+#
+# Apply with the clang-format shipped with Visual Studio:
+#   $cf = 'D:\Program\Development\VisualStudio\18\Community\VC\Tools\Llvm\x64\bin\clang-format.exe'
+#   Get-ChildItem src,tests -Recurse -Include *.hpp,*.cpp | ForEach-Object { & $cf -i --style=file $_.FullName }
+#
+# Scope: src/ and tests/ only. res/ is excluded (RC files must keep their BOM),
+# and third-party code is never formatted.
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+# ---- width and indentation ----
+ColumnLimit: 120
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 8
+# Namespace bodies start at column 0 (that is how src/modules and src/win32 are
+# already written); the closing brace carries the namespace name.
+NamespaceIndentation: None
+FixNamespaceComments: true
+AccessModifierOffset: -4
+IndentCaseLabels: true
+ConstructorInitializerIndentWidth: 4
+
+# ---- braces and line breaking ----
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+BreakStringLiterals: false
+
+# ---- alignment ----
+PointerAlignment: Right
+ReferenceAlignment: Right
+DerivePointerAlignment: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+AlignEscapedNewlines: Left
+
+# ---- spacing ----
+SpaceBeforeParens: ControlStatements
+SpaceAfterTemplateKeyword: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceInEmptyBlock: false
+
+# ---- includes ----
+# The three blocks stay as written (own header / system / project); only the
+# order inside each block is sorted.
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+
+# ---- comments and blank lines ----
+# Comments are hand-wrapped and some contain ASCII diagrams, so never reflow.
+ReflowComments: false
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+SeparateDefinitionBlocks: Always
+LineEnding: DeriveLF
