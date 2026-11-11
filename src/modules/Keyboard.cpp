@@ -10,10 +10,10 @@
 namespace keyboard {
 
     int run(const KeyboardParams &p, const ITimer &timer, const std::stop_token &st) {
-        // 轮间等待：intervalMs 是整个周期，按住时间从里面扣
+        // wait between rounds: intervalMs is the whole cycle, hold duration is taken out of it
         const int gapMs = std::max(0, p.intervalMs - p.holdMs);
 
-        // 开始延迟必须先于 RunController 构造（它的起点是第一轮动作的时刻）
+        // start delay must come before RunController construction (its origin is the first round's action time)
         if (const int startDelayMs = std::max(0, p.run.startDelayMs); startDelayMs > 0) {
             if (!timer.wait(ITimer::Duration{startDelayMs}, st)) {
                 LOG_DEBUG("keyboard: start delay interrupted, executed=0");
@@ -25,16 +25,16 @@ namespace keyboard {
         int executed = 0;
 
         while (rc.shouldRun(ITimer::now())) {
-            if (st.stop_requested()) break;   // 停止请求已到：这一轮一个事件都不发
+            if (st.stop_requested()) break;   // stop requested: send no events at all in this round
 
-            // pressKey 返回 false = 按住期间被 stop 打断（抬起已补发）
+            // pressKey returns false = interrupted by stop during hold (release already sent)
             const bool interrupted = !input::pressKey(p.hotkey, p.holdMs, timer, st);
 
-            ++executed;   // 被打断的那一轮也计数：按键已经发出去并抬起了
+            ++executed;   // the interrupted round also counts: the key was sent and released
             rc.noteIteration();
 
             if (interrupted) break;
-            if (!rc.shouldRun(ITimer::now())) break;   // 最后一轮之后不再白等一个间隔
+            if (!rc.shouldRun(ITimer::now())) break;   // no idle wait for an interval after the last round
 
             if (!timer.wait(rc.clampWait(ITimer::Duration{gapMs}, ITimer::now()), st)) break;
         }

@@ -6,7 +6,7 @@ void to_json(nlohmann::json &j, const Action &a) {
     j = nlohmann::json::object();
     j["type"] = actionTypeToString(a.type);
 
-    // 相对坐标只对鼠标动作有意义；false 不写，旧脚本零影响
+    // relative coords only matter for mouse actions; false is omitted, old scripts unaffected
     if (a.relative) {
         j["relative"] = true;
     }
@@ -46,7 +46,7 @@ void to_json(nlohmann::json &j, const Action &a) {
             break;
 
         case ActionType::Delay:
-            // delayMs 在这里是等待时长
+            // here delayMs is the wait duration
             j["delayMs"] = a.delayMs;
             break;
     }
@@ -92,7 +92,7 @@ void from_json(const nlohmann::json &j, Action &a) {
             break;
 
         case ActionType::Delay:
-            // delayMs 已经在上面读过，不需要额外字段
+            // delayMs was already read above, no extra field needed
             break;
     }
 }

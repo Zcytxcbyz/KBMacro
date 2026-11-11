@@ -87,6 +87,14 @@ def strip_comments(text: str) -> list[str]:
             i = end + len(closing)
             continue
 
+        # C++14 digit separator (10'000): a quote that sits between two digits is
+        # part of the number, not a character literal -- otherwise the scanner
+        # swallows the rest of the line (and its trailing comment) as literal text.
+        if char == "'" and current and current[-1].isdigit() and nxt.isdigit():
+            current.append(char)
+            i += 1
+            continue
+
         # normal string / char literal
         if char in ('"', "'"):
             quote = char

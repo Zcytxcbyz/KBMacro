@@ -5,10 +5,10 @@
 #include <wx/scrolwin.h>
 #include <wx/listctrl.h>
 
-// 关于面板。
+// About panel.
 //
-// 显示程序信息、第三方库列表、所有许可全文（含 KBMacro 自身）。
-// 许可全文从 RC 的 RCDATA 资源加载，拼接到一个只读多行文本框。
+// Shows app info, the third-party library list, and the full license texts (including KBMacro itself).
+// License texts are loaded from RC RCDATA resources and concatenated into a read-only multiline text box.
 class AboutPanel : public wxScrolledWindow {
 public:
     explicit AboutPanel(wxWindow *parent);

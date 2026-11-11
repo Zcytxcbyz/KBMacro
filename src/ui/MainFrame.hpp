@@ -7,7 +7,7 @@
 #include "common/HotkeyAction.hpp"
 #include "common/ITimer.hpp"
 
-// 前向声明（避免在头文件里引入一堆面板实现）
+// forward declarations (avoid pulling a pile of panel implementations into the header)
 class wxNotebook;
 class HotkeyManager;
 class KBMacroStatusBar;
@@ -18,70 +18,72 @@ class SettingsPanel;
 class AboutPanel;
 class ThreadManager;
 
-// 主窗口。
+// main window.
 //
-// 职责：
-//   - 创建并持有 wxNotebook，组装五个标签页
-//   - 持有 HotkeyManager，接收 WM_HOTKEY 并分发到对应面板
-//   - 处理窗口级样式、尺寸、位置、标签页记忆
+// responsibilities:
+//   - create and own the wxNotebook, assembling the five tabs
+//   - own the HotkeyManager, receive WM_HOTKEY and dispatch to the matching panel
+//   - handle window-level style, size, position and tab memory
 //
-// 热键分发路由：
+// hotkey dispatch route:
 //   HotkeyManager::TriggerCallback -> MainFrame::dispatchHotkeyAction
-//     -> 各面板的 startWithCurrentParams() / stop() / ...
-//   MainFrame 不直接操作 ThreadManager；面板自己负责调（等模块落地）。
+//     -> each panel's startWithCurrentParams() / stop() / ...
+//   MainFrame does not touch ThreadManager directly; panels do (once the module lands).
 class MainFrame : public wxFrame {
 public:
     MainFrame();
     ~MainFrame() override;
 
-    // 把窗口几何 + 当前标签页写到 ConfigManager。
-    // 从 onClose 抽出来，供"切换语言重启"这类不经过 wxEVT_CLOSE_WINDOW
-    // 的退出路径主动调用。
+    // Write window geometry + current tab to ConfigManager.
+    // Extracted from onClose so "restart to switch language" paths that bypass wxEVT_CLOSE_WINDOW
+    // can call it explicitly.
     void saveWindowState();
 
-    // 按当前配置重建计时器实例。设置页切换计时器模式 / 调末尾忙等时长后调用。
-    // 旧实例由 shared_ptr 保活：已经在跑的任务用它跑完，之后启动的任务用新的。
+    // Rebuild the timer instance from the current config. Called when the settings tab switches
+    // timer mode or changes the trailing busy-wait duration.
+    // The old instance stays alive via shared_ptr: running tasks finish on it, later tasks use the new one.
     void rebuildTimer();
 
 private:
-    // HotkeyManager 的回调入口：switch 到对应面板方法
+    // HotkeyManager callback entry: switch to the matching panel method
     void dispatchHotkeyAction(HotkeyAction action);
 
-    // wxEVT_HOTKEY 处理：转发给 HotkeyManager::dispatch
+    // wxEVT_HOTKEY handler: forward to HotkeyManager::dispatch
     void onHotkey(wxKeyEvent &event);
 
-    // wxEVT_CLOSE_WINDOW 处理：保存窗口几何 + 当前标签页，然后放行关闭
+    // wxEVT_CLOSE_WINDOW handler: save window geometry + current tab, then allow the close
     void onClose(wxCloseEvent &event);
 
-    // 注册失败时把数量写到状态栏
+    // write the failure count to the status bar when registration fails
     void reportHotkeyFailures();
 
     void refreshStatus();
     void onStatusTimer(wxTimerEvent &event);
 
-    // ---- 计时器 ----
-    // 声明位置有讲究：接线阶段 m_threadMgr 拿的是这个 shared_ptr 的引用，
-    // 所以它必须排在 m_threadMgr 之前（析构顺序反过来，先停线程再放计时器）。
+    // ---- timer ----
+    // declaration order matters: during wiring, m_threadMgr holds a reference to this shared_ptr,
+    // so it must come before m_threadMgr (destruction is reversed: stop threads, then drop the timer).
     std::shared_ptr<ITimer> m_timer;
 
-    // ---- 线程与任务 ----
-    // 必须声明在 m_timer 之后：析构逆序，先停线程再放计时器（线程里还拿着计时器引用）
+    // ---- threads and tasks ----
+    // must be declared after m_timer: destruction is reversed, stop threads before dropping
+    // the timer (threads still hold a timer reference)
     std::unique_ptr<ThreadManager> m_threadMgr;
 
-    // ---- 服务 ----
+    // ---- services ----
     std::unique_ptr<HotkeyManager> m_hotkeyMgr;
 
-    // ---- 布局 ----
+    // ---- layout ----
     wxNotebook *m_notebook{};
 
-    // ---- 面板（热键分发的目标）----
+    // ---- panels (hotkey dispatch targets) ----
     ClickerPanel *m_clickerPanel{};
     KeyboardPanel *m_keyboardPanel{};
     RecorderPanel *m_recorderPanel{};
     SettingsPanel *m_settingsPanel{};
     AboutPanel *m_aboutPanel{};
 
-    // ---- 状态栏 ----
+    // ---- status bar ----
     KBMacroStatusBar *m_statusBar{};
-    wxTimer m_statusTimer{this};   // 300ms 轮询任务状态，驱动状态栏三态
+    wxTimer m_statusTimer{this};   // poll task status every 300ms, driving the status bar's three states
 };

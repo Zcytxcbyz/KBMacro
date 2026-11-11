@@ -11,7 +11,7 @@
 #include "ui/ListHelpers.hpp"
 
 // ============================================================
-// 版本 / 主页由 CMake 注入
+// Version / homepage are injected by CMake
 // ============================================================
 #ifndef KBMACRO_VERSION
 #define KBMACRO_VERSION "0.0.0"
@@ -22,9 +22,9 @@
 
 namespace {
 
-    // 第三方库信息与对应的许可资源 ID。
-    // 顺序即列表顺序，也是许可全文拼接顺序。
-    // 所有字段均为 ASCII 语义（库名 / 版本号 / 许可名），用窄字符存储。
+    // Info for each third-party library and the matching license resource id.
+    // The order is the list order and also the concatenation order of the license texts.
+    // All fields are ASCII by semantics (library name / version / license name) and stored as narrow chars.
     struct LibInfo {
         const char *name;
         const char *version;
@@ -47,7 +47,7 @@ namespace {
     constexpr auto kSeparator =
             L"\n\n==================================================\n\n";
 
-    // 从 RC 的 RCDATA 资源读出原始字节，当作 UTF-8 文本返回
+    // Read raw bytes from the RC RCDATA resource and return them as UTF-8 text
     std::string LoadRcText(const int resId) {
         const auto hInst = ::GetModuleHandleW(nullptr);
         const auto hRes = ::FindResourceW(hInst, MAKEINTRESOURCEW(resId), RT_RCDATA);
@@ -60,7 +60,7 @@ namespace {
         return {data, size};
     }
 
-    // 拼接：库名 + 版本 + 许可名 + 分隔线 + 许可全文
+    // Concatenate: library name + version + license name + separator + license text
     wxString BuildLicenseText() {
         wxString text;
         for (const auto &[name, version, license, licenseResId]: kLibs) {
@@ -85,7 +85,7 @@ AboutPanel::AboutPanel(wxWindow *parent)
                        wxVSCROLL | wxHSCROLL) {
     buildUi();
 
-    // 页面级双向滚动：正常尺寸都看不到，窗口太窄时出横向滚条
+    // Page-level bidirectional scrolling: hidden at normal sizes, horizontal bar appears when too narrow
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 }
@@ -93,7 +93,7 @@ AboutPanel::AboutPanel(wxWindow *parent)
 void AboutPanel::buildUi() {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
-    // ---- 分组一：程序信息 ----
+    // ---- Group 1: app info ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_ABOUT_GROUP_APP));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -123,7 +123,7 @@ void AboutPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组二：第三方库列表 ----
+    // ---- Group 2: third-party library list ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_ABOUT_GROUP_LIBS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -145,12 +145,12 @@ void AboutPanel::buildUi() {
 
         box->Add(m_libList, 0, wxEXPAND | wxALL, 8);
 
-        // 7 行全部撑开，列表内部不出滚动条（滚动统一交给页面）
+        // Stretch to all 7 rows so the list has no internal scrollbar (scrolling is handled by the page)
         uifit::fitListToRows(m_libList);
-        // 鼠标停在列表上也要能滚页面
+        // Still scroll the page when the mouse is over the list
         uifit::forwardWheelToPage(m_libList);
 
-        // 许可证全文不在这里展开，单独开对话框查看
+        // Full license texts are not expanded here; open a separate dialog to view them
         auto *btnRow = new wxBoxSizer(wxHORIZONTAL);
         m_btnLicense = new wxButton(staticBox, wxID_ANY, TR(IDS_ABOUT_BTN_LICENSE));
         m_btnLicense->Bind(wxEVT_BUTTON, &AboutPanel::onShowLicense, this);
@@ -164,8 +164,8 @@ void AboutPanel::buildUi() {
     SetSizer(root);
 }
 
-// 许可证全文放进模态对话框看：内容就是一段长文本 + 确定按钮，
-// 不值得为它单开一个类。文本上千行，所以用 wxTE_RICH2 保证滚动流畅。
+// Full license texts are shown in a modal dialog: content is just a long text + an OK button,
+// not worth a dedicated class. Texts run into thousands of lines, so use wxTE_RICH2 for smooth scrolling.
 void AboutPanel::onShowLicense(wxCommandEvent &event) {
     (void)event;
 
@@ -177,7 +177,7 @@ void AboutPanel::onShowLicense(wxCommandEvent &event) {
     auto *text = new wxTextCtrl(&dlg, wxID_ANY, BuildLicenseText(), wxDefaultPosition,
                                 wxDefaultSize,
                                 wxTE_MULTILINE | wxTE_READONLY | wxTE_RICH2);
-    text->SetInsertionPoint(0);   // 打开时停在开头，而不是末尾
+    text->SetInsertionPoint(0);   // stay at the beginning on open, not the end
 
     root->Add(text, 1, wxEXPAND | wxALL, 8);
     root->Add(dlg.CreateButtonSizer(wxOK), 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);

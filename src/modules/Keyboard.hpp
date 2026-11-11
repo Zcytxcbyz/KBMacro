@@ -6,23 +6,23 @@
 #include "common/KeyboardParams.hpp"
 
 // ============================================================
-// 键盘模拟器模块
+// Keyboard simulator module
 //
-// 职责：按 KeyboardParams 重复发送一个热键组合（修饰键 + 主键）。
+// Responsibility: repeatedly send one hotkey combination (modifiers + main key) per KeyboardParams.
 //
-// 不做：
-//   - 不做表单校验 —— 空热键（vk == 0 且 modifiers == 0）也照跑，
-//     由 input 层记一条 "skipped, no events"；参数是否合法是面板的事
-//   - 不认识 ThreadManager / 面板 / UI
-//   - 循环体不打日志（热路径），只发事件；可观测性靠 input 层
-//   - 不负责"发送一次"（那是面板的 SendOnce，UI 线程直调）
+// Not doing:
+//   - no form validation -- an empty hotkey (vk == 0 and modifiers == 0) still runs,
+//     the input layer logs one "skipped, no events"; whether the params are valid is the panel's job
+//   - does not know ThreadManager / panels / UI
+//   - the loop body does not log (hot path), only sends events; observability comes from the input layer
+//   - does not handle "send once" (that is the panel's SendOnce, called directly on the UI thread)
 //
-// 错误契约：input::SendInputError 往上抛，由 ThreadManager 的 launch 兜底
+// Error contract: input::SendInputError is thrown upward, ThreadManager's launch catches it
 // ============================================================
 namespace keyboard {
 
-    // 返回实际执行轮数（= 实际按键次数）。
-    // 被 stop 打断时已经抬起的键不会残留，返回也已经数过被打断的那一轮。
+    // Return the actual number of rounds executed (= actual key presses).
+    // Keys already released before the stop interruption do not linger; the count includes the interrupted round.
     [[nodiscard]] int run(const KeyboardParams &p, const ITimer &timer, const std::stop_token &st);
 
 } // namespace keyboard

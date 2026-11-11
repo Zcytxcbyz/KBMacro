@@ -117,7 +117,7 @@ namespace utils {
 } // namespace utils
 
 // ============================================================
-// Hotkey 序列化（全局命名空间）
+// Hotkey serialization (global namespace)
 // ============================================================
 
 void to_json(nlohmann::json &j, const Hotkey &hk) {

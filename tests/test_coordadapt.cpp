@@ -1,7 +1,7 @@
 // ============================================================
-// 坐标适配测试：纯函数，只看数值。
-//   - 只在导入别人的脚本时使用，因此本文件的输入都是"两份屏幕规格"
-//   - MulDiv 是四舍五入（0.5 向远离零的方向）
+// Coordinate adaptation tests: pure functions, values only.
+//   - only used when importing someone else's script, so inputs are always "two screen specs"
+//   - MulDiv rounds half away from zero
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -49,12 +49,12 @@ TEST(CoordAdapt, HalvesWithRounding) {
 
     coord::adaptActions(actions, spec(3840, 2160), spec(1920, 1080));
 
-    EXPECT_EQ(actions[0].x, 51);   // 50.5 四舍五入
-    EXPECT_EQ(actions[0].y, 26);   // 25.5 四舍五入
+    EXPECT_EQ(actions[0].x, 51);   // 50.5 rounded
+    EXPECT_EQ(actions[0].y, 26);   // 25.5 rounded
 }
 
 TEST(CoordAdapt, RoundsHalfAwayFromZero) {
-    // 200 → 100：一半的位置都落在 .5 上
+    // 200 → 100: half of the positions land on .5
     std::vector<Action> actions{move(1, 3), move(5, 0)};
 
     coord::adaptActions(actions, spec(200, 200), spec(100, 100));
@@ -75,7 +75,7 @@ TEST(CoordAdapt, NonUniformScales) {
 }
 
 TEST(CoordAdapt, IgnoresNonCoordinateActions) {
-    // 滚轮与键盘的 x/y 即使被手写成非 0，也不该被换算
+    // wheel and keyboard x/y must not be scaled even if hand-edited to non-zero
     Action wheel{.type = ActionType::MouseWheel, .x = 500, .y = 500};
     Action key{.type = ActionType::Keyboard, .x = 700, .y = 300};
     std::vector<Action> actions{wheel, key};
@@ -108,7 +108,7 @@ TEST(CoordAdapt, InvalidSourceLeavesUntouched) {
 }
 
 TEST(CoordAdapt, NegativeCoordinatesScale) {
-    // 副屏在主屏左侧：坐标本来就是负的，照比例走，不夹取
+    // second screen left of the main one: coordinates are already negative, scale as-is, no clamp
     std::vector<Action> actions{move(-100, -50)};
 
     coord::adaptActions(actions, spec(1920, 1080), spec(3840, 2160));
@@ -146,10 +146,10 @@ TEST(CoordAdapt, SkipsRelativeActions) {
 
     coord::adaptActions(actions, spec(1280, 720), spec(2560, 1440));
 
-    // 绝对动作翻倍
+    // absolute actions are doubled
     EXPECT_EQ(actions[0].x, 1280);
     EXPECT_EQ(actions[0].y, 720);
-    // 相对动作是偏移量，原样保留
+    // relative actions are offsets, kept as-is
     EXPECT_EQ(actions[1].x, 640);
     EXPECT_EQ(actions[1].y, 360);
     EXPECT_EQ(actions[2].x, -20);

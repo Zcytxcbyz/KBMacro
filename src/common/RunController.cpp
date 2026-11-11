@@ -3,10 +3,10 @@
 #include <chrono>
 
 // ============================================================
-// 本文件不打日志：
-//   - 构造 / noteIteration 的调用点在任务启动与每轮循环里，
-//     启动日志由 ThreadManager 统一记一次（那里才知道完整参数），
-//     循环体是热路径，按约定不记。
+// this file does not log:
+//   - the constructor / noteIteration are called at task start and in every loop iteration;
+//     the start log is written once by ThreadManager (only it knows the full parameters),
+//     and the loop body is a hot path and is not logged by convention.
 // ============================================================
 
 RunController::RunController(const RunSpec &spec, const TimePoint start)
@@ -22,22 +22,22 @@ bool RunController::shouldRun(const TimePoint now) const {
             return true;
 
         case RunMode::Timed:
-            // 直接比时间点，不经过毫秒转换，保证与"严格小于"的口径一致。
+            // compare time points directly without going through milliseconds, matching the strict less-than rule.
             return now < m_start + m_duration;
 
         case RunMode::Counted:
             return m_executedCount < m_totalCount;
     }
 
-    return false;   // 不可达：RunMode 三个值都已覆盖
+    return false;   // unreachable: all three RunMode values are covered
 }
 
 RunController::Duration RunController::clampWait(const Duration interval,
                                                  const TimePoint now) const {
     if (m_mode != RunMode::Timed) return interval;
 
-    // ceil 而不是截断：Duration 是毫秒，截断会把最后不到 1ms 的零头算没，
-    // 让"定时 N 秒"提前结束（跟 SleepTimer 里同一个理由）。
+    // ceil instead of truncation: Duration is milliseconds, truncation would drop the sub-1ms remainder
+    // and make "run N seconds" end early (same reason as in SleepTimer).
     const auto left = std::chrono::ceil<Duration>(m_start + m_duration - now);
 
     if (left <= Duration::zero()) return Duration::zero();

@@ -1,11 +1,11 @@
 // ============================================================
-// 键盘模块测试：
-//   - 轮数口径、轮间等待、被 stop 打断
-//   - 空热键不拒绝（模块自己的决策：合法性归面板）
+// Keyboard module tests:
+//   - round counting, waits between rounds, interrupted by stop
+//   - an empty hotkey is not rejected (module decision: validity belongs to the panel)
 //
-// 同连点器：input::pressKey 内部的按住等待也走这个 FakeTimer，
-// 所以按住的 5ms 与轮间隔的 95ms 要分开数。
-// 不测 Timed 的轮数（ITimer::now() 是静态的，改不了时钟）。
+// Like the clicker: the hold wait inside input::pressKey also uses this FakeTimer,
+// so the 5ms hold and the 95ms round gap must be counted separately.
+// Timed round counts are not tested (ITimer::now() is static, the clock cannot be moved).
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -18,9 +18,9 @@
 
 namespace {
 
-    // intervalMs = 100、holdMs = 5 → 轮间隔 95，与按住的 5ms 不同
+    // intervalMs = 100, holdMs = 5 → the round gap is 95, unlike the 5ms hold
     KeyboardParams makeParams(const RunMode mode, const int count,
-                              const Hotkey &hotkey = Hotkey{.vk = 0x41}) {   // 默认 A
+                              const Hotkey &hotkey = Hotkey{.vk = 0x41}) {   // default A
         KeyboardParams p;
         p.hotkey = hotkey;
         p.intervalMs = 100;
@@ -29,8 +29,8 @@ namespace {
         return p;
     }
 
-    constexpr ITimer::Duration kHold{5};    // 一次按住的等待
-    constexpr ITimer::Duration kGap{95};    // 轮间隔（100 - 5）
+    constexpr ITimer::Duration kHold{5};    // one hold wait
+    constexpr ITimer::Duration kGap{95};    // round gap (100 - 5)
 
 } // namespace
 
@@ -40,7 +40,7 @@ TEST(KeyboardRun, CountedRunsExactRounds) {
 
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 3);
 
-    // 三次按住等待 + 两次轮间隔（最后一轮之后不再等）
+    // three hold waits + two round gaps (no wait after the last round)
     EXPECT_EQ(timer.countWaits(kHold), 3u);
     EXPECT_EQ(timer.countWaits(kGap), 2u);
     EXPECT_EQ(timer.waitCalls(), 5);
@@ -65,17 +65,17 @@ TEST(KeyboardRun, GapDeductsHoldTime) {
 }
 
 TEST(KeyboardRun, StopOnFirstWaitCountsFirstRound) {
-    FakeTimer timer(1);   // 第一次等待（第 1 轮的按住）就"被打断"
+    FakeTimer timer(1);   // interrupted on the first wait (the hold of round 1)
     const KeyboardParams p = makeParams(RunMode::Infinite, 0);
 
-    // 按键已经发出并抬起了，所以算一轮
+    // the key was already pressed and released, so it counts as one round
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 1);
     EXPECT_EQ(timer.waitCalls(), 1);
 }
 
 TEST(KeyboardRun, InfiniteStopsOnThirdRound) {
-    // 调用序列：hold, gap, hold, gap, hold, gap, ...
-    // 第 6 次等待 = 第 3 轮之后的间隔
+    // call sequence: hold, gap, hold, gap, hold, gap, ...
+    // the 6th wait = the gap after round 3
     FakeTimer timer(6);
     const KeyboardParams p = makeParams(RunMode::Infinite, 0);
 
@@ -85,14 +85,14 @@ TEST(KeyboardRun, InfiniteStopsOnThirdRound) {
 
 TEST(KeyboardRun, EmptyHotkeyIsNotRejected) {
     FakeTimer timer;
-    const KeyboardParams p = makeParams(RunMode::Counted, 1, Hotkey{});   // vk=0, 无修饰键
+    const KeyboardParams p = makeParams(RunMode::Counted, 1, Hotkey{});   // vk=0, no modifiers
 
-    // 模块不校验参数：空热键照跑一轮，事件表为空、只在 input 层记一条 skipped
+    // no validation here: an empty hotkey still runs one round, empty event table, one skipped log in input
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 1);
     EXPECT_EQ(timer.countWaits(kHold), 1u);
 }
 
-// ---- 开始延迟 ----
+// ---- start delay ----
 
 TEST(KeyboardRun, StartDelayHappensBeforeFirstAction) {
     KeyboardParams p;
@@ -106,7 +106,7 @@ TEST(KeyboardRun, StartDelayHappensBeforeFirstAction) {
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 2);
 
     const auto &w = timer.waited();
-    ASSERT_EQ(w.size(), 4u);   // 1 次延迟 + 2 次按住 + 1 次轮间隔
+    ASSERT_EQ(w.size(), 4u);   // 1 delay + 2 holds + 1 round gap
     EXPECT_EQ(w[0], ITimer::Duration{300});
     EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
     EXPECT_EQ(timer.countWaits(ITimer::Duration{5}), 2u);

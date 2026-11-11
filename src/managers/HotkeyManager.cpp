@@ -10,8 +10,8 @@
 
 namespace {
 
-    // hk::kMod* 位掩码 → Win32 MOD_* 位掩码
-    // 始终附带 MOD_NOREPEAT：按住不放只触发一次
+    // hk::kMod* bitmask → Win32 MOD_* bitmask
+    // MOD_NOREPEAT is always added: holding the key triggers only once
     UINT toWin32Modifiers(const unsigned mods) {
         UINT m = MOD_NOREPEAT;
         if (mods & hk::kModCtrl)  m |= MOD_CONTROL;
@@ -21,8 +21,8 @@ namespace {
         return m;
     }
 
-    // 空热键：没设置任何键。用户通过"清除"得到的状态。
-    // 空热键不注册、不冲突。
+    // empty hotkey: no key assigned. The state the user gets via "clear".
+    // empty hotkeys are not registered and never conflict.
     bool isEmptyHotkey(const Hotkey &hk) noexcept {
         return hk.vk == 0 && hk.modifiers == 0;
     }
@@ -30,7 +30,7 @@ namespace {
 } // namespace
 
 // ============================================================
-// 构造 / 析构
+// Construction / destruction
 // ============================================================
 
 HotkeyManager::HotkeyManager(HWND hwnd, TriggerCallback onTriggered)
@@ -43,17 +43,17 @@ HotkeyManager::~HotkeyManager() {
 }
 
 // ============================================================
-// 批量注册 / 注销
+// Bulk register / unregister
 // ============================================================
 
 void HotkeyManager::registerAll() {
-    // 幂等：先清空已有注册（首次调用时是空操作）
+    // idempotent: clear existing registrations first (a no-op on the first call)
     unregisterAll();
 
     const auto &cfg = ConfigManager::instance().config();
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (!cfg.hotkeyEnabled[static_cast<std::size_t>(i)]) {
-            // 禁用项不注册，也不计入失败
+            // disabled slots are not registered and do not count as failures
             continue;
         }
         registerOne(i, cfg.hotkeys[i]);
@@ -71,7 +71,7 @@ void HotkeyManager::unregisterAll() {
 }
 
 // ============================================================
-// 单个注册 / 注销
+// Single register / unregister
 // ============================================================
 
 void HotkeyManager::registerOne(const int index, const Hotkey &hk) {
@@ -110,7 +110,7 @@ void HotkeyManager::unregisterOne(const int index) {
 }
 
 // ============================================================
-// 修改单个热键
+// Modify a single hotkey
 // ============================================================
 
 bool HotkeyManager::setHotkey(const int index, const Hotkey &hk) {
@@ -119,19 +119,19 @@ bool HotkeyManager::setHotkey(const int index, const Hotkey &hk) {
         return false;
     }
 
-    // 冲突检测：空热键不参与
+    // conflict check: empty hotkeys do not participate
     if (!isEmptyHotkey(hk) && isConflicting(hk, index)) {
         LOG_WARN("hotkey[{}] conflicts with another hotkey, rejected", index);
         return false;
     }
 
-    // 注销旧的（若未注册则空操作）
+    // unregister the old one (a no-op when not registered)
     unregisterOne(index);
 
-    // 落盘。即便下一步注册失败，也保留用户输入，由 failedIndices 反馈。
+    // persist. Even if registration fails next, keep the user input and report it via failedIndices.
     ConfigManager::instance().setHotkey(index, hk);
 
-    // 禁用状态下改键：只落盘、保持禁用，不注册
+    // rebinding while disabled: only persist, stay disabled, do not register
     const bool enabled = ConfigManager::instance()
                              .config()
                              .hotkeyEnabled[static_cast<std::size_t>(index)];
@@ -141,10 +141,10 @@ bool HotkeyManager::setHotkey(const int index, const Hotkey &hk) {
         return true;
     }
 
-    // 注册新的（空热键只落盘，不注册）
+    // register the new one (an empty hotkey is only persisted, not registered)
     registerOne(index, hk);
 
-    // 空热键视为"清除成功"，注册成功也返回 true
+    // an empty hotkey counts as "cleared", a successful registration also returns true
     return m_registered[index] || isEmptyHotkey(hk);
 }
 
@@ -154,7 +154,7 @@ bool HotkeyManager::setEnabled(const int index, const bool enabled) {
         return false;
     }
 
-    // 先落盘（记录用户意图），再动注册状态
+    // persist first (record user intent), then touch the registration state
     ConfigManager::instance().setHotkeyEnabled(index, enabled);
 
     if (!enabled) {
@@ -171,7 +171,7 @@ bool HotkeyManager::setEnabled(const int index, const bool enabled) {
 }
 
 // ============================================================
-// 分发
+// Dispatch
 // ============================================================
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -193,7 +193,7 @@ void HotkeyManager::dispatch(const int hotkeyId) {
 }
 
 // ============================================================
-// 查询
+// Queries
 // ============================================================
 
 int HotkeyManager::failedCount() const noexcept {
@@ -201,8 +201,8 @@ int HotkeyManager::failedCount() const noexcept {
     int n = 0;
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增：禁用的不算失败
-        // 只统计"用户设置过但注册失败"的项；空热键不算失败
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added: disabled slots do not count as failures
+        // only count items "set by the user but failed to register"; empty hotkeys do not count
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             ++n;
         }
@@ -217,7 +217,7 @@ std::vector<int> HotkeyManager::failedIndices() const {
 
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             result.push_back(i);
         }
@@ -234,7 +234,7 @@ bool HotkeyManager::isConflicting(const Hotkey &hk, // NOLINT(*-convert-member-f
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (i == excludeIndex) continue;
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← 新增：禁用的不参与冲突
+        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added: disabled slots never conflict
         if (cfg.hotkeys[idx].vk == hk.vk &&
             cfg.hotkeys[idx].modifiers == hk.modifiers) {
             return true;

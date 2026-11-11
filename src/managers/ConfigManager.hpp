@@ -7,58 +7,58 @@
 #include "common/Types.hpp"
 
 // ============================================================
-// 全局配置管理器
+// Global config manager
 //
-// 职责：
-//   - 启动时判定配置路径（便携 / APPDATA）并加载
-//   - 提供只读访问 config()
-//   - 提供 setter，每个 setter 内部即改即存
-//   - 便携模式的导出 / 删除
-//   - 恢复默认值
+// Responsibilities:
+//   - decide the config path at startup (portable / APPDATA) and load
+//   - provide read-only access via config()
+//   - provide setters, each setter saves immediately
+//   - export / delete for portable mode
+//   - restore defaults
 //
-// 不做：
-//   - 变更通知（UI 是唯一读写方，无并发）
-//   - reload()（语言等配置需重启生效）
-//   - 各模块参数的持久化（模块自己走导入导出）
+// Not responsible for:
+//   - change notification (the UI is the only reader/writer, no concurrency)
+//   - reload() (language and other configs need a restart to take effect)
+//   - persisting per-module params (modules use their own import/export)
 //
-// 生命周期：
-//   - 单例，在 main() 中 load() 一次
-//   - 路径判定算法在 common/ConfigPaths 里，本类只做编排
+// Lifetime:
+//   - singleton, load() once in main()
+//   - the path decision algorithm lives in common/ConfigPaths, this class only orchestrates
 // ============================================================
 
 class ConfigManager {
 public:
     static ConfigManager &instance();
 
-    // 启动时调一次：判定路径 → 读文件 → 填 m_config；失败则保持默认值。
-    // 读取失败不抛异常，行为等价于"用默认配置"。
+    // call once at startup: decide path → read file → fill m_config; on failure keep the defaults.
+    // a read failure does not throw, equivalent to "use the default config".
     void load();
 
-    // ---- 只读访问 ----
+    // ---- read-only access ----
 
     [[nodiscard]] const Config &config() const noexcept { return m_config; }
 
-    // 当前生效的配置文件路径
+    // currently effective config file path
     [[nodiscard]] const std::filesystem::path &currentPath() const noexcept {
         return m_path;
     }
 
-    // 是否便携模式（当前配置来自 EXE 同目录的 {exe}.json）
+    // whether portable mode (current config comes from {exe}.json next to the EXE)
     [[nodiscard]] bool isPortable() const noexcept { return m_portable; }
 
-    // ---- 修改（每个 setter 内部立即 save） ----
+    // ---- modification (each setter saves immediately) ----
 
     void setLanguage(std::string_view code);
     void setTimerMode(TimerMode mode);
-    // 混合计时器的末尾忙等时长（毫秒），越界会被夹到
+    // trailing busy-wait duration of the hybrid timer (ms), out-of-range values are clamped to
     // kTimerHybridSpinMsMin/Max
     void setTimerHybridSpinMs(int ms);
-    // 录制设置，越界的值会被夹到对应 kRecord*Min/Max
+    // recording settings, out-of-range values are clamped to the matching kRecord*Min/Max
     void setRecordMoveIntervalMs(int ms);
     void setRecordIgnoreInjected(bool v);
     void setRecordStartDelayMs(int ms);
     void setRecordMaxActions(int n);
-    // 回放倍率：归到最近档位后落盘
+    // playback factor: snapped to the nearest step, then persisted
     void setPlaybackSpeed(double speed);
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
@@ -68,20 +68,20 @@ public:
     void setWindow(const Config::Window &w);
     void setTabIndex(int index);
 
-    // ---- 便携模式 ----
+    // ---- portable mode ----
 
-    // 把当前内存配置写到 {exe}.json，并切换到便携模式。
-    // 之后所有 setter 的 save 都写这个文件。
-    //   返回 true  = 成功
-    //   返回 false = 写文件失败，状态不变（仍是原 APPDATA 模式）
+    // write the current in-memory config to {exe}.json and switch to portable mode.
+    // every later setter save writes this file.
+    //   returns true  = success
+    //   returns false = file write failed, state unchanged (still the original APPDATA mode)
     [[nodiscard]] bool exportToPortable();
 
-    // 删除 {exe}.json，切回 APPDATA，并把当前内存配置写一份到 APPDATA。
-    //   返回 true  = 成功（含"本来就不是便携模式"的幂等情况）
-    //   返回 false = 删文件失败，状态不变（仍是便携模式）
+    // delete {exe}.json, switch back to APPDATA, and write a copy of the in-memory config to APPDATA.
+    //   returns true  = success (including the idempotent case "was not portable anyway")
+    //   returns false = file delete failed, state unchanged (still portable mode)
     [[nodiscard]] bool deletePortable();
 
-    // ---- 重置 ----
+    // ---- reset ----
 
     void clearSpinWarning();
     void resetToDefaults();
@@ -89,10 +89,10 @@ public:
 private:
     ConfigManager() = default;
 
-    // 把 m_config 写到 m_path；失败只记日志，不抛。
+    // write m_config to m_path; on failure only log, do not throw.
     void save() const;
 
-    // 从环境变量读 %APPDATA%
+    // read %APPDATA% from the environment
     [[nodiscard]] static std::filesystem::path appDataDir();
 
     Config m_config;

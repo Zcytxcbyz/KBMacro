@@ -21,8 +21,8 @@ namespace {
     constexpr auto kLoggerName = "KBMacro";
     constexpr auto kLogPattern = "[%Y-%m-%d %H:%M:%S.%e] [%t] [%s:%#] [%l] %v";
 #ifdef KBMACRO_DRY_RUN
-    // 干跑时动作密度可能远高于真实运行（回放 delayMs 很小的脚本），
-    // 8192 条会在 overrun_oldest 策略下悄悄丢最旧的行。给足余量。
+    // a dry run can have a much higher action density than a real run (playing a script with tiny delayMs),
+    // 8192 entries would silently drop the oldest lines under overrun_oldest. leave plenty of headroom.
     constexpr std::size_t kAsyncQueueSize = 65536;
 #else
     constexpr std::size_t kAsyncQueueSize = 8192;
@@ -33,7 +33,7 @@ namespace {
         return utils::GetExecutableDirectory() / L"logs";
     }
 
-    // 保留最近 keepCount 个日志文件，删掉更旧的
+    // keep the newest keepCount log files and delete the older ones
     void CleanOldLogs(const std::filesystem::path &logDir, const std::size_t keepCount) {
         std::vector<std::filesystem::path> logFiles;
 
@@ -50,8 +50,8 @@ namespace {
 
         if (logFiles.size() <= keepCount) return;
 
-        // 文件名格式 KBMacro_YYYY-MM-DD_HH-MM-SS.log
-        // 字典序 == 时间序，直接按路径排
+        // file name format KBMacro_YYYY-MM-DD_HH-MM-SS.log
+        // lexicographic order == chronological order, so sorting by path is enough
         std::ranges::sort(logFiles);
 
         const std::size_t deleteCount = logFiles.size() - keepCount;
@@ -75,8 +75,8 @@ void Log::Init() {
         auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
             utils::ToUtf8(logFile.native()), /*truncate=*/true);
 
-        // 同时送一份到调试器输出（VS 输出窗口）。sink 默认 check_debugger_present_ = true，
-        // 没挂调试器时每行只做一次 IsDebuggerPresent() 就返回，不格式化也不写。
+        // mirror to the debugger output too (VS output window). check_debugger_present_ = true by default,
+        // without a debugger each line only does one IsDebuggerPresent() and returns, no formatting or writing.
         auto msvcSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
 
         auto logger = std::make_shared<spdlog::async_logger>(

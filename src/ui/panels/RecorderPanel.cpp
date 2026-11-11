@@ -23,7 +23,7 @@
 
 namespace {
 
-    // ---- Action → 显示文本 ----
+    // ---- Action → display text ----
 
     wxString actionTypeText(const ActionType t) {
         switch (t) {
@@ -59,7 +59,7 @@ namespace {
         return {};
     }
 
-    // 相对动作在参数列末尾标一下，一眼能区分绝对/相对
+    // Mark relative actions at the end of the params column so absolute/relative is obvious at a glance
     wxString relativeSuffix(const Action &a) {
         return a.relative ? wxString(" ") + wxString(TR(IDS_ACTION_RELATIVE_SUFFIX)) : wxString{};
     }
@@ -82,7 +82,7 @@ namespace {
             }
             case ActionType::MouseDown:
             case ActionType::MouseUp:
-                // 类型列已经写明"按下/松开"，这里只补按键和坐标
+                // The type column already says "down/up"; only fill in the button and coordinates here
                 return wxString::Format("%s (%d, %d)", mouseButtonText(a.button), a.x, a.y) +
                        relativeSuffix(a);
             case ActionType::Delay:
@@ -91,8 +91,8 @@ namespace {
         return {};
     }
 
-    // 从 wxListCtrl 的 long 行号安全转 vector 索引。
-    // 调用方保证 row >= 0（选中判断之后才调用）。
+    // Safely convert a wxListCtrl long row to a vector index.
+    // Callers guarantee row >= 0 (called only after a selection check).
     [[nodiscard]] std::size_t toIndex(const long row) {
         assert(row >= 0);
         return static_cast<std::size_t>(row);
@@ -102,12 +102,12 @@ namespace {
         return static_cast<long>(i);
     }
 
-    // size_t → 有符号索引（用于迭代器算术）
+    // size_t → signed index (for iterator arithmetic)
     [[nodiscard]] std::ptrdiff_t toDiff(const std::size_t i) {
         return static_cast<std::ptrdiff_t>(i);
     }
 
-    // *.macro.json 的 schema 版本
+    // Schema version of *.macro.json
     constexpr int kMacroVersion = 1;
 } // namespace
 
@@ -119,8 +119,8 @@ RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
     setRunning(false);
     setRecording(false);
 
-    // 页面双向滚动：横向管"窗口太窄、控件排不下"，竖向管"窗口太矮"。
-    // 动作列表自己还有一套滚动条（行数可变、列宽固定），那是列表自己的范围。
+    // Page-level two-way scrolling: horizontal for "window too narrow, widgets don't fit", vertical for "too short".
+    // The action list has its own scrollbars (variable rows, fixed column widths) covering its own extent.
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 }
@@ -128,7 +128,7 @@ RecorderPanel::RecorderPanel(wxWindow *parent, ThreadManager &threadMgr)
 void RecorderPanel::buildUi() {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
-    // ---- 分组一：录制 ----
+    // ---- Group 1: recording ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_RECORDER_GROUP_RECORD));
         auto *box = new wxStaticBoxSizer(staticBox, wxHORIZONTAL);
@@ -143,7 +143,7 @@ void RecorderPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组二：动作列表 ----
+    // ---- Group 2: action list ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_RECORDER_GROUP_ACTION_LIST));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -180,7 +180,7 @@ void RecorderPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组三：运行模式 ----
+    // ---- Group 3: run mode ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -225,14 +225,14 @@ void RecorderPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组四：回放 ----
+    // ---- Group 4: playback ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_RECORDER_GROUP_PLAYBACK));
         auto *box = new wxStaticBoxSizer(staticBox, wxHORIZONTAL);
 
         m_choiceSpeed = new wxChoice(staticBox, wxID_ANY);
 
-        // 档位表与配置文件共用 Config.hpp 里的 kPlaybackSpeeds，UI 不另存一份
+        // The step table is shared with the config file via kPlaybackSpeeds in Config.hpp; the UI keeps no copy
         for (const double speed: kPlaybackSpeeds) {
             m_choiceSpeed->Append(wxString::Format("%0.2fx", speed));
         }
@@ -258,7 +258,7 @@ void RecorderPanel::buildUi() {
 
     SetSizer(root);
 
-    // ---- 事件绑定 ----
+    // ---- Event binding ----
     m_btnStartRecord->Bind(wxEVT_BUTTON, &RecorderPanel::onStartRecord, this);
     m_btnStopRecord->Bind(wxEVT_BUTTON, &RecorderPanel::onStopRecord, this);
     m_btnAdd->Bind(wxEVT_BUTTON, &RecorderPanel::onAdd, this);
@@ -277,10 +277,10 @@ void RecorderPanel::buildUi() {
     m_listCtrl->Bind(wxEVT_LIST_ITEM_DESELECTED,
                      &RecorderPanel::onListSelectionChanged, this);
 
-    // ---- 初始填充 ----
+    // ---- Initial fill ----
     refreshList();
 
-    // ---- 运行模式下拉框事件 ----
+    // ---- Run mode combo box events ----
     m_choiceSpeed->Bind(wxEVT_CHOICE, &RecorderPanel::onSpeedChanged, this);
     Bind(wxEVT_SHOW, &RecorderPanel::onShow, this);
     m_choiceRunMode->Bind(wxEVT_CHOICE, &RecorderPanel::onRunModeChanged, this);
@@ -288,7 +288,7 @@ void RecorderPanel::buildUi() {
 }
 
 // ============================================================
-// 参数收集
+// Params collection
 // ============================================================
 
 RunSpec RecorderPanel::collectRunSpec() const {
@@ -308,7 +308,7 @@ RunSpec RecorderPanel::collectRunSpec() const {
 }
 
 // ===========================================================
-// 参数应用
+// Params application
 // ===========================================================
 void RecorderPanel::applyRunSpec(const RunSpec &run) {
     switch (run.mode) {
@@ -323,7 +323,7 @@ void RecorderPanel::applyRunSpec(const RunSpec &run) {
 }
 
 // ============================================================
-// 列表维护
+// List maintenance
 // ============================================================
 void RecorderPanel::refreshList() {
     m_listCtrl->DeleteAllItems();
@@ -359,7 +359,7 @@ void RecorderPanel::refreshButtonStates() {
     m_btnMoveUp->Enable(editable && hasSelection && row > 0);
     m_btnMoveDown->Enable(editable && hasSelection && row < total - 1);
     m_btnClear->Enable(editable && hasItems);
-    // 列表变化后同步回放按钮（空列表不允许开始、录制中不允许开始）
+    // Sync playback buttons after list changes (empty list cannot start, cannot start while recording)
     setRunning(m_threadMgr.IsRunning(TaskKind::Playback));
 }
 
@@ -382,10 +382,10 @@ void RecorderPanel::onListSelectionChanged(wxListEvent &event) {
 }
 
 // ============================================================
-// 列表操作
+// List operations
 // ============================================================
 void RecorderPanel::onAdd(wxCommandEvent &) {
-    Action newAction; // 默认 MouseMove
+    Action newAction; // defaults to MouseMove
     ActionEditDialog dlg(this, TR(IDS_ACTION_DIALOG_TITLE_ADD), newAction);
     if (dlg.ShowModal() != wxID_OK) return;
 
@@ -418,7 +418,7 @@ void RecorderPanel::onDelete(wxCommandEvent &) {
     m_actions.erase(m_actions.begin() + toDiff(row));
     refreshList();
 
-    // 尽量选中同一位置，删了最后一个就往前退一格
+    // Try to keep the same position selected; if the last one was deleted, step back one
     if (!m_actions.empty()) {
         const long target = std::min<long>(row, toRow(m_actions.size() - 1));
         selectRow(target);
@@ -461,7 +461,7 @@ void RecorderPanel::onClear(wxCommandEvent &) {
 }
 
 // ============================================================
-// 运行模式
+// Run mode
 // ============================================================
 
 void RecorderPanel::onRunModeChanged(wxCommandEvent &) {
@@ -484,7 +484,7 @@ void RecorderPanel::onSpeedChanged(wxCommandEvent &) {
 void RecorderPanel::syncSpeedFromConfig() {
     const double speed = ConfigManager::instance().config().playbackSpeed;
 
-    // 档位表里找同一个值：Config 侧已经 snap 过，这里只做匹配
+    // Find the same value in the step table: the Config side already snapped it; match only here
     int selection = 0;
     int index = 0;
     for (const double candidate: kPlaybackSpeeds) {
@@ -501,8 +501,8 @@ void RecorderPanel::syncSpeedFromConfig() {
 void RecorderPanel::onShow(wxShowEvent &event) {
     event.Skip();
 
-    // 切回本页时同步一次：设置页的"恢复默认设置"会改 config，
-    // 但碰不到这个面板里的控件；显示时机自愈，比跨面板通知简单
+    // Sync once when switching back to this page: "Restore defaults" on the settings page changes config
+    // but cannot reach the widgets in this panel; self-healing on show is simpler than cross-panel notification
     if (event.IsShown()) {
         syncSpeedFromConfig();
     }
@@ -517,7 +517,7 @@ void RecorderPanel::refreshEnableStates() {
 
 
 // ============================================================
-// 录制 / 回放
+// Recording / playback
 // ============================================================
 void RecorderPanel::onStartRecord(wxCommandEvent &) {
     startRecording();
@@ -544,17 +544,17 @@ void RecorderPanel::startRecording() {
     opts.ignoreInjected = cfg.recordIgnoreInjected;
     opts.maxActions     = cfg.recordMaxActions;
 
-    // 所有已启用的全局热键主键都过滤：录制期间它们已被热键系统消费、前台程序
-    // 收不到，录进产物只会在回放时反过来触发我们自己。
-    //   修饰键不在这里传（那靠归一化阶段的头尾剔除），
-    //   否则用户正常按的 Ctrl+C 会被吃掉 Ctrl。
+    // Filter all enabled global hotkey main keys: during recording they are consumed by the hotkey system,
+    // so the foreground app never sees them; recording them would make playback trigger ourselves.
+    //   Modifiers are not passed here (they are trimmed at the head/tail during normalization),
+    //   otherwise a normal Ctrl+C from the user would lose its Ctrl.
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (cfg.hotkeyEnabled[i] && cfg.hotkeys[i].vk != 0) {
             opts.ignoredKeys.push_back(cfg.hotkeys[i].vk);
         }
     }
 
-    // 开始/停止热键的主键与修饰键：只给归一化阶段用于剔除产物头尾的修饰键段
+    // Start/stop hotkeys' main keys and modifiers: passed only to normalization to trim the head/tail modifier runs
     const auto &startKey = cfg.hotkeys[static_cast<int>(HotkeyAction::StartRecord)];
     const auto &stopKey  = cfg.hotkeys[static_cast<int>(HotkeyAction::StopRecord)];
     opts.startKeyVk = startKey.vk;
@@ -569,16 +569,16 @@ void RecorderPanel::startRecording() {
 
     m_threadMgr.StartRecord(opts, [this](const TaskResult& res) { onRecordFinished(res); });
 
-    // 回放正在跑时 ThreadManager 会拒绝这次请求（不回调、不打按钮），
-    // 所以按权威状态校正，免得界面切到"录制中"却什么都没发生
+    // ThreadManager rejects this request while playback is running (no callback, no button change),
+    // so correct from the authoritative state to avoid showing "recording" when nothing happened
     setRecording(m_threadMgr.IsRunning(TaskKind::Record));
 }
 
 void RecorderPanel::stopRecording() {
     LOG_INFO("recorder: stop recording requested");
 
-    // 阻塞 join，返回时采集线程确实已经退出（钩子也卸了）。
-    //   产物走队列里的回调：稍后 onRecordFinished 再问"替换/追加/丢弃"
+    // Blocking join; on return the capture thread has really exited (hooks are removed too).
+    //   The result goes through the queued callback: onRecordFinished later asks "replace/append/discard"
     m_threadMgr.StopRecord();
     setRecording(false);
 }
@@ -587,7 +587,7 @@ void RecorderPanel::stopRecording() {
 void RecorderPanel::startPlayback() {
     const RunSpec run = collectRunSpec();
 
-    // 倍率在"开始这一刻"快照：回放中途改下拉框，不影响已经在跑的这一次
+    // Snapshot the factor at "start": changing the combo box mid-playback does not affect the running pass
     const double speed = ConfigManager::instance().config().playbackSpeed;
     std::vector<Action> script = m_actions;
     action::scaleActions(script, speed);
@@ -595,8 +595,8 @@ void RecorderPanel::startPlayback() {
     LOG_INFO("recorder: start playback requested (actions={}, mode={}, speed={}x)",
              script.size(), runModeToString(run.mode), speed);
 
-    // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
-    // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
+    // ThreadManager ignores this request while already running (the same task must not run concurrently),
+    // so ignore the return value and flip the buttons to "started"; the callback flips them back on real exit
     m_threadMgr.StartPlayback(std::move(script), run, [this](const TaskResult& res) {
         setRunning(false);
         LOG_INFO("recorder: playback finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
@@ -613,8 +613,8 @@ void RecorderPanel::stopPlayback() {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::setRunning(const bool running) {
-    // 空列表时不允许开始：否则会起一个"一条动作都不播"的线程
-    // 录制中也不允许：录制与回放互斥，ThreadManager 会拒绝，界面就别给入口
+    // Starting is not allowed on an empty list: otherwise it would spawn a thread that plays nothing
+    // Nor while recording: recording and playback are mutually exclusive and ThreadManager rejects it
     m_btnStartPlayback->Enable(!running && !m_recording && !m_actions.empty());
     m_btnStopPlayback->Enable(running);
 }
@@ -626,13 +626,13 @@ void RecorderPanel::setRecording(const bool recording) {
     m_btnStartRecord->Enable(!recording);
     m_btnStopRecord->Enable(recording);
 
-    // 录制期间锁住"会改动列表"的入口：停止后要拿录到的内容和当前列表做交付选择，
-    //   中途改了列表，那个"替换还是追加"的提问就失去意义了
+    // Lock the entries that "modify the list" while recording: after stop we compare the recorded content
+    //   with the current list to ask "replace or append"; changing the list midway makes that question meaningless
     m_btnAdd->Enable(!recording);
     m_btnImportScript->Enable(!recording);
     m_btnExportScript->Enable(!recording);
 
-    // 编辑类按钮按"选中 + 非录制中"统一刷新
+    // Refresh edit buttons uniformly by "selected + not recording"
     refreshButtonStates();
 }
 
@@ -643,7 +643,7 @@ void RecorderPanel::onRecordFinished(const TaskResult &res) {
              static_cast<int>(res.reason),
              res.recorded ? static_cast<int>(res.recorded->size()) : -1);
 
-    // 没有产物只有一种情况：录制线程异常结束（钩子装不上等），launch 已经记了 ERROR
+    // No result means one case: the recording thread ended abnormally (hooks failed etc.); launch logged ERROR
     if (!res.recorded) {
         if (res.reason == FinishReason::Failed) {
             uibtn::messageBox(TR(IDS_MSG_RECORD_FAILED), TR(IDS_APP_TITLE),
@@ -664,7 +664,7 @@ void RecorderPanel::onRecordFinished(const TaskResult &res) {
 void RecorderPanel::deliverRecording(const std::vector<Action> &actions) {
     const auto count = static_cast<int>(actions.size());
 
-    // 列表本来就是空的：直接装进去，没必要问"替换还是追加"
+    // The list was empty: just take it, no need to ask "replace or append"
     if (m_actions.empty()) {
         m_actions = actions;
         refreshList();
@@ -701,7 +701,7 @@ void RecorderPanel::deliverRecording(const std::vector<Action> &actions) {
 }
 
 // ============================================================
-// 导入 / 导出脚本
+// Script import / export
 // ============================================================
 
 void RecorderPanel::onImportScript(wxCommandEvent &) {
@@ -747,7 +747,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         return;
     }
 
-    // ---- 屏幕规格比对 ----
+    // ---- Screen spec comparison ----
     ScreenSpec scriptSpec;
     if (j.contains("screen") && j["screen"].is_object()) {
         scriptSpec = j["screen"].get<ScreenSpec>();
@@ -779,7 +779,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         }
     }
 
-    // 替换确认
+    // Replace confirmation
     const int ret = uibtn::messageBox(TR(IDS_MSG_MACRO_REPLACE_CONFIRM),
                                  TR(IDS_APP_TITLE),
                                  wxYES_NO | wxICON_QUESTION, this);
@@ -791,7 +791,7 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
     m_actions = std::move(imported);
     refreshList();
 
-    // 运行模式：缺失走默认（Infinite）
+    // Run mode: missing means default (Infinite)
     if (j.contains("run") && j["run"].is_object()) {
         applyRunSpec(j["run"].get<RunSpec>());
     }
@@ -832,14 +832,14 @@ void RecorderPanel::onExportScript(wxCommandEvent &) {
 }
 
 // ============================================================
-// 坐标适配询问
+// Coordinate adapt prompt
 // ============================================================
 RecorderPanel::AdaptChoice
 RecorderPanel::askAdaptCoordinates(const ScreenSpec &scriptSpec,
                                    const ScreenSpec &currentSpec) {
     auto &cfgMgr = ConfigManager::instance();
 
-    // 记忆命中：不弹窗
+    // Memory hit: no prompt
     const auto pref = cfgMgr.config().flags.adaptationPreference;
     if (pref == AdaptationPreference::AlwaysAdapt) {
         LOG_INFO("recorder: adapt preference = AlwaysAdapt, skip prompt");
@@ -850,7 +850,7 @@ RecorderPanel::askAdaptCoordinates(const ScreenSpec &scriptSpec,
         return AdaptChoice::KeepOriginal;
     }
 
-    // Ask：弹窗
+    // Ask: show the dialog
     const wxString msg = wxString::Format(
         TR(IDS_MSG_ADAPT_CONFIRM).data(),
         scriptSpec.width, scriptSpec.height, scriptSpec.dpi,

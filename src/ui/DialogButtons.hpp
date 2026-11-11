@@ -8,14 +8,15 @@
 #include "resource.h"
 
 // ============================================================
-// 标准按钮文案本地化
+// Standard button label localization
 //
-// wxID_OK / wxID_CANCEL / wxID_YES / wxID_NO 这些标准按钮，文案来自 wxWidgets
-// 自带的 wxstd.mo 翻译文件。本项目是单 EXE 便携版、不带 wx 的语言文件，
-// 所以这些按钮在中文界面下仍显示英文。这里在按钮建好之后按 id 换成资源文案。
+// Labels of the wxID_OK / wxID_CANCEL / wxID_YES / wxID_NO standard buttons come from
+// wxWidgets' bundled wxstd.mo translation files. This project is a single-EXE portable
+// build without wx language files, so these buttons stay English on the Chinese UI.
+// Here we replace their labels with resource strings by id once they are created.
 //
-// 用法：CreateStdDialogButtonSizer() / CreateButtonSizer() 之后、
-//       SetSizerAndFit() / SetSizer() 之前调用 uibtn::localize(this)。
+// usage: after CreateStdDialogButtonSizer() / CreateButtonSizer() and before
+//       SetSizerAndFit() / SetSizer(), call uibtn::localize(this).
 // ============================================================
 namespace uibtn {
 
@@ -38,14 +39,14 @@ namespace uibtn {
         }
     }
 
-    // ---- 消息框文案本地化 ----
+    // ---- message box label localization ----
     //
-    // wxMessageBox 的标准按钮也来自 wxstd.mo，中文界面下同样显示英文。
-    // 这里用 wxMessageDialog 手工设一次标签，返回值和 wxMessageBox 一致
-    // （wxID_OK / wxID_YES / wxID_CANCEL …）。
+    // wxMessageBox's standard buttons also come from wxstd.mo and show English on the Chinese UI.
+    // Here we set the labels manually via wxMessageDialog; its return value matches wxMessageBox
+    // (wxID_OK / wxID_YES / wxID_CANCEL ...).
     //
-    // 参数顺序特意与 wxMessageBox 一样（text, caption, style, parent），
-    // 这样调用点只需把 wxMessageBox( 换成 uibtn::messageBox( 就行。
+    // The parameter order intentionally matches wxMessageBox (text, caption, style, parent),
+    // so call sites only need to replace wxMessageBox( with uibtn::messageBox(.
     [[nodiscard]] inline wxMessageDialogBase::ButtonLabel label(const int resId) {
         return { wxMessageDialogBase::ButtonLabel(wxString(TR(resId))) };
     }

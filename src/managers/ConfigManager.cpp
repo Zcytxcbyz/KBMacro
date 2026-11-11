@@ -8,7 +8,7 @@
 #include "common/Utils.hpp"
 
 // ============================================================
-// 单例
+// Singleton
 // ============================================================
 
 ConfigManager &ConfigManager::instance() {
@@ -17,12 +17,12 @@ ConfigManager &ConfigManager::instance() {
 }
 
 // ============================================================
-// %APPDATA% 目录
+// %APPDATA% directory
 // ============================================================
 
 std::filesystem::path ConfigManager::appDataDir() {
-    // 环境变量方式最简单。%APPDATA% 在正常 Windows 会话下必有值，
-    // 缺失的极端场景（服务进程等）回退到 EXE 目录，避免落到 CWD。
+    // the environment variable is the simplest way. %APPDATA% is always set in a normal Windows session,
+    // in the rare missing case (service process etc.) fall back to the EXE directory, avoiding the CWD.
     if (const wchar_t *appData = _wgetenv(L"APPDATA"); appData && *appData) {
         return {appData};
     }
@@ -31,7 +31,7 @@ std::filesystem::path ConfigManager::appDataDir() {
 }
 
 // ============================================================
-// 加载
+// Load
 // ============================================================
 
 void ConfigManager::load() {
@@ -52,7 +52,7 @@ void ConfigManager::load() {
 }
 
 // ============================================================
-// 保存（setter 内部调用）
+// Save (called inside setters)
 // ============================================================
 
 void ConfigManager::save() const {
@@ -60,7 +60,7 @@ void ConfigManager::save() const {
 }
 
 // ============================================================
-// 通用 setter
+// Generic setters
 // ============================================================
 
 void ConfigManager::setLanguage(const std::string_view code) {
@@ -196,7 +196,7 @@ void ConfigManager::setTabIndex(const int index) {
 }
 
 // ============================================================
-// 便携模式
+// Portable mode
 // ============================================================
 
 bool ConfigManager::exportToPortable() {
@@ -205,7 +205,7 @@ bool ConfigManager::exportToPortable() {
     portablePath.concat(L".json");
 
     if (!config::saveTo(portablePath, m_config)) {
-        // 写文件失败：状态不变，仍是原来的 APPDATA 模式
+        // file write failed: state unchanged, still the original APPDATA mode
         LOG_ERROR("config: export to portable failed, state unchanged");
         return false;
     }
@@ -218,18 +218,18 @@ bool ConfigManager::exportToPortable() {
 }
 
 bool ConfigManager::deletePortable() {
-    // 幂等：本来就不是便携模式，视为成功
+    // idempotent: already not in portable mode, treat as success
     if (!m_portable) {
         LOG_DEBUG("config: deletePortable called but not in portable mode");
         return true;
     }
 
-    // 删除便携文件
+    // remove the portable file
     std::error_code ec;
     const bool removed = std::filesystem::remove(m_path, ec);
 
     if (ec) {
-        // 删除失败：状态不变，仍是便携模式
+        // delete failed: state unchanged, still portable mode
         LOG_ERROR("config: remove portable failed: {} ({}), state unchanged",
                   utils::ToUtf8(m_path.wstring()), ec.message());
         return false;
@@ -239,18 +239,18 @@ bool ConfigManager::deletePortable() {
         LOG_INFO("config: portable config removed: {}",
                  utils::ToUtf8(m_path.wstring()));
     } else {
-        // 文件本来就不存在（用户手动删了）：不视为错误，继续切换
+        // the file was already absent (deleted by hand): not an error, keep switching
         LOG_DEBUG("config: portable file already absent: {}",
                   utils::ToUtf8(m_path.wstring()));
     }
 
-    // 切回 APPDATA
+    // switch back to APPDATA
     const auto [path, portable] = config::resolveConfigPath(
         utils::GetExecutablePath(), appDataDir());
     m_path = path;
     m_portable = false;
 
-    // 把当前内存配置写到 APPDATA，避免下次启动时"回到远古状态"
+    // write the in-memory config to APPDATA so the next start does not "revert to ancient state"
     save();
     LOG_INFO("config: switched back to APPDATA: {}",
              utils::ToUtf8(m_path.wstring()));
@@ -258,7 +258,7 @@ bool ConfigManager::deletePortable() {
 }
 
 // ============================================================
-// 重置
+// Reset
 // ============================================================
 
 void ConfigManager::clearSpinWarning() {

@@ -61,7 +61,7 @@ TEST(ActionScale, DelayActionScalesItsDuration) {
 }
 
 TEST(ActionScale, HoldIsClampedToMinimum) {
-    // 4 倍速下 8ms 会被压到 2ms，必须夹到下限
+    // at 4x speed 8ms shrinks to 2ms, so it must be clamped to the lower bound
     std::vector<Action> actions{makeClick(8, 100)};
 
     action::scaleActions(actions, 4.0);
@@ -93,7 +93,7 @@ TEST(ActionScale, CoordinatesAndKeysAreUntouched) {
     EXPECT_EQ(actions[1].hotkey.modifiers, hk::kModCtrl);
     EXPECT_EQ(actions[1].keyEvent, KeyEventType::Down);
     EXPECT_EQ(actions[1].delayMs, 15);
-    EXPECT_EQ(actions[1].holdMs, 0);   // 键盘动作没有按住时长，不该被写
+    EXPECT_EQ(actions[1].holdMs, 0);   // keyboard actions have no hold duration, so it must not be written
 }
 
 TEST(ActionScale, NonPositiveFactorIsIgnored) {

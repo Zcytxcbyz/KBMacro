@@ -7,39 +7,39 @@
 #include "common/ITimer.hpp"
 
 // ============================================================
-// 鼠标连点器 —— 把一份 ClickerParams 跑成真实的输入事件
+// Mouse auto-clicker -- runs a ClickerParams into real input events
 //
-// 职责：
-//   - 按 RunController 的节奏循环，每轮按 ClickType 发一次（双击是两次）输入
-//   - 返回实际执行了多少轮，面板用它显示"已完成 N 次"
+// Responsibility:
+//   - loops at RunController's pace, sending one input per round by ClickType (two for double-click)
+//   - returns how many rounds actually ran, the panel uses it to show "completed N times"
 //
-// 不做：
-//   - 不管线程、不管状态、不产生停止请求（stop_token 由调用方给）
-//   - 不碰 UI、不认识 ThreadManager、不认识面板
-//   - 循环体不打日志（热路径）；每次 SendInput 由 win32/Input 自己记
+// Not doing:
+//   - does not manage threads or state, does not produce stop requests (stop_token comes from the caller)
+//   - does not touch UI, does not know ThreadManager, does not know panels
+//   - the loop body does not log (hot path); each SendInput is logged by win32/Input itself
 //
-// 错误契约：input::SendInputError 直接往外抛，由 ThreadManager 兜底记 Failed
+// Error contract: input::SendInputError is thrown straight out, ThreadManager records Failed as a fallback
 // ============================================================
 
 namespace clicker {
 
-    // ClickType 展开成"发什么、发几次"。纯函数，可单独测。
-    //   - 双击 = 两次完整点击（各等 holdMs），times = 2
-    //   - 滚轮类型 times 恒为 1（一次事件带 steps × WHEEL_DELTA）
+    // Expand ClickType into "what to send, how many times". Pure function, testable on its own.
+    //   - double-click = two full clicks (each waits holdMs), times = 2
+    //   - wheel types always use times = 1 (one event carries steps × WHEEL_DELTA)
     struct ClickStep {
-        bool wheel = false;                              // true：用 direction + wheelSteps
-        int times = 1;                                   // 要发几次
-        MouseButton button = MouseButton::Left;          // wheel == false 时有效
-        WheelDirection direction = WheelDirection::Up;   // wheel == true 时有效
+        bool wheel = false;                              // true: use direction + wheelSteps
+        int times = 1;                                   // how many times to send
+        MouseButton button = MouseButton::Left;          // valid when wheel == false
+        WheelDirection direction = WheelDirection::Up;   // valid when wheel == true
     };
 
     [[nodiscard]] ClickStep toClickStep(ClickType type) noexcept;
 
-    // 连点主循环，返回实际执行轮数。
-    //   - 被 stop 打断时立即返回，返回值是已完成的轮数
-    //   - 每轮：先 moveTo（除非 ignorePosition）→ 再按 ClickType 发输入
-    //   - 轮间等待 = max(0, intervalMs - holdMs)（间隔是整个周期，按住时间抵扣）；
-    //     滚轮类型没有按住，等待 = intervalMs
+    // Clicker main loop, returns the actual number of rounds executed.
+    //   - returns immediately when interrupted by stop, the value is the completed rounds
+    //   - per round: first moveTo (unless ignorePosition) → then send input by ClickType
+    //   - wait between rounds = max(0, intervalMs - holdMs) (interval is the cycle, hold time deducted);
+    //     wheel types have no hold, wait = intervalMs
     [[nodiscard]] int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st);
 
 } // namespace clicker

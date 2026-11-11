@@ -4,21 +4,21 @@
 
 #include "common/Action.hpp"
 
-// 按倍率缩放动作序列里的时间字段（回放倍率用）。
+// scale the time fields of an action sequence by a factor (used for the playback factor).
 //
-//   factor > 1  播放加快，时间变短
-//   factor < 1  播放放慢，时间变长
-//   factor == 1 原样不动（不会产生任何数值变化）
+//   factor > 1  playback speeds up, times get shorter
+//   factor < 1  playback slows down, times get longer
+//   factor == 1 unchanged (no numeric change at all)
 //
-// 只动 delayMs 与 holdMs，坐标、按键、滚轮步数一律不变。
-// 缩放后 holdMs 夹到 >= kMinHoldMs：太快时 down/up 会被系统合并成一次点击。
-// 缩放后 delayMs 夹到 >= 0。
+// only delayMs and holdMs change; coordinates, buttons and wheel steps stay as is.
+// after scaling holdMs is clamped to >= kMinHoldMs: when too fast the system merges down/up into one click.
+// after scaling delayMs is clamped to >= 0.
 namespace action {
 
-    // 按住时长的下限（毫秒）。低于这个值，down 与 up 之间可能没有可观测的间隔。
+    // lower bound of the hold duration (ms). Below it down and up may show no observable gap.
     inline constexpr int kMinHoldMs = 5;
 
-    // 就地缩放。factor <= 0 或为 1 时什么都不做。
+    // scale in place. does nothing when factor <= 0 or == 1.
     void scaleActions(std::vector<Action> &actions, double factor);
 
 } // namespace action

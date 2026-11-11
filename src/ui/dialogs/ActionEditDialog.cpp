@@ -10,7 +10,7 @@
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
-    // PropertyGrid 内部属性名（key），与界面 label 无关
+    // PropertyGrid internal property names (keys), unrelated to the UI labels
     constexpr auto kPropX        = "x";
     constexpr auto kPropY        = "y";
     constexpr auto kPropDelay    = "delayMs";
@@ -21,7 +21,7 @@ namespace {
     constexpr auto kPropKey      = "key";
     constexpr auto kPropKeyEvent = "keyEvent";
 
-    // 鼠标按键下拉的构造
+    // build the mouse button dropdown
     wxPGChoices makeButtonChoices() {
         wxPGChoices c;
         c.Add(TR(IDS_CLICKER_TYPE_LEFT),   static_cast<int>(MouseButton::Left));
@@ -48,13 +48,13 @@ namespace {
         return c;
     }
 
-    // 带鼠标按键的动作类型
+    // action types that carry a mouse button
     [[nodiscard]] bool hasButton(const ActionType t) noexcept {
         return t == ActionType::MouseClick || t == ActionType::MouseDown ||
                t == ActionType::MouseUp;
     }
 
-    // 带坐标的动作类型：拖动两端也要坐标
+    // action types that carry coordinates; both ends of a drag need them too
     [[nodiscard]] bool hasCoordinates(const ActionType t) noexcept {
         return t == ActionType::MouseMove || hasButton(t);
     }
@@ -70,7 +70,7 @@ ActionEditDialog::ActionEditDialog(wxWindow *parent, const wxString &title,
 void ActionEditDialog::buildUi() {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
-    // ---- 动作类型 ----
+    // ---- action type ----
     {
         auto *row = new wxBoxSizer(wxHORIZONTAL);
         row->Add(new wxStaticText(this, wxID_ANY, TR(IDS_ACTION_LABEL_TYPE)),
@@ -84,13 +84,13 @@ void ActionEditDialog::buildUi() {
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_DOWN));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_UP));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_DELAY));
-        m_choiceType->SetSelection(static_cast<int>(m_action.type));   // 顺序必须与 enum 一致
+        m_choiceType->SetSelection(static_cast<int>(m_action.type));   // order must match the enum
 
         row->Add(m_choiceType, 1, wxALIGN_CENTER_VERTICAL);
         root->Add(row, 0, wxEXPAND | wxALL, 12);
     }
 
-    // ---- 相对坐标（只对带坐标的类型有意义）----
+    // ---- relative coordinates (meaningful only for types with coordinates) ----
     {
         auto *row = new wxBoxSizer(wxHORIZONTAL);
         m_chkRelative = new wxCheckBox(this, wxID_ANY, TR(IDS_ACTION_CHK_RELATIVE));
@@ -99,7 +99,7 @@ void ActionEditDialog::buildUi() {
         root->Add(row, 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
     }
 
-    // ---- 参数表（PropertyGrid） ----
+    // ---- parameter table (PropertyGrid) ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_ACTION_GROUP_PARAMS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -112,7 +112,7 @@ void ActionEditDialog::buildUi() {
         root->Add(box, 1, wxEXPAND | wxLEFT | wxRIGHT, 12);
     }
 
-    // ---- 辅助按钮 ----
+    // ---- aux buttons ----
     {
         auto *row = new wxBoxSizer(wxHORIZONTAL);
         m_btnCapturePos = new wxButton(this, wxID_ANY, TR(IDS_ACTION_DIALOG_BTN_CAPTURE));
@@ -123,7 +123,7 @@ void ActionEditDialog::buildUi() {
         root->Add(row, 0, wxEXPAND | wxALL, 12);
     }
 
-    // ---- 标准按钮行 ----
+    // ---- standard button row ----
     root->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 0, wxEXPAND | wxALL, 12);
 
     uibtn::localize(this);
@@ -131,20 +131,20 @@ void ActionEditDialog::buildUi() {
     SetSizerAndFit(root);
     SetMinSize(FromDIP(wxSize(500, 420)));
 
-    // ---- 事件绑定 ----
+    // ---- event bindings ----
     m_choiceType->Bind(wxEVT_CHOICE, &ActionEditDialog::onTypeChanged, this);
     m_chkRelative->Bind(wxEVT_CHECKBOX, &ActionEditDialog::onRelativeToggled, this);
     m_btnCapturePos->Bind(wxEVT_BUTTON, &ActionEditDialog::onCapturePosition, this);
     m_btnSetKey->Bind(wxEVT_BUTTON, &ActionEditDialog::onSetKey, this);
     Bind(wxEVT_BUTTON, &ActionEditDialog::onOk, this, wxID_OK);
 
-    // ---- 初始构建 ----
+    // ---- initial build ----
     rebuildParamGrid();
     refreshAuxButtons();
 }
 
 // ============================================================
-// 动作类型切换：保留 delayMs，其余字段重置
+// action type change: keep delayMs, reset the other fields
 // ============================================================
 void ActionEditDialog::onTypeChanged(wxCommandEvent &) {
     const int sel = m_choiceType->GetSelection();
@@ -153,7 +153,7 @@ void ActionEditDialog::onTypeChanged(wxCommandEvent &) {
     const auto newType = static_cast<ActionType>(sel);
     if (newType == m_action.type) return;
 
-    // 切换类型前先从旧网格读回当前值（主要为 delayMs）
+    // read current values from the old grid before switching (mainly delayMs)
     collectFromGrid();
 
     const int savedDelay = m_action.delayMs;
@@ -166,17 +166,17 @@ void ActionEditDialog::onTypeChanged(wxCommandEvent &) {
 }
 
 // ============================================================
-// 勾选/取消"相对坐标"：X/Y 的标签跟着变，值保留
+// toggle "relative coordinates": X/Y labels change, values are kept
 // ============================================================
 void ActionEditDialog::onRelativeToggled(wxCommandEvent &) {
-    collectFromGrid();                                   // 先读回当前值
+    collectFromGrid();                                   // read back current values first
     m_action.relative = m_chkRelative->GetValue();
-    rebuildParamGrid();                                  // 标签要从"X/Y"变"X 偏移/Y 偏移"
+    rebuildParamGrid();                                  // labels change from "X/Y" to "X offset/Y offset"
     refreshAuxButtons();
 }
 
 // ============================================================
-// 重建参数表
+// rebuild parameter table
 // ============================================================
 void ActionEditDialog::rebuildParamGrid() {
     m_grid->Clear();
@@ -184,8 +184,8 @@ void ActionEditDialog::rebuildParamGrid() {
     const bool withButton = hasButton(m_action.type);
     const bool withCoords = hasCoordinates(m_action.type);
 
-    // 顺序固定：按键 → 坐标 → 滚轮 → 键 → 延时 → 按住。
-    // 各类型原有的字段相对顺序都能被这个序列表达，切换类型时视觉位置不跳。
+    // fixed order: button -> coordinates -> wheel -> key -> delay -> hold.
+    // every type's own field order fits this sequence, so rows don't jump when the type changes.
     if (withButton) {
         wxPGChoices buttonChoices = makeButtonChoices();
         m_grid->Append(new wxEnumProperty(TR(IDS_ACTION_PARAM_BUTTON), kPropButton, buttonChoices,
@@ -230,7 +230,7 @@ void ActionEditDialog::rebuildParamGrid() {
 }
 
 // ============================================================
-// 从网格读回字段（只处理当前类型存在的属性）
+// read fields back from the grid (only properties present for the current type)
 // ============================================================
 void ActionEditDialog::collectFromGrid() {
     const auto get = [this](const char *name) -> int {
@@ -256,7 +256,7 @@ void ActionEditDialog::collectFromGrid() {
 
     if (m_action.type == ActionType::Keyboard) {
         m_action.keyEvent = static_cast<KeyEventType>(get(kPropKeyEvent));
-        // hotkey 由"设置按键"按钮单独更新，网格里只是显示
+        // hotkey is updated only by the "set key" button; the grid just displays it
     }
 
     m_action.delayMs = get(kPropDelay);
@@ -267,7 +267,7 @@ void ActionEditDialog::collectFromGrid() {
 }
 
 // ============================================================
-// 辅助按钮启用
+// aux button enabling
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ActionEditDialog::refreshAuxButtons() {
@@ -277,13 +277,13 @@ void ActionEditDialog::refreshAuxButtons() {
     m_chkRelative->Enable(withCoords);
     m_chkRelative->SetValue(m_action.relative);
 
-    // 捕捉坐标只对绝对坐标有意义（相对动作要的是偏移量，不是屏幕上的点）
+    // position capture only makes sense for absolute coordinates (relative actions need an offset)
     m_btnCapturePos->Enable(absolute);
     m_btnSetKey->Enable(m_action.type == ActionType::Keyboard);
 }
 
 // ============================================================
-// 捕捉坐标：覆盖层 → 回填 x/y + 更新网格
+// capture position: overlay -> fill x/y back + update grid
 // ============================================================
 void ActionEditDialog::onCapturePosition(wxCommandEvent &) {
     new ScreenCaptureOverlay(this,
@@ -297,7 +297,7 @@ void ActionEditDialog::onCapturePosition(wxCommandEvent &) {
 }
 
 // ============================================================
-// 设置按键：热键捕获 → 更新 hotkey + 网格显示
+// set key: hotkey capture -> update hotkey + grid display
 // ============================================================
 void ActionEditDialog::onSetKey(wxCommandEvent &) {
     HotkeyCaptureDialog dlg(this, TR(IDS_ACTION_DIALOG_BTN_SET_KEY),
@@ -310,7 +310,7 @@ void ActionEditDialog::onSetKey(wxCommandEvent &) {
 }
 
 // ============================================================
-// 确定：先从网格收集，再让对话框正常关闭
+// OK: collect from the grid first, then let the dialog close normally
 // ============================================================
 void ActionEditDialog::onOk(wxCommandEvent &event) {
     collectFromGrid();

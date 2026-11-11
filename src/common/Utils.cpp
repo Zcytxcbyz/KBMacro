@@ -68,7 +68,7 @@ namespace utils {
             s.dpi = 96;
         }
 
-        // 坐标适配的唯一数据源：出问题时第一眼看它
+        // the only data source for coordinate adaptation: check it first when things go wrong
         LOG_DEBUG("utils: primary screen {}x{}@{}dpi", s.width, s.height, s.dpi);
         return s;
     }

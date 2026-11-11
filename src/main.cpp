@@ -12,12 +12,12 @@ public:
         Log::Init();
         LOG_INFO("KBMacro starting");
 
-        // ---- 1. 加载全局配置（判定路径 → 读文件）----
+        // ---- 1. load global config (decide path → read file) ----
         ConfigManager::instance().load();
 
-        // ---- 2. 决定 UI 语言 ----
-        //   config 有值   → 用它（用户主动选过）
-        //   config 为空   → 系统语言，不写回（用户没选过，不替他做主）
+        // ---- 2. decide the UI language ----
+        //   config has a value   → use it (the user chose it)
+        //   config is empty   → system language, not written back (the user never chose; don't decide for them)
         const std::string &code = ConfigManager::instance().config().language;
         if (!code.empty()) {
             if (LanguageManager::instance().setLanguageByCode(code)) {
@@ -31,7 +31,7 @@ public:
             LOG_INFO("UI language from system (config empty)");
         }
 
-        // ---- 3. 主窗口 ----
+        // ---- 3. main window ----
         auto *frame = new MainFrame();
         frame->Show(true);
         return true;

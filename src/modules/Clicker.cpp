@@ -18,7 +18,7 @@ ClickStep toClickStep(const ClickType type) noexcept {
         case ClickType::Middle:
             return {.button = MouseButton::Middle};
 
-        // 双击 = 两次完整点击（各等一次 holdMs），不是靠系统双击时限
+        // double-click = two full clicks (each waits holdMs), not the system double-click time limit
         case ClickType::Double:
             return {.times = 2, .button = MouseButton::Left};
 
@@ -37,20 +37,20 @@ ClickStep toClickStep(const ClickType type) noexcept {
             return {.wheel = true, .direction = WheelDirection::Right};
     }
 
-    return {};   // 不可达：枚举已全部分支，留着是为了让编译器闭嘴
+    return {};   // unreachable: all enum branches covered, kept to keep the compiler quiet
 }
 
 int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) {
     const auto [wheel, times, button, direction] =
         toClickStep(p.clickType);
 
-    // 轮间等待：intervalMs 是整个周期，按住时间从里面扣；
-    // 滚轮没有"按住"，等待就是完整间隔。
+    // wait between rounds: intervalMs is the whole cycle, hold duration is taken out of it;
+    // wheel has no "hold", so the wait is the full interval.
     const int gapMs = wheel ? p.intervalMs : std::max(0, p.intervalMs - p.holdMs);
 
-    // 开始延迟：按下热键后还要松手、切窗口，先等一会儿再动。
-    // 必须在 RunController 构造之前 —— 它的起点是"第一轮动作开始"的时刻，
-    // 把延迟算进起点会让定时模式被白吃（5 秒延迟 + 定时 5 秒 = 立刻结束）。
+    // start delay: after the hotkey press the hand must release it and switch windows, so wait a bit first.
+    // must come before RunController construction -- its origin is "when the first round's action starts",
+    // counting the delay into the origin would eat the timed mode for nothing (5s delay + 5s timer = ends at once).
     if (const int startDelayMs = std::max(0, p.run.startDelayMs); startDelayMs > 0) {
         if (!timer.wait(ITimer::Duration{startDelayMs}, st)) {
             LOG_DEBUG("clicker: start delay interrupted, executed=0");
@@ -62,33 +62,33 @@ int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) 
     int executed = 0;
 
     while (rc.shouldRun(ITimer::now())) {
-        // 停止请求已到：这一轮一个事件都不发。
-        // （input::click 自己也会查，但这里先挡一次，"轮数"才数得准）
+        // stop requested: send no events at all in this round.
+        // (input::click checks too, but blocking here first is what makes the round count accurate)
         if (st.stop_requested()) break;
 
-        // 每轮先定位；勾了"忽略坐标"就不动光标
+        // position first each round; with "ignore coordinates" checked the cursor is left alone
         if (!p.ignorePosition) input::moveTo(p.x, p.y);
 
-        // times 只有 1（单击类）或 2（双击）：双击 = 连做两次完整点击、各等一次 holdMs。
-        // 次数由 toClickStep 给出，循环体里不出现 ClickType。
+        // times is only 1 (single-click types) or 2 (double-click): double-click = two full clicks, each holds holdMs.
+        // the count comes from toClickStep, ClickType never appears in the loop body.
         bool interrupted = false;
         for (int i = 0; i < times; ++i) {
             if (wheel) {
                 input::wheel(direction, p.wheelSteps);
             } else if (!input::click(button, p.holdMs, timer, st)) {
-                interrupted = true;   // 按住期间被 stop：抬起已补发
+                interrupted = true;   // stopped during hold: release already sent
                 break;
             }
         }
 
-        // 被打断的那一轮也计数：按下（或滚轮）已经发出去了
+        // the interrupted round also counts: the press (or wheel) was already sent
         ++executed;
         rc.noteIteration();
 
         if (interrupted) break;
 
-        // 最后一轮之后不必再等一个间隔：Counted 已跑满、Timed 也没时间了，
-        // 再等一次只会让"已完成"通知白白晚到（间隔 60s 时就是 60 秒）。
+        // no need to wait another interval after the last round: Counted is full, Timed has no time left,
+        // one more wait only delays the "completed" notice for nothing (60s interval means 60 seconds).
         if (!rc.shouldRun(ITimer::now())) break;
 
         if (!timer.wait(rc.clampWait(ITimer::Duration{gapMs}, ITimer::now()), st)) break;

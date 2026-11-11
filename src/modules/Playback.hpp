@@ -7,19 +7,19 @@
 #include "common/ITimer.hpp"
 #include "common/Types.hpp"
 
-// 回放：把一串动作按各自的时间间隔重新发出去。
+// Playback: re-send a list of actions with their own time intervals.
 //
-// 契约：
-//   - 只读 actions，不持有、不修改
-//   - 不认识 ThreadManager / 面板
-//   - 循环体不打日志（input 层已经逐条记录）
-//   - input::SendInputError 往外抛，由 ThreadManager 兜成 FinishReason::Failed
-//   - 返回实际播放的动作条数（不是轮数）
+// Contract:
+//   - reads actions only, does not own or modify them
+//   - does not know ThreadManager / panels
+//   - the loop body does not log (the input layer already records each event)
+//   - input::SendInputError is thrown outward, ThreadManager catches it as FinishReason::Failed
+//   - returns the number of actions actually played (not rounds)
 //
-// ActionType 说明：
-//   - delayMs 是"上一条动作完全做完之后再等这么久"，所以回放里它是纯前置等待
-//   - MouseClick 会先移动到 x/y 再点
-//   - 将来的相对坐标是新的 ActionType 值，本文件对未知类型按无操作处理
+// ActionType notes:
+//   - delayMs = "wait this long after the previous action fully finishes", so playback uses it as pure pre-wait
+//   - MouseClick first moves to x/y and then clicks
+//   - future relative coordinates will be a new ActionType value, this file treats unknown types as no-op
 namespace playback {
 
     [[nodiscard]] int run(const std::vector<Action> &actions, const RunSpec &run,

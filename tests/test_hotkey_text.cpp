@@ -1,18 +1,18 @@
 // ============================================================
-// 热键文本化 / 校验测试
+// Hotkey text / validation tests
 //
-// 覆盖 utils 里与热键显示、解析、合法性相关的纯逻辑：
-//   1. vkToString / vkFromString：已知键、未知键、空值
-//   2. hotkeyToString：修饰键固定顺序 + 主键拼接
-//   3. isModifierKey / modifierBitForVk：修饰键判定表
-//   4. isValidHotkey：两种严格度（是否要求主键）
+// covers the pure logic in utils for hotkey display, parsing and validity:
+//   1. vkToString / vkFromString: known keys, unknown keys, empty values
+//   2. hotkeyToString: fixed modifier order + main key concatenation
+//   3. isModifierKey / modifierBitForVk: modifier lookup tables
+//   4. isValidHotkey: two strictness levels (whether a main key is required)
 //
-// 键名来自 common/KeyNames.gen.hpp（生成物），断言里写死的是
-// 发布后所有用户看到的显示名——若重新生成键名表导致名字变化，
-// 这些用例会失败，提醒同步检查 UI 文案有没有跟着改。
+// Key names come from common/KeyNames.gen.hpp (generated); the expectations pin
+// the display names every user sees after release -- if regenerating the key
+// table changes them, these cases fail and remind you to check the UI strings.
 //
-// 字符串比较统一走 ToUtf8 转成 std::string 再做：失败时 gtest
-// 打出来的是可读的 UTF-8，不会变成宽字符的字节堆。
+// Comparisons always go through ToUtf8 into std::string first: on failure gtest
+// prints readable UTF-8 instead of a heap of wide-char bytes.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -42,7 +42,7 @@ TEST(VkToString, KnownKeys) {
 
 TEST(VkToString, UnknownKeyIsQuestionMark) {
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(0x07)), "?");
-    // 修饰键本身不进键名表：它们走 modifiers 位，不参与 vk 文本化
+    // modifiers are not in the key table: they use the modifiers bits, not vk text
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LCONTROL)), "?");
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RWIN)), "?");
 }
@@ -60,7 +60,7 @@ TEST(VkFromString, KnownNames) {
     EXPECT_EQ(utils::vkFromString(L"Esc"), static_cast<unsigned>(VK_ESCAPE));
     EXPECT_EQ(utils::vkFromString(L"A"), static_cast<unsigned>('A'));
     EXPECT_EQ(utils::vkFromString(L"Page Up"), static_cast<unsigned>(VK_PRIOR));
-    // 大小写敏感：显示名就是唯一合法写法
+    // case-sensitive: the display name is the only accepted spelling
     EXPECT_EQ(utils::vkFromString(L"f1"), 0u);
     EXPECT_EQ(utils::vkFromString(L"esc"), 0u);
 }
@@ -87,7 +87,7 @@ TEST(HotkeyToString, ModifiersOnly) {
 
 TEST(HotkeyToString, ModifierOrderIsFixed) {
     Hotkey hk;
-    hk.modifiers = hk::kModWin | hk::kModCtrl;   // 位顺序不影响显示顺序
+    hk.modifiers = hk::kModWin | hk::kModCtrl;   // bit order does not affect display order
     EXPECT_EQ(utils::ToUtf8(utils::hotkeyToString(hk)), "Ctrl+Win");
 }
 
@@ -161,8 +161,8 @@ TEST(HotkeyValidity, EmptyIsNeverValid) {
 TEST(HotkeyValidity, ModifiersOnly) {
     Hotkey hk;
     hk.modifiers = hk::kModCtrl;
-    EXPECT_TRUE(utils::isValidHotkey(hk, false));   // 面板允许纯修饰键
-    EXPECT_FALSE(utils::isValidHotkey(hk, true));   // 全局热键必须带主键
+    EXPECT_TRUE(utils::isValidHotkey(hk, false));   // the panel allows modifier-only hotkeys
+    EXPECT_FALSE(utils::isValidHotkey(hk, true));   // global hotkeys must have a main key
 }
 
 TEST(HotkeyValidity, MainKeyOnly) {

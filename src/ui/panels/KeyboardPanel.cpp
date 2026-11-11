@@ -17,12 +17,12 @@
 #include "ui/DialogButtons.hpp"
 
 namespace {
-    // 运行模式下拉框索引
+    // Run mode combo box indexes
     constexpr int kRunModeInfinite = 0;
     constexpr int kRunModeTimed    = 1;
     constexpr int kRunModeCounted  = 2;
 
-    // *.keyboard.json 的 schema 版本
+    // Schema version of *.keyboard.json
     constexpr int kKeyboardParamsVersion = 1;
 }
 
@@ -34,7 +34,7 @@ KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
     buildUi();
     setRunning(false);
 
-    // 页面级滚动：窗口装不下时才出现，正常尺寸下看不到滚动条
+    // Page-level scrolling: appears only when the window is too small; no scrollbar at normal size
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 }
@@ -42,7 +42,7 @@ KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
 void KeyboardPanel::buildUi() {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
-    // ---- 分组一：按键 ----
+    // ---- Group 1: key ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_KEYBOARD_GROUP_KEY));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -68,7 +68,7 @@ void KeyboardPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组二：参数 ----
+    // ---- Group 2: params ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_KEYBOARD_GROUP_PARAMS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -96,7 +96,7 @@ void KeyboardPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组三：运行模式 ----
+    // ---- Group 3: run mode ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -141,7 +141,7 @@ void KeyboardPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组四：操作 ----
+    // ---- Group 4: actions ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_ACTIONS));
         auto *box = new wxStaticBoxSizer(staticBox, wxHORIZONTAL);
@@ -164,7 +164,7 @@ void KeyboardPanel::buildUi() {
 
     SetSizer(root);
 
-    // ---- 事件绑定 ----
+    // ---- Event binding ----
     m_btnSetKey->Bind(wxEVT_BUTTON, &KeyboardPanel::onSetKey, this);
     m_btnSendOnce->Bind(wxEVT_BUTTON, &KeyboardPanel::onSendOnce, this);
     m_btnStart->Bind(wxEVT_BUTTON, &KeyboardPanel::onStart, this);
@@ -178,7 +178,7 @@ void KeyboardPanel::buildUi() {
 }
 
 // ============================================================
-// 参数收集 / 应用
+// Params collection / application
 // ============================================================
 
 KeyboardParams KeyboardPanel::collectParams() const {
@@ -229,7 +229,7 @@ void KeyboardPanel::refreshKeyDisplay() {
 }
 
 // ============================================================
-// 事件处理
+// Event handling
 // ============================================================
 
 void KeyboardPanel::onSetKey(wxCommandEvent &) {
@@ -262,10 +262,10 @@ void KeyboardPanel::sendOnce() {
         return;
     }
 
-    // 一次性发送不走线程、不经过 ThreadManager，没有异常接收方，
-    // 所以必须自己兜住：让 SendInputError 穿透 wx 事件循环会直接 terminate
+    // One-shot send uses no thread and does not go through ThreadManager, so nothing catches exceptions;
+    // we must catch them here: letting SendInputError escape the wx event loop calls terminate
     try {
-        // 空 stop_token：一次性发送没有"中途停止"的语义，必定等满 holdMs
+        // Empty stop_token: a one-shot send has no "stop midway" semantics and always waits the full holdMs
         static_cast<void>(input::pressKey(p.hotkey, p.holdMs, *m_timerRef, std::stop_token{}));
     } catch (const std::exception &e) {
         LOG_ERROR("keyboard: send once failed: {}", e.what());
@@ -285,7 +285,7 @@ void KeyboardPanel::startWithCurrentParams() {
     const KeyboardParams p = collectParams();
 
     if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
-        // TODO(接线): 换成状态栏提示 + i18n 资源
+        // TODO(wiring): switch to a status bar hint + i18n resource
         LOG_WARN("keyboard: start ignored, no key configured");
         return;
     }
@@ -295,7 +295,7 @@ void KeyboardPanel::startWithCurrentParams() {
              utils::ToUtf8(utils::hotkeyToString(p.hotkey)),
              runModeToString(p.run.mode));
 
-    // 已在跑时 ThreadManager 会忽略这次请求，所以不看返回值直接切按钮
+    // ThreadManager ignores this request while already running, so ignore the return value and flip the buttons
     m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
         setRunning(false);
         LOG_INFO("keyboard: finished, reason={}, executed={}",
@@ -399,8 +399,8 @@ void KeyboardPanel::refreshEnableStates() {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void KeyboardPanel::setRunning(const bool running) {
-    // 运行中改参数不影响已启动的任务（参数在 StartKeyboard 时已快照），
-    // 只切按钮；"发送一次"是无状态的，运行中也允许点
+    // Changing params while running does not affect the started task (snapshotted at StartKeyboard);
+    // only flip the buttons. "Send once" is stateless, so it stays clickable while running
     if (m_btnStart != nullptr) m_btnStart->Enable(!running);
     if (m_btnStop != nullptr) m_btnStop->Enable(running);
 }

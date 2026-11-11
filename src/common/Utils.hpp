@@ -6,24 +6,24 @@
 
 namespace utils {
 
-    // 当前 EXE 的完整路径（拿不到返回空 path）
+    // full path of the current EXE (empty path when unavailable)
     std::filesystem::path GetExecutablePath();
 
-    // 当前 EXE 所在目录（拿不到则回退到 current_path）
+    // directory of the current EXE (falls back to current_path when unavailable)
     std::filesystem::path GetExecutableDirectory();
 
-    // 宽字符 → UTF-8
+    // wide chars → UTF-8
     std::string ToUtf8(std::wstring_view wstr);
 
-    // UTF-8 → 宽字符
+    // UTF-8 → wide chars
     std::wstring ToWide(std::string_view str);
 
-    // 文件名友好的时间戳：2026-09-15_22-30-15
+    // file-name-friendly timestamp: 2026-09-15_22-30-15
     std::wstring GetTimestampForFilename();
 
-    // 主屏规格（分辨率 + DPI）。
-    // 分辨率走 GetSystemMetrics(SM_CXSCREEN/SM_CYSCREEN)，
-    // DPI 走 GetDeviceCaps(LOGPIXELSX)，失败时回退 96。
+    // primary screen spec (resolution + DPI).
+    // resolution comes from GetSystemMetrics(SM_CXSCREEN/SM_CYSCREEN),
+    // DPI from GetDeviceCaps(LOGPIXELSX), falling back to 96 on failure.
     [[nodiscard]] ScreenSpec GetPrimaryScreenSpec();
 
 } // namespace utils

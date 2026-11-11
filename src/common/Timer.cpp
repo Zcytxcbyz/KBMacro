@@ -4,30 +4,30 @@
 #include <thread>        // std::this_thread::sleep_for
 
 // ============================================================
-// 两个实现都不打日志：wait 是热路径，按约定不记。
-// （ENABLE_LOGGING 开关在这里无关紧要，因为压根没有 LOG_* 调用。）
+// neither implementation logs: wait is a hot path and is not logged by convention.
+// (the ENABLE_LOGGING switch does not matter here since there are no LOG_* calls at all.)
 // ============================================================
 
 // ============================================================
-// SleepTimer：分段睡眠
+// SleepTimer: chunked sleep
 // ============================================================
 
 bool SleepTimer::wait(const Duration d, const std::stop_token &st) const {
     if (d <= Duration::zero()) return !st.stop_requested();
 
-    // 用绝对截止点重算剩余量，而不是对剩余量做累减：
-    // sleep_for 的实际睡眠时间总是 >= 请求值，累减会把每次的超出量
-    // 攒成总时长偏差（越睡越晚）。
+    // recompute the remainder from an absolute deadline instead of subtracting from it:
+    // sleep_for always sleeps at least the requested time, so subtracting would accumulate
+    // each overshoot into a total drift (sleeping later and later).
     const auto deadline = now() + d;
 
     while (true) {
-        // 先判停止：语义上"被打断"优先于"刚好到点"。
+        // check stop first: semantically "interrupted" wins over "just reached the deadline".
         if (st.stop_requested()) return false;
         if (now() >= deadline) return true;
 
-        // ceil 而不是 duration_cast：Duration 是毫秒，直接截断会在
-        // 最后一轮少算不到 1ms 的零头，导致提前返回（下限断言会挂）。
-        // ceil 宁可多睡不到 1ms，相对系统定时器粒度完全可以忽略。
+        // ceil instead of duration_cast: Duration is milliseconds, plain truncation would drop
+        // the sub-1ms remainder in the last round and return early (the lower-bound assert would fail).
+        // ceil over-sleeps by less than 1ms, negligible against the system timer granularity.
         const auto remaining = std::chrono::ceil<Duration>(deadline - now());
 
         std::this_thread::sleep_for(remaining < kSlice ? remaining : kSlice);
@@ -35,7 +35,7 @@ bool SleepTimer::wait(const Duration d, const std::stop_token &st) const {
 }
 
 // ============================================================
-// SpinTimer：忙等
+// SpinTimer: busy wait
 // ============================================================
 
 bool SpinTimer::wait(const Duration d, const std::stop_token &st) const {
@@ -47,38 +47,38 @@ bool SpinTimer::wait(const Duration d, const std::stop_token &st) const {
         if (st.stop_requested()) return false;
         if (now() >= deadline) return true;
 
-        // 自旋提示：降低功耗、减少超线程下的执行单元争用。
-        // 不加它纯 while 也能跑，但会无谓地打满译码/执行端口。
+        // spin hint: lower power draw and reduce execution-unit contention under SMT.
+        // a plain while loop works without it but needlessly saturates the decode/execute ports.
         _mm_pause();
     }
 }
 
 // ============================================================
-// HybridTimer：长间隔分段睡、末尾忙等
+// HybridTimer: chunked sleep for long waits, busy wait at the tail
 // ============================================================
-// 两段式：
-//   1) 剩余 > spinTail → 分段 sleep（绝对 deadline 重算，与 SleepTimer 同法）
-//   2) 剩余 <= spinTail → 忙等到 deadline
-// 关键在第一步算的是"剩余 - spinTail"而不是"剩余"：否则最后一段 sleep 的
-// 溢出会把尾巴吃掉，混合就白做了。
+// two phases:
+//   1) remaining > spinTail → chunked sleep (absolute deadline recompute, same as SleepTimer)
+//   2) remaining <= spinTail → busy-wait until the deadline
+// the key is that phase one uses "remaining - spinTail", not "remaining": otherwise the
+// overshoot of the last sleep chunk eats the tail and the hybrid is pointless.
 bool HybridTimer::wait(const Duration d, const std::stop_token &st) const {
     if (d <= Duration::zero()) return !st.stop_requested();
 
     const auto deadline = now() + d;
 
-    // ---- 第一段：睡到 deadline - spinTail ----
+    // ---- phase one: sleep until deadline - spinTail ----
     while (true) {
         if (st.stop_requested()) return false;
 
         const auto remaining = deadline - now();
         if (remaining <= Duration::zero()) return true;
-        if (remaining <= m_spinTail) break;   // 进入尾巴，交给忙等
+        if (remaining <= m_spinTail) break;   // enter the tail, hand over to the spin loop
 
         const auto sleepFor = std::chrono::ceil<Duration>(remaining - m_spinTail);
         std::this_thread::sleep_for(sleepFor < SleepTimer::kSlice ? sleepFor : SleepTimer::kSlice);
     }
 
-    // ---- 第二段：忙等到点 ----
+    // ---- phase two: spin until the deadline ----
     while (true) {
         if (st.stop_requested()) return false;
         if (now() >= deadline) return true;

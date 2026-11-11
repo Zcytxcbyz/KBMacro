@@ -30,7 +30,7 @@ TEST(RateLimiterTest, AllowsExactlyAtInterval) {
     const TimePoint base{};
 
     ASSERT_TRUE(limiter.allow(base));
-    // 边界是"大于等于"，所以正好 1000ms 要放行
+    // the boundary is "greater or equal", so exactly 1000ms must pass
     EXPECT_TRUE(limiter.allow(base + Duration{1000}));
 }
 
@@ -40,9 +40,9 @@ TEST(RateLimiterTest, AllowsAgainAfterInterval) {
     const TimePoint base{};
 
     ASSERT_TRUE(limiter.allow(base));
-    ASSERT_TRUE(limiter.allow(base + Duration{1500}));  // 放行，起点移到 1500
-    EXPECT_FALSE(limiter.allow(base + Duration{2000})); // 只过了 500ms
-    EXPECT_TRUE(limiter.allow(base + Duration{2500}));  // 又过了 1000ms
+    ASSERT_TRUE(limiter.allow(base + Duration{1500}));  // allowed; the anchor moves to 1500
+    EXPECT_FALSE(limiter.allow(base + Duration{2000})); // only 500ms have passed
+    EXPECT_TRUE(limiter.allow(base + Duration{2500}));  // another 1000ms have passed
 }
 
 TEST(RateLimiterTest, ResetAllowsImmediately) {

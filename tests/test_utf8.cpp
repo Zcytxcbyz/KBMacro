@@ -1,19 +1,19 @@
 // ============================================================
-// UTF-8 ↔ 宽字符 转换测试
+// UTF-8 ↔ wide character conversion tests
 //
-// ToUtf8 / ToWide 是所有"人可见文本"进出 Win32 的关口：
-// 日志（spdlog 只收 UTF-8）、JSON（Hotkey 的键名）、文件名。
-// 出错时的表现不是崩溃，而是某个字变成 "?" 或字符串被截断，
-// 所以这层必须有测试。
+// ToUtf8 / ToWide are the gate for all "human-visible text" entering and leaving Win32:
+// logs (spdlog only takes UTF-8), JSON (Hotkey key names), file names.
+// the symptom is not a crash but one character turning into "?" or a truncated string,
+// so this layer must be tested.
 //
-// 覆盖点：
-//   1. 空串：两边都返回空，不走 Win32 调用
-//   2. ASCII / 中文 / 非 BMP（emoji）：字节长度与往返
-//   3. 内嵌 '\0'：实现显式传长度，不能被当成结尾
-//   4. 非法输入：非法 UTF-8 与孤立代理项都替换成 U+FFFD，不崩
+// coverage points:
+//   1. empty string: both sides return empty, no Win32 call is made
+//   2. ASCII / Chinese / non-BMP (emoji): byte length and round-trip
+//   3. embedded '\0': the implementation takes the length explicitly, it must not end the string
+//   4. invalid input: invalid UTF-8 and lone surrogates both become U+FFFD, no crash
 //
-// 断言统一用"UTF-8 字符串"作为比较形态：宽字符断言失败时
-// gtest 打出来的是字节堆，看不出是哪个字。
+// assertions always compare in UTF-8 form: a failed wide-character assertion
+// makes gtest print a byte pile, where the offending character is unrecognizable.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -41,7 +41,7 @@ TEST(ToUtf8, ChineseIsThreeBytesPerChar) {
 }
 
 TEST(ToUtf8, NonBmpIsFourBytes) {
-    // U+1F600 在宽字符里是两个代理项 0xD83D 0xDE00 → F0 9F 98 80
+    // U+1F600 in a wide string is two surrogates 0xD83D 0xDE00 → F0 9F 98 80
     const std::wstring emoji = L"\xD83D\xDE00";
     const std::string utf8 = utils::ToUtf8(emoji);
     EXPECT_EQ(utf8.size(), 4u);
@@ -49,22 +49,22 @@ TEST(ToUtf8, NonBmpIsFourBytes) {
 }
 
 TEST(ToUtf8, KeepsEmbeddedNul) {
-    // 注意：不能写 ToUtf8(L"a\0b")——字面量隐式转 std::wstring_view 时
-    // 按 wcslen 求长度，'\0' 之后的内容根本进不来（这个坑踩过）。
-    // 必须显式给长度构造，才能真正把内嵌 NUL 递进函数。
+    // note: do not write ToUtf8(L"a\0b"): implicit literal to std::wstring_view conversion
+    // measures length with wcslen, so anything after '\0' never gets in (we hit this).
+    // construct with an explicit length to actually pass the embedded NUL through.
     const std::wstring withNul(L"a\0b", 3);
 
     const std::string utf8 = utils::ToUtf8(withNul);
     EXPECT_EQ(utf8.size(), 3u);
     EXPECT_EQ(utf8, std::string("a\0b", 3));
 
-    // 回程同样要显式长度 → 往返后内嵌 NUL 还在
+    // the way back also needs an explicit length → the embedded NUL survives the round-trip
     EXPECT_EQ(utils::ToWide(utf8).size(), 3u);
 }
 
 TEST(ToUtf8, UnpairedSurrogateBecomesReplacement) {
-    // 孤立代理项不是合法 UTF-16：Vista+ 的文档行为是替换成 U+FFFD，
-    // 不设 WC_ERR_INVALID_CHARS 时不会失败。
+    // a lone surrogate is not valid UTF-16: the documented Vista+ behavior is to replace it with U+FFFD,
+    // and it does not fail without WC_ERR_INVALID_CHARS.
     const std::string utf8 = utils::ToUtf8(L"\xD83D");
     EXPECT_EQ(utf8, std::string("\xEF\xBF\xBD", 3));
 }
@@ -88,18 +88,18 @@ TEST(ToWide, Chinese) {
 
 TEST(ToWide, NonBmpBecomesSurrogatePair) {
     const std::wstring wide = utils::ToWide(std::string("\xF0\x9F\x98\x80", 4));
-    EXPECT_EQ(wide.size(), 2u);   // 一个字符占两个 wchar_t
+    EXPECT_EQ(wide.size(), 2u);   // one character takes two wchar_t
     EXPECT_EQ(utils::ToUtf8(wide), std::string("\xF0\x9F\x98\x80", 4));
 }
 
 TEST(ToWide, InvalidBytesBecomeReplacement) {
-    // 0xFF 在 UTF-8 里不合法 → U+FFFD，不失败、不空串
+    // 0xFF is invalid in UTF-8 → U+FFFD, no failure, no empty string
     const std::wstring wide = utils::ToWide(std::string("\xFF", 1));
     EXPECT_EQ(wide.size(), 1u);
     EXPECT_EQ(utils::ToUtf8(wide), std::string("\xEF\xBF\xBD", 3));
 }
 
-// ---- 往返 ----
+// ---- round-trip ----
 
 TEST(Utf8RoundTrip, MixedSamples) {
     constexpr std::wstring_view kSamples[] = {

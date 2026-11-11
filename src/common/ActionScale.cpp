@@ -5,7 +5,7 @@
 
 namespace {
 
-    // 单个时间字段缩放：保留符号语义（<= 0 一律回到 0），四舍五入到毫秒。
+    // scale one time field: preserve sign semantics (<= 0 always maps to 0), round to whole ms.
     [[nodiscard]] int scaleMs(const int ms, const double factor) {
         if (ms <= 0) {
             return 0;
@@ -25,7 +25,7 @@ void action::scaleActions(std::vector<Action> &actions, const double factor) {
     for (Action &a: actions) {
         a.delayMs = scaleMs(a.delayMs, factor);
 
-        // 只有鼠标点击带"按住时长"；键盘是 down/up 两条独立动作，没有 holdMs。
+        // only mouse clicks carry a "hold duration"; keyboard is separate down/up actions without holdMs.
         if (a.type == ActionType::MouseClick && a.holdMs > 0) {
             a.holdMs = std::max(kMinHoldMs, scaleMs(a.holdMs, factor));
         }

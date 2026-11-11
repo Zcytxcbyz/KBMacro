@@ -24,9 +24,9 @@
 
 namespace {
 
-    // 从 Config 读取初始窗口位置。
-    //   - x/y < 0  → 未设置，走 wxDefaultPosition
-    //   - 不在虚拟桌面范围内 → 走 wxDefaultPosition（比如副屏被拔掉了）
+    // read the initial window position from Config.
+    //   - x/y < 0  -> not set, use wxDefaultPosition
+    //   - outside the virtual desktop -> use wxDefaultPosition (e.g. a secondary monitor was unplugged)
     wxPoint initialPosition() {
         const auto &w = ConfigManager::instance().config().window;
         if (w.x < 0 || w.y < 0) return wxDefaultPosition;
@@ -36,23 +36,23 @@ namespace {
         const int vw = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
         const int vh = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-        // 只要求窗口至少有一部分在虚拟桌面内
+        // only require the window to be at least partly on the virtual desktop
         const bool visible = (w.x + w.width > vx) && (w.x < vx + vw) &&
                              (w.y + w.height > vy) && (w.y < vy + vh);
 
         return visible ? wxPoint(w.x, w.y) : wxDefaultPosition;
     }
 
-    // 从 Config 读取初始窗口样式（置顶与否）
+    // read the initial window style from Config (always-on-top or not)
     long initialStyle() {
         return ConfigManager::instance().config().alwaysOnTop
                    ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
                    : wxDEFAULT_FRAME_STYLE;
     }
 
-    // 按配置创建计时器实例。
-    // 切换模式时整体替换，不原地改参数——ITimer 是 const 的、且可能正被
-    // 运行中的线程持有，替换比改状态安全。
+    // create the timer instance from the config.
+    // replaced wholesale on mode change, never tweaked in place: ITimer is const and may be
+    // held by a running thread, so replacing is safer than mutating state.
     std::shared_ptr<ITimer> createTimer() {
         const auto &cfg = ConfigManager::instance().config();
         switch (cfg.timerMode) {
@@ -66,12 +66,12 @@ namespace {
         }
     }
 
-    // 初始几何：用配置里的尺寸，夹到"窗口将要放的那个显示器"可用区（已扣任务栏）的 90%。
-    // 内容装不下由各页的滚动条兜底，不在这里按内容撑开。
+    // initial geometry: use the configured size, clamped to 90% of the available area (taskbar excluded)
+    // of the display the window will land on. Content overflow falls back to each page's scrollbar.
     void applyInitialGeometry(wxFrame *frame) {
         const auto &w = ConfigManager::instance().config().window;
 
-        // 用窗口将要放置的显示器；配置里没有位置时用主显示器
+        // use the display the window will be placed on; the primary one when no position is configured
         const wxPoint pos = initialPosition();
         unsigned displayIdx = 0;
         if (pos != wxDefaultPosition) {
@@ -84,7 +84,7 @@ namespace {
         const int maxW    = area.width * 9 / 10;
         const int maxH    = area.height * 9 / 10;
 
-        // 初始尺寸只看配置：五页都是滚动窗口，装不下就滚，不需要按内容撑开
+        // initial size comes only from config: all five pages scroll, no need to grow to content
         const wxSize target(std::min(w.width, maxW), std::min(w.height, maxH));
 
         frame->SetSize(target);
@@ -106,14 +106,15 @@ MainFrame::MainFrame()
               wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
 
-    // 图标：用数字资源 id + MAKEINTRESOURCEW。
-    // 不能用 wxICON(IDI_APP_ICON)——wxICON 会把参数“字符串化”成 "IDI_APP_ICON"，
-    // 而 resource.rc 里 IDI_APP_ICON 已被 resource.h 展开成数字 101，名字查不到。
+    // icon: numeric resource id + MAKEINTRESOURCEW.
+    // do not use wxICON(IDI_APP_ICON): wxICON "stringizes" the argument into "IDI_APP_ICON",
+    // while resource.h has already expanded IDI_APP_ICON to the number 101 in resource.rc,
+    // so a lookup by name fails.
     if (const auto appIcon = static_cast<HICON>(::LoadImageW(
             ::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON, 0, 0,
             LR_DEFAULTSIZE | LR_DEFAULTCOLOR))) {
         wxIcon icon;
-        icon.CreateFromHICON(appIcon);   // CreateFromHICON 内部 CopyIcon，不会双释放
+        icon.CreateFromHICON(appIcon);   // CreateFromHICON copies the icon internally, no double free
         SetIcon(icon);
         LOG_DEBUG("mainframe: icon applied from resource id {}", IDI_APP_ICON);
             } else {
@@ -121,15 +122,15 @@ MainFrame::MainFrame()
                          ::GetLastError());
             }
 
-    // 输入注入层初始化：只记一条"虚拟屏 + DPI"（干跑模式下会多一条 WARN）
+    // init the input injection layer: logs one "virtual screen + DPI" line (dry-run mode adds a WARN)
     input::init();
 
-    // 计时器：按配置创建，切换模式时由 rebuildTimer() 整体替换
+    // timer: created from config, replaced wholesale by rebuildTimer() on mode change
     m_timer = createTimer();
     LOG_DEBUG("mainframe: timer ready: mode={}, spinTail={}ms",
               timerModeToString(ConfigManager::instance().config().timerMode),
               ConfigManager::instance().config().timerHybridSpinMs);
-    // ---- 1. 先创建 HotkeyManager（只依赖 HWND）----
+    // ---- 1. create HotkeyManager first (depends only on HWND) ----
     m_hotkeyMgr = std::make_unique<HotkeyManager>(
         GetHWND(),
         [this](const HotkeyAction action) {
@@ -137,40 +138,40 @@ MainFrame::MainFrame()
         });
     Bind(wxEVT_HOTKEY, &MainFrame::onHotkey, this);
 
-    // ---- 1.5 创建 ThreadManager：面板构造时要注入它的引用，必须早于面板 ----
-    // 它内部持 m_timer 的引用，所以必须排在 createTimer() 之后
+    // ---- 1.5 create ThreadManager: panels need its reference at construction, so it must come first ----
+    // it holds a reference to m_timer, so it must come after createTimer()
     m_threadMgr = std::make_unique<ThreadManager>(m_timer, *this);
 
-    // ---- 2. 组装 UI ----
+    // ---- 2. assemble the UI ----
     m_notebook = new wxNotebook(this, wxID_ANY);
 
-    // 标签页1：鼠标连点器
+    // tab 1: mouse clicker
     m_clickerPanel = new ClickerPanel(m_notebook, *m_threadMgr);
     m_notebook->AddPage(m_clickerPanel, TR(IDS_TAB_CLICKER));
 
-    // 标签页2：键盘模拟器
+    // tab 2: keyboard simulator
     m_keyboardPanel = new KeyboardPanel(m_notebook, *m_threadMgr, m_timer);
     m_notebook->AddPage(m_keyboardPanel, TR(IDS_TAB_KEYBOARD));
 
-    // 标签页3：录制与编排
+    // tab 3: recording and sequencing
     m_recorderPanel = new RecorderPanel(m_notebook, *m_threadMgr);
     m_notebook->AddPage(m_recorderPanel, TR(IDS_TAB_RECORDER));
 
-    // 标签页4：设置（注入 HotkeyManager）
+    // tab 4: settings (HotkeyManager injected)
     m_settingsPanel = new SettingsPanel(m_notebook, *m_hotkeyMgr);
     m_notebook->AddPage(m_settingsPanel, TR(IDS_TAB_SETTINGS));
 
-    // 标签页5：关于
+    // tab 5: about
     m_aboutPanel = new AboutPanel(m_notebook);
     m_notebook->AddPage(m_aboutPanel, TR(IDS_TAB_ABOUT));
 
-    // notebook 必须由 sizer 管，否则它不会被 frame 拉伸：
-    // 窗口拖大它不变、窗口缩小就直接裁剪（旧实现就是这个毛病）
+    // the notebook must be managed by a sizer, otherwise the frame never stretches it:
+    // resize the window larger and it stays put; resize smaller and it gets clipped (the old bug)
     auto *root = new wxBoxSizer(wxVERTICAL);
     root->Add(m_notebook, 1, wxEXPAND);
     SetSizer(root);
 
-    // ---- 3. 恢复上次选中的标签页 ----
+    // ---- 3. restore the last selected tab ----
     const int savedTab = ConfigManager::instance().config().tabIndex;
     if (savedTab >= 0 && savedTab < m_notebook->GetPageCount()) {
         m_notebook->SetSelection(savedTab);
@@ -178,36 +179,36 @@ MainFrame::MainFrame()
 
     wxWindowBase::SetBackgroundColour(wxColour(240, 240, 240));
 
-    // ---- 4. 状态栏 ----
+    // ---- 4. status bar ----
     m_statusBar = new KBMacroStatusBar(this);
     wxFrameBase::SetStatusBar(m_statusBar);
     m_statusBar->SetMessage(TR(IDS_STATUS_READY));
 
-    // ---- 5. 按内容与屏幕确定初始几何（必须在面板建好、SetSizer 之后）----
+    // ---- 5. settle initial geometry from content and screen (must be after panels + SetSizer) ----
     applyInitialGeometry(this);
 
-    // ---- 6. 如果配置里记着"最大化"，最大化 ----
+    // ---- 6. maximize if the config says "maximized" ----
     if (ConfigManager::instance().config().window.maximized) {
         wxTopLevelWindowMSW::Maximize(true);
     }
 
-    // ---- 7. 最后注册热键（面板都构造好了，之后触发的回调才能安全分发）----
+    // ---- 7. register hotkeys last (panels are built, so later callbacks dispatch safely) ----
     m_hotkeyMgr->registerAll();
     reportHotkeyFailures();
 
-    // ---- 8. 状态栏三态由计时器驱动：任务状态只在 ThreadManager 里，
-    //        面板各自刷自己的按钮，主窗口靠轮询汇总（迟 ≤300ms，无耦合）
+    // ---- 8. the status timer drives the status bar's three states: task state lives only in ThreadManager,
+    //        panels refresh their own buttons, the main window polls and aggregates (<=300ms late, decoupled)
     Bind(wxEVT_TIMER, &MainFrame::onStatusTimer, this);
     m_statusTimer.Start(300);
 
-    // ---- 9. 关闭时保存几何 + 标签页 ----
+    // ---- 9. save geometry + tab on close ----
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::onClose, this);
 }
 
 MainFrame::~MainFrame() {
-    // 先停掉所有任务（阻塞 join），再清掉还在队列里的通知事件。
-    // 不清的话：worker 退出前 CallAfter 的事件会一直挂到 ~wxEvtHandler 才被删，
-    // 那时面板早已析构，lambda 里捕获的面板指针就是悬垂的。
+    // stop all tasks first (blocking join), then clear notification events still queued.
+    // otherwise events CallAfter'ed before the worker exits stay alive until ~wxEvtHandler,
+    // by which time panels are long gone and the panel pointers captured in the lambda dangle.
     m_threadMgr.reset();
     DeletePendingEvents();
 }
@@ -221,7 +222,7 @@ void MainFrame::rebuildTimer() {
 }
 
 // ============================================================
-// wxEVT_HOTKEY 处理：转发给 HotkeyManager
+// wxEVT_HOTKEY handler: forward to HotkeyManager
 // ============================================================
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -234,25 +235,25 @@ void MainFrame::onHotkey(wxKeyEvent &event) {
 }
 
 // ============================================================
-// 保存窗口几何 + 当前标签页
+// save window geometry + current tab
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::saveWindowState() {
     auto &cfgMgr = ConfigManager::instance();
 
-    // ---- 窗口几何 ----
-    // 在现存的 Config::Window 上打补丁，而不是新建一个——这样"最大化时
-    // 不改 x/y/width/height"的语义自然成立（保留上次正常状态的值）。
+    // ---- window geometry ----
+    // patch the existing Config::Window instead of creating a new one: this way "while maximized,
+    // x/y/width/height are untouched" holds naturally (keeps the values from the last normal state).
     Config::Window w = cfgMgr.config().window;
 
     if (IsMaximized()) {
-        // 最大化：只更新标志位，几何保留上次"正常状态"的值
+        // maximized: update only the flag, geometry keeps the values from the last "normal" state
         w.maximized = true;
     } else if (IsIconized()) {
-        // 最小化：几何信息不可靠，什么都不改（保留上次的值）
-        // 标志位也不动，保持上次的选择
+        // minimized: geometry is unreliable, change nothing (keep the previous values)
+        // leave the flag alone too, keeping the previous choice
     } else {
-        // 正常状态：更新几何 + 清掉最大化标志
+        // normal state: update geometry + clear the maximized flag
         w.maximized = false;
         const wxPoint pos = GetPosition();
         const wxSize size = GetSize();
@@ -263,28 +264,28 @@ void MainFrame::saveWindowState() {
     }
     cfgMgr.setWindow(w);
 
-    // ---- 标签页 ----
+    // ---- tab ----
     if (m_notebook) {
         cfgMgr.setTabIndex(m_notebook->GetSelection());
     }
 }
 
 // ============================================================
-// wxEVT_CLOSE_WINDOW：保存窗口几何 + 当前标签页
+// wxEVT_CLOSE_WINDOW: save window geometry + current tab
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::onClose(wxCloseEvent &event) {
-    // 记在 saveWindowState 之前：关窗真正可能卡住的是之后的
-    // ~MainFrame → ThreadManager::StopAll（4 次阻塞 join），不是存配置
+    // logged before saveWindowState: what may really stall on close is the later
+    // ~MainFrame -> ThreadManager::StopAll (4 blocking joins), not saving the config
     LOG_INFO("mainframe: closing");
     saveWindowState();
 
-    // 放行关闭流程
+    // let the close proceed
     event.Skip();
 }
 
 // ============================================================
-// 热键分发：按动作调用对应面板的公开方法
+// hotkey dispatch: call the matching panel's public method by action
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
@@ -322,8 +323,8 @@ void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
             m_recorderPanel->stopPlayback();
             break;
 
-        // "全部开始"：连点器和键盘独立，可以同时跑；
-        // 录制与回放互斥，不在这里自动启动——用户手动选一个。
+        // "start all": clicker and keyboard are independent and can run together;
+        // recording and playback are mutually exclusive, not auto-started here: the user picks one.
         case HotkeyAction::StartAll:
             m_clickerPanel->startWithCurrentParams();
             m_keyboardPanel->startWithCurrentParams();
@@ -339,7 +340,7 @@ void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
 }
 
 // ============================================================
-// 注册失败汇总到状态栏
+// summarize registration failures to the status bar
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::reportHotkeyFailures() {
@@ -355,7 +356,7 @@ void MainFrame::reportHotkeyFailures() {
 }
 
 // ============================================================
-// 状态栏：三态 = 就绪 / 运行中（列出在跑的任务）
+// status bar: three states = ready / running (lists the running tasks)
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void MainFrame::refreshStatus() {

@@ -9,43 +9,43 @@
 
 namespace utils {
 
-    // Hotkey → 显示字符串，如 "Ctrl+Alt+F1"
-    // 修饰键顺序固定：Ctrl、Shift、Alt、Win
-    // 空热键返回空串；只有修饰键（vk == 0）返回 "Ctrl" 之类
+    // Hotkey → display string, e.g. "Ctrl+Alt+F1"
+    // modifier order is fixed: Ctrl, Shift, Alt, Win
+    // an empty hotkey returns an empty string; modifiers only (vk == 0) return e.g. "Ctrl"
     [[nodiscard]] std::wstring hotkeyToString(const Hotkey &hk);
 
-    // 虚拟键码 → 键名，如 VK_F1 → "F1"
-    // 未知键返回 "?"，vk == 0 返回空串
+    // virtual key code → key name, e.g. VK_F1 → "F1"
+    // unknown keys return "?", vk == 0 returns an empty string
     [[nodiscard]] std::wstring vkToString(unsigned vk);
 
-    // 键名 → 虚拟键码，如 "F1" → VK_F1
-    // 找不到返回 0
+    // key name → virtual key code, e.g. "F1" → VK_F1
+    // returns 0 when not found
     [[nodiscard]] unsigned vkFromString(std::wstring_view name);
 
-    // 校验热键是否有效
-    //   requireMainKey == true  必须有主键（vk != 0），用于全局热键
-    //   requireMainKey == false 允许纯修饰键或纯主键
-    // 修饰键和主键都为空 → false
+    // validate a hotkey
+    //   requireMainKey == true  a main key is mandatory (vk != 0), used for global hotkeys
+    //   requireMainKey == false modifiers only or a main key only are allowed
+    // no modifiers and no main key → false
     [[nodiscard]] bool isValidHotkey(const Hotkey &hk, bool requireMainKey);
 
-    // 判断某个虚拟键码是否是修饰键本身
+    // check whether a virtual key code is a modifier key itself
     [[nodiscard]] bool isModifierKey(unsigned vk);
 
-    // 修饰键虚拟码 → hk::kMod* 位掩码；非修饰键返回 0
+    // modifier virtual key → hk::kMod* bitmask; non-modifiers return 0
     [[nodiscard]] unsigned modifierBitForVk(unsigned vk);
 
 } // namespace utils
 
 // ============================================================
-// Hotkey 的 nlohmann ADL 序列化
+// nlohmann ADL serialization for Hotkey
 //
-// JSON 形态：
+// JSON shape:
 //   { "modifiers": ["Ctrl", "Shift"], "vk": "F1" }
 //
-// modifiers 存修饰键名字数组（固定顺序 Ctrl/Shift/Alt/Win）
-// vk 存键名字符串，未设置时为空串
+// modifiers holds an array of modifier names (fixed order Ctrl/Shift/Alt/Win)
+// vk holds the key name string, an empty string when unset
 //
-// 放在全局命名空间，和 Hotkey 同处，让 ADL 能找到。
+// placed in the global namespace next to Hotkey so ADL can find it.
 // ============================================================
 
 void to_json(nlohmann::json &j, const Hotkey &hk);

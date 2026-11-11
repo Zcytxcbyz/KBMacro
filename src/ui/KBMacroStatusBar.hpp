@@ -4,21 +4,21 @@
 // ReSharper disable once CppUnusedIncludeDirective
 #include <wx/string.h>
 
-// 状态栏。
+// status bar.
 //
-// 单一字段，显示当前状态文本。各面板运行时状态通过 SetMessage 更新。
-// 字段划分、复杂状态管理接入 ThreadManager 时再补。
+// Single field showing the current status text. Each panel's run status is updated via SetMessage.
+// Field splitting and complex status management will follow once ThreadManager is integrated.
 class KBMacroStatusBar : public wxStatusBar {
 public:
     explicit KBMacroStatusBar(wxWindow *parent);
 
-    // 显示状态文本（覆盖当前内容）
+    // show status text (overwrites current content)
     void SetMessage(const wxString &text);
 
-    // 右侧常驻提示（热键注册失败、配置异常之类）。
-    // 与左边"运行状态"互不覆盖：状态每 300ms 重算，提示只在有事时写。
+    // persistent notice on the right (hotkey registration failures, config problems, etc.).
+    // independent of the left run status: status is recomputed every 300ms, notice only when needed.
     void SetNotice(const wxString &text);
 
-    // 清空状态文本
+    // clear status text
     void Clear();
 };

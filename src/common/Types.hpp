@@ -6,14 +6,14 @@
 #include <nlohmann/json.hpp>
 
 // ============================================================
-// 跨模块共享的枚举与常量
+// enums and constants shared across modules
 // ============================================================
 
-// 计时器模式：由 ConfigManager 持久化，ITimer 消费
+// timer mode: persisted by ConfigManager, consumed by ITimer
 enum class TimerMode {
     Sleep,
     Spin,
-    Hybrid,   // 长间隔睡、末尾忙等；忙等时长见 Config::timerHybridSpinMs
+    Hybrid,   // chunked sleep for long waits, busy wait at the tail; spin duration in Config::timerHybridSpinMs
 };
 
 struct TimerModeEntry {
@@ -42,10 +42,10 @@ inline constexpr TimerModeEntry kTimerModeEntries[] = {
 }
 
 // ============================================================
-// 热键
+// hotkeys
 // ============================================================
 
-// 修饰键位掩码
+// modifier bitmasks
 namespace hk {
     constexpr unsigned kModCtrl  = 1u << 0;
     constexpr unsigned kModShift = 1u << 1;
@@ -53,15 +53,15 @@ namespace hk {
     constexpr unsigned kModWin   = 1u << 3;
 }
 
-// 一个按键组合：修饰键位掩码 + 主键虚拟键码
-// vk == 0 表示"未设置主键"（可能只在等待用户继续按主键）
+// one key combination: modifier bitmask + main-key virtual key code
+// vk == 0 means "no main key set" (possibly still waiting for the user to press one)
 struct Hotkey {
     unsigned modifiers = 0;
     unsigned vk = 0;
 };
 
 // ============================================================
-// 运行模式
+// run mode
 // ============================================================
 
 enum class RunMode {
@@ -95,15 +95,15 @@ inline constexpr RunModeEntry kRunModeEntries[] = {
     return "Infinite";
 }
 
-// 运行模式参数：无限 / 定时 / 固定次数
+// run mode parameters: infinite / timed / fixed count
 struct RunSpec {
     RunMode mode = RunMode::Infinite;
-    int durationSec = 10;   // mode == Timed 时有效
-    int count = 100;        // mode == Counted 时有效
-    int startDelayMs = 0;   // 线程启动后先等这么久再执行第一个动作（与 mode 无关）
+    int durationSec = 10;   // only valid when mode == Timed
+    int count = 100;        // only valid when mode == Counted
+    int startDelayMs = 0;   // wait this long after thread start before the first action (independent of mode)
 };
 
-// 序列化：按 mode 精简
+// serialization: trimmed by mode
 inline void to_json(nlohmann::json &j, const RunSpec &r) {
     j = nlohmann::json::object();
     j["mode"] = runModeToString(r.mode);
@@ -119,7 +119,7 @@ inline void to_json(nlohmann::json &j, const RunSpec &r) {
             break;
     }
 
-    // 开始延迟与 mode 无关；为 0 时不写，避免每个参数文件都多一行噪声
+    // start delay is independent of mode; omitted when 0 to keep parameter files noise-free
     if (r.startDelayMs > 0) j["startDelayMs"] = r.startDelayMs;
 }
 
@@ -132,11 +132,11 @@ inline void from_json(const nlohmann::json &j, RunSpec &r) {
 }
 
 // ============================================================
-// 运行结束原因
+// run finish reason
 // ============================================================
 
-// 工作线程退出时上报：是跑够了自然结束，还是被用户叫停。
-// 不落盘，因此不做表驱动字符串转换。
+// reported when a worker thread exits: finished naturally or stopped by the user.
+// never persisted, so no table-driven string conversion.
 enum class FinishReason {
     Completed,
     Stopped,
@@ -144,13 +144,13 @@ enum class FinishReason {
 };
 
 // ============================================================
-// 屏幕规格
+// screen spec
 // ============================================================
 
-// 记录录制/导出时的屏幕环境，用于导入脚本时判断是否需要坐标适配。
-//   - width / height: 主屏像素分辨率
-//   - dpi: 主屏 DPI（96 = 100%，120 = 125%，144 = 150%）
-// 全 0 表示"未记录"（老脚本或非 KBMacro 生成的文件）。
+// records the screen environment at record/export time, used to decide on coordinate adaptation at import.
+//   - width / height: primary screen resolution in pixels
+//   - dpi: primary screen DPI (96 = 100%, 120 = 125%, 144 = 150%)
+// all zero means "not recorded" (old scripts or files not produced by KBMacro).
 struct ScreenSpec {
     int width = 0;
     int height = 0;
@@ -172,11 +172,11 @@ inline void from_json(const nlohmann::json &j, ScreenSpec &s) {
 }
 
 // ============================================================
-// 坐标适配偏好
+// coordinate adaptation preference
 // ============================================================
 
-// 导入脚本遇到屏幕规格不一致时的处理偏好。
-// Ask 每次弹窗；其余两项直接执行，不弹窗。
+// preferred handling when an imported script has a different screen spec.
+// Ask prompts every time; the other two act directly without prompting.
 enum class AdaptationPreference {
     Ask,
     AlwaysAdapt,

@@ -6,10 +6,10 @@
 #include "resource.h"
 
 // ============================================================
-// 全局热键动作
+// global hotkey actions
 //
-// 枚举值即热键数组索引，与 Config::hotkeys 一一对应。
-// 顺序变化会破坏已保存的配置文件，不可随意调整。
+// the enum value is the hotkey array index and maps 1:1 to Config::hotkeys.
+// reordering breaks saved config files, so the order must not change.
 // ============================================================
 
 enum class HotkeyAction {
@@ -26,10 +26,10 @@ enum class HotkeyAction {
     StopAll,
 };
 
-// 热键数量。Config / HotkeyManager / SettingsPanel 共用。
+// number of hotkeys. shared by Config / HotkeyManager / SettingsPanel.
 inline constexpr int kHotkeyCount = 11;
 
-// 动作 → 显示名资源 ID。SettingsPanel 直接按索引取。
+// action → display-name resource id. SettingsPanel indexes into it directly.
 inline constexpr int kHotkeyActionResIds[kHotkeyCount] = {
     IDS_SETTINGS_HOTKEY_START_CLICKER,
     IDS_SETTINGS_HOTKEY_STOP_CLICKER,

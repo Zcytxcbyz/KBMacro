@@ -2,7 +2,7 @@
 
 KBMacroStatusBar::KBMacroStatusBar(wxWindow *parent)
     : wxStatusBar(parent, wxID_ANY) {
-    // 字段 0：运行状态（弹性）；字段 1：常驻提示（固定宽度）
+    // field 0: run status (flexible); field 1: persistent notice (fixed width)
     SetFieldsCount(2);
     const int widths[2] = {-1, FromDIP(240)};
     SetStatusWidths(2, widths);

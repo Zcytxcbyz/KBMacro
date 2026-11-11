@@ -10,7 +10,7 @@ namespace jsonio {
     bool saveTo(const std::filesystem::path &path, const nlohmann::json &j) {
         const std::string pathStr = utils::ToUtf8(path.wstring());
 
-        // 父目录不存在时自动创建
+        // create the parent directory when missing
         if (const auto parent = path.parent_path(); !parent.empty()) {
             std::error_code ec;
             std::filesystem::create_directories(parent, ec);

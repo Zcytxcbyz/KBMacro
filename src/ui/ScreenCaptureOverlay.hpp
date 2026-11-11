@@ -4,9 +4,9 @@
 
 #include <wx/wx.h>
 
-// 全屏坐标捕获窗口。
+// Full-screen coordinate capture window.
 //
-// 用法：
+// usage:
 //     auto *overlay = new ScreenCaptureOverlay(this,
 //         [this](bool captured, wxPoint pos) {
 //             if (captured) {
@@ -15,11 +15,11 @@
 //             }
 //         });
 //
-// 构造即显示，用户交互后自动 Destroy，调用方不需要持有指针。
+// Shows itself on construction and destroys itself after interaction; caller keeps no pointer.
 //
-// 交互：
-//   - 左键点击：回调 (true, 虚拟桌面坐标)
-//   - Esc / 右键：回调 (false, (0,0))
+// interaction:
+//   - left click: callback (true, virtual desktop coordinate)
+//   - Esc / right click: callback (false, (0,0))
 class ScreenCaptureOverlay : public wxFrame {
 public:
     using Callback = std::function<void(bool captured, wxPoint pos)>;
@@ -37,5 +37,5 @@ private:
 
     Callback m_callback;
     bool m_finished = false;
-    wxPoint m_origin;   // 虚拟桌面左上角（屏幕坐标）
+    wxPoint m_origin;   // top-left of the virtual desktop (screen coordinates)
 };

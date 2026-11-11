@@ -8,10 +8,10 @@
 #include "common/Types.hpp"
 
 // ============================================================
-// 连点器参数
+// clicker parameters
 //
-// 点击类型 10 项，与 ClickerPanel 的下拉框 1:1 对应。
-// 不复用 Action 的枚举——连点器和录制是两套语义，不互转。
+// 10 click types, mapped 1:1 to the ClickerPanel drop-down.
+// Action's enums are not reused: the clicker and recording are two separate domains, no conversion.
 // ============================================================
 
 enum class ClickType {
@@ -59,31 +59,31 @@ inline constexpr ClickTypeEntry kClickTypeEntries[] = {
     return ClickType::Left;
 }
 
-// 是否是滚轮类点击
+// whether this is a wheel click type
 [[nodiscard]] constexpr bool isWheelClickType(const ClickType t) noexcept {
     return t == ClickType::WheelUp || t == ClickType::WheelDown
            || t == ClickType::WheelLeft || t == ClickType::WheelRight;
 }
 
 // ============================================================
-// 参数
+// parameters
 // ============================================================
 
 struct ClickerParams {
-    // 位置
-    bool ignorePosition = false;   // 勾选后忽略 x/y，用当前光标位置
+    // position
+    bool ignorePosition = false;   // when checked x/y are ignored and the current cursor position is used
     int x = 0;
     int y = 0;
 
-    // 点击
+    // click
     ClickType clickType = ClickType::Left;
-    int wheelSteps = 1;            // 仅滚轮类有效
+    int wheelSteps = 1;            // only valid for wheel click types
 
-    // 时间
+    // timing
     int intervalMs = 100;
-    int holdMs = 50;               // 仅非滚轮类有效
+    int holdMs = 50;               // only valid for non-wheel click types
 
-    // 运行模式
+    // run mode
     RunSpec run;
 };
 

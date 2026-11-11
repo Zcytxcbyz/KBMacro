@@ -3,60 +3,60 @@
 #include "common/ITimer.hpp"
 
 // ============================================================
-// ITimer 的三个实现
+// the three ITimer implementations
 //
-//   SleepTimer —— 分段睡眠
-//       CPU 占用 ≈ 0；"等待中被停止"的响应延迟 = 一次 slice 对齐到系统节拍
-//       （名义 kSlice = 10ms，实测约 15–25ms）；
-//       但等待精度受系统定时器粒度影响（Windows 默认约 15.6ms），
-//       因此普通模式下实际间隔可能略长于设定值——这是设计内的代价。
+//   SleepTimer — chunked sleep
+//       CPU usage ≈ 0; stop-while-waiting latency = one slice aligned to a system tick
+//       (nominal kSlice = 10ms, measured about 15–25ms);
+//       but wait precision depends on the system timer granularity (Windows defaults to about 15.6ms),
+//       so in the normal mode the real interval may be slightly longer than configured — a designed-in cost.
 //
-//   SpinTimer  —— 忙等
-//       精度最好（受 steady_clock / QPC 限制）；停止响应亚微秒级；
-//       代价是等待期间占满一个核心。这是明确的契约，
-//       UI 侧"高精度模式"的 CPU 警告弹窗就是为它存在的。
+//   SpinTimer  — busy wait
+//       best precision (bounded by steady_clock / QPC); stop response is sub-microsecond;
+//       the cost is a full core while waiting. that is an explicit contract,
+//       and it is why the UI shows a CPU warning dialog for "high-precision mode".
 //
-//   HybridTimer —— 混合
-//       长间隔分段睡、末尾忙等；阈值（末尾忙等时长）由配置给出。
-//       精度接近 Spin，CPU 只在尾巴上烧。
+//   HybridTimer — hybrid
+//       chunked sleep for long waits, busy wait at the tail; the threshold (tail spin) comes from config.
+//       precision close to Spin, CPU burns only on the tail.
 //
-// 三者都是无状态类：同一实例可被多个线程并发调用。
-// 实现细节（deadline 循环、为什么不做累减）见 Timer.cpp。
+// all three are stateless: one instance may be called concurrently by several threads.
+// implementation details (the deadline loop, why nothing is subtracted) are in Timer.cpp.
 // ============================================================
 
-// 分段睡眠实现。
+// chunked sleep implementation.
 //
-// 把一次长等待切成 <= kSlice 的小段，段间检查停止请求。
-// 因此"等待中被停止"的最坏响应延迟 = 一个 slice 对齐到一次系统节拍
-// （名义 10ms，实测约 15–25ms），并不等于名义上的 kSlice。
-// 这个延迟同时也是 Sleep 模式下 Stop 阻塞 join 时 UI 线程的停顿上界。
+// split a long wait into pieces of <= kSlice and check for a stop request between pieces.
+// so the worst stop-while-waiting latency = one slice aligned to a system tick
+// (nominal 10ms, measured about 15–25ms), which is not equal to the nominal kSlice.
+// this latency is also the upper bound on the UI thread stall when Stop blocks in join in Sleep mode.
 class SleepTimer final : public ITimer {
 public:
-    // 分段粒度。对外暴露是为了让测试能断言停止延迟的上界。
+    // slice granularity. exposed so tests can assert the upper bound of the stop latency.
     static constexpr Duration kSlice{10};
 
     [[nodiscard]] bool wait(Duration d, const std::stop_token &st) const override;
 };
 
-// 忙等实现。
+// busy-wait implementation.
 //
-// 循环里检查停止请求，相邻两次检查之间只隔一条 _mm_pause，
-// 因此响应延迟是亚微秒级。
-// 注意：等待期间 CPU 占用 100%（单核）——这是设计内的取舍，不是缺陷。
+// the loop checks for stop requests, separated by a single _mm_pause,
+// so the response latency is sub-microsecond.
+// note: CPU usage is 100% (one core) while waiting — a designed-in tradeoff, not a defect.
 class SpinTimer final : public ITimer {
 public:
     [[nodiscard]] bool wait(Duration d, const std::stop_token &st) const override;
 };
 
-// 混合实现：长间隔分段睡、末尾忙等。
+// hybrid implementation: chunked sleep for long waits, busy wait at the tail.
 //
-// 语义（T = 构造时给的末尾忙等时长）：
-//   - d >  T：先分段 sleep 到 deadline - T，再用 T 忙等到点
-//   - d <= T：全程忙等（此时等价于 SpinTimer）
-// 精度：误差 = max(0, 最后一段 sleep 的溢出 - T)；T=10ms 时通常能压到个位数毫秒。
-// 停止响应：上界约 T（睡眠段内仍是 slice 对齐，忙等段内是亚微秒）。
-// 代价：忙等的那 T 毫秒占满一个核心 —— 与 SpinTimer 同一份契约。
-// T <= 0 时退化为纯粹的分段睡眠（防御性，UI 不会给出这种值）。
+// semantics (T = tail spin duration given at construction):
+//   - d >  T: chunked-sleep until deadline - T, then busy-wait the last T
+//   - d <= T: busy-wait the whole time (equivalent to SpinTimer then)
+// precision: error = max(0, overshoot of the last sleep chunk - T); with T=10ms usually single-digit ms.
+// stop response: upper bound about T (slice alignment in sleep chunks, sub-microsecond while spinning).
+// cost: those T milliseconds of spinning occupy a full core — the same contract as SpinTimer.
+// T <= 0 degrades to plain chunked sleep (defensive; the UI never supplies such a value).
 class HybridTimer final : public ITimer {
 public:
     explicit HybridTimer(const Duration spinTail) noexcept

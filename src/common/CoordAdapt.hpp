@@ -5,21 +5,21 @@
 #include "common/Action.hpp"
 #include "common/Types.hpp"
 
-// 坐标适配：把动作里的屏幕坐标从一份屏幕规格换算到另一份。
+// coordinate adaptation: scale screen coordinates inside actions from one screen spec to another.
 //
-// 只在"导入别人的 *.macro.json"时使用——录制永远产出当前机器的绝对坐标。
-// 纯数据变换：不碰线程、计时器、Win32 输入。
+// only for importing others' *.macro.json — recording always uses absolute coordinates of this machine.
+// pure data transformation: no threads, timers or Win32 input involved.
 namespace coord {
 
-    // 按比例换算 MouseMove / MouseClick 的 x、y：
+    // scale x and y of MouseMove / MouseClick proportionally:
     //   newX = MulDiv(oldX, to.width,  from.width)
     //   newY = MulDiv(oldY, to.height, from.height)
     //
-    // MulDiv 是四舍五入（0.5 向远离零的方向），整数除法会把缩小的结果系统性偏小。
+    // MulDiv rounds to nearest (0.5 away from zero); integer division would bias scaled-down results low.
     //
-    // from 的宽或高 <= 0 时不做任何改动（ScreenSpec 全 0 表示"未记录"）。
-    // 负坐标照比例换算，不夹取——副屏在主屏左侧时坐标本来就是负的。
-    // 其余字段（wheelSteps / hotkey / keyEvent / holdMs / delayMs）一律不动。
+    // when from width or height <= 0 nothing changes (an all-zero ScreenSpec means "not recorded").
+    // negative coordinates are scaled too, never clamped — a secondary screen left of the primary is negative.
+    // all other fields (wheelSteps / hotkey / keyEvent / holdMs / delayMs) are untouched.
     void adaptActions(std::vector<Action> &actions, const ScreenSpec &from, const ScreenSpec &to);
 
 } // namespace coord

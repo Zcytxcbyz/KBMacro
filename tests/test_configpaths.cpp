@@ -1,11 +1,11 @@
 // ============================================================
-// ConfigPaths::resolveConfigPath 测试
+// ConfigPaths::resolveConfigPath tests
 //
-// 这是设计文档里标记为 P1 的测试项。核心逻辑是：
-//   - {exePath}.json 存在 → 便携模式
-//   - 否则               → APPDATA 模式
+// This is the P1 test item from the design doc. The core logic is:
+//   - {exePath}.json exists → portable mode
+//   - otherwise         → APPDATA mode
 //
-// 用例在临时目录里操作，不污染真实环境。
+// Cases work in a temp directory and do not pollute the real environment.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -17,8 +17,8 @@
 
 namespace {
 
-    // 每个测试用一个唯一的临时目录，测试结束时清掉。
-    // 用 ::testing::UnitTest 的当前测试名做后缀，避免并发冲突。
+    // each test uses a unique temp directory, removed on teardown.
+    // suffix with the current ::testing::UnitTest name to avoid concurrent clashes.
     class ConfigPathsTest : public ::testing::Test {
     protected:
         void SetUp() override {
@@ -36,7 +36,7 @@ namespace {
             std::filesystem::remove_all(m_dir, ec);
         }
 
-        // 在临时目录里造一个假的 exe 路径
+        // build a fake exe path inside the temp directory
         [[nodiscard]] std::filesystem::path fakeExe() const {
             return m_dir / L"KBMacro.exe";
         }
@@ -51,7 +51,7 @@ namespace {
 } // namespace
 
 TEST_F(ConfigPathsTest, NoPortableFileFallsBackToAppData) {
-    // {exe}.json 不存在 → APPDATA 模式
+    // {exe}.json absent → APPDATA mode
     const auto result = config::resolveConfigPath(fakeExe(), fakeAppData());
 
     EXPECT_FALSE(result.portable);
@@ -59,7 +59,7 @@ TEST_F(ConfigPathsTest, NoPortableFileFallsBackToAppData) {
 }
 
 TEST_F(ConfigPathsTest, PortableFileExistsUsesPortableMode) {
-    // 造一个 {exe}.json
+    // create a {exe}.json
     auto portablePath = fakeExe();
     portablePath.concat(L".json");
     {
@@ -74,7 +74,7 @@ TEST_F(ConfigPathsTest, PortableFileExistsUsesPortableMode) {
 }
 
 TEST_F(ConfigPathsTest, PortablePathIsExePathPlusJson) {
-    // 验证拼接规则：KBMacro.exe → KBMacro.exe.json
+    // check the append rule: KBMacro.exe → KBMacro.exe.json
     auto portablePath = fakeExe();
     portablePath.concat(L".json");
     {
@@ -89,7 +89,7 @@ TEST_F(ConfigPathsTest, PortablePathIsExePathPlusJson) {
 }
 
 TEST_F(ConfigPathsTest, AppDataPathStructure) {
-    // APPDATA 模式下的路径形状：{appData}/KBMacro/config.json
+    // path shape in APPDATA mode: {appData}/KBMacro/config.json
     const auto result = config::resolveConfigPath(fakeExe(), fakeAppData());
 
     EXPECT_EQ(result.path.parent_path().filename(), L"KBMacro");

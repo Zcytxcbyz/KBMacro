@@ -5,64 +5,64 @@
 #include <cstdint>
 
 #include "common/Action.hpp"   // MouseButton / WheelDirection
-#include "common/ITimer.hpp"   // 复合层的按住等待
+#include "common/ITimer.hpp"   // hold wait for the composite layer
 #include "common/Types.hpp"    // Hotkey
 
 // ============================================================
-// 模拟输入注入 —— Win32 SendInput 的唯一出口
+// Simulated input injection -- the only exit for Win32 SendInput
 //
-// 职责：
-//   - 把动作翻成等价的 INPUT，调 SendInput，检查返回值，记日志
+// Responsibilities:
+//   - turn an action into an equivalent INPUT, call SendInput, check the return value, log it
 //
-// 不做：
-//   - 不等待"动作间隔"（那是 RunController + ITimer 的事），只等"按住时长"
-//   - 不做坐标适配（导入那一刻已完成），只把最终屏幕坐标归一化后交给 Win32
-//   - 不认识 UI 词汇（ClickType 等），只说 Win32 词汇：
-//     MouseButton / WheelDirection / Hotkey —— 正好是 Action 里那三个枚举
-//   - 不产生停止请求、不碰线程；stop_token 由调用方给
+// Not responsible for:
+//   - not waiting for the "action interval" (that is RunController + ITimer's job), only the "hold duration"
+//   - no coordinate adaptation (done at import time), only normalize the final screen coordinate for Win32
+//   - no UI vocabulary (ClickType etc.), only Win32 vocabulary:
+//     MouseButton / WheelDirection / Hotkey -- exactly the three enums in Action
+//   - no stop request, no thread handling; stop_token is provided by the caller
 //
-// 错误契约：失败一律抛，接收方负责收
-//   - 每次 SendInput 都检查返回值；小于预期 → 先补发抬起收拾现场 → 抛 SendInputError
-//   - 线程任务由 ThreadManager 兜底（catch → FinishReason::Failed）
-//   - UI 线程直调（键盘的 SendOnce）必须自己 try/catch，
-//     否则异常穿透 wx 事件循环直接 terminate
+// Error contract: failures always throw, the receiver handles them
+//   - every SendInput checks its return value; fewer than expected → re-send the up to clean up → throw SendInputError
+//   - thread tasks are covered by ThreadManager (catch → FinishReason::Failed)
+//   - direct calls on the UI thread (keyboard's SendOnce) must try/catch themselves,
+//     otherwise the exception crosses the wx event loop and terminates
 //
-// 日志契约：一次 SendInput 调用 = 一行 LOG_DEBUG（动作 + 关键参数 + sent/expected）
+// Log contract: one SendInput call = one LOG_DEBUG line (action + key params + sent/expected)
 //
-// 线程：纯 Win32 调用、无共享状态，任意线程可调；
-//       但"同一时刻只有一个任务在跑"是 ThreadManager 的保证，不是这里的
+// Threading: pure Win32 calls, no shared state, callable from any thread;
+//            but "only one task runs at a time" is ThreadManager's guarantee, not this file's
 // ============================================================
 
 namespace input {
 
-// SendInput 失败。what() 里已经带上 动作 / expected / sent / GetLastError() 文本，
-// 直接丢进日志即可，不需要额外字段。
+// SendInput failure. what() already carries the action / expected / sent / GetLastError() text,
+// just drop it into the log, no extra fields needed.
 class SendInputError : public std::runtime_error {
 public:
     using std::runtime_error::runtime_error;
 };
 
-// 注入事件的身份标记（'KBMR'）。写进 INPUT::dwExtraInfo，
-// 录制端的低级钩子靠它认出"这是我们自己发的"，从而不把自己录进去。
+// Identity marker for injected events ('KBMR'). Written into INPUT::dwExtraInfo,
+// the recording side's low-level hook uses it to recognize "we sent this", so it never records itself.
 inline constexpr std::uintptr_t kInjectedSignature = 0x4B424D52u;
 
-// 启动时调一次：把虚拟屏幕 rect 与 DPI 记一条 LOG_DEBUG。
-// 纯粹是日志（排查"坐标偏"时用来复算归一化），不建立任何状态。
+// Called once at startup: log the virtual screen rect and DPI in one LOG_DEBUG line.
+// purely for the log (used to recompute normalization when debugging "coordinates are off"), builds no state.
 void init();
 
-// ---- 原子层：只发事件、立即返回（回放用它精确重放事件流）----
+// ---- atomic layer: send events only, return at once (playback uses it to replay the event stream) ----
 void moveTo(int x, int y);
-// 相对当前位置移动 dx/dy 个物理像素（可负）。不经过虚拟桌面归一化，
-// 也不需要 init() 提供的屏幕尺寸。
+// Move dx/dy physical pixels relative to the current position (may be negative). No virtual-desktop
+// normalization, and no screen size from init() is needed.
 void moveBy(int dx, int dy);
 void buttonDown(MouseButton button);
 void buttonUp(MouseButton button);
-void wheel(WheelDirection direction, int steps);   // steps 1–10，一条事件带 steps × WHEEL_DELTA
-void keyDown(const Hotkey &hk);                    // 先修饰键、后主键
-void keyUp(const Hotkey &hk);                      // 先主键、后修饰键
+void wheel(WheelDirection direction, int steps);   // steps 1–10, one event carries steps × WHEEL_DELTA
+void keyDown(const Hotkey &hk);                    // modifiers first, main key after
+void keyUp(const Hotkey &hk);                      // main key first, modifiers after
 
-// ---- 复合层：语义完整，内部等 holdMs ----
-// 返回 false = 按住期间被 stop 打断（键/鼠标键已经抬起，调用方 break 即可）
+// ---- composite layer: full semantics, waits holdMs inside ----
+// returns false = interrupted by stop during the hold (keys/buttons are already up, the caller can just break)
 [[nodiscard]] bool click(MouseButton button, int holdMs, const ITimer &timer, const std::stop_token &st);
 [[nodiscard]] bool pressKey(const Hotkey &hk, int holdMs, const ITimer &timer, const std::stop_token &st);
 

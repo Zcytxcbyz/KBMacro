@@ -13,16 +13,16 @@
 #include "ui/DialogButtons.hpp"
 
 namespace {
-    // 点击类型下拉框的索引：滚轮类的范围
+    // Indexes of the click type combo box: the wheel range
     constexpr int kTypeWheelFirst = 4;  // Wheel Up
     constexpr int kTypeWheelLast  = 7;  // Wheel Right
 
-    // 运行模式下拉框索引
+    // Run mode combo box indexes
     constexpr int kRunModeInfinite = 0;
     constexpr int kRunModeTimed    = 1;
     constexpr int kRunModeCounted  = 2;
 
-    // *.clicker.json 的 schema 版本
+    // Schema version of *.clicker.json
     constexpr int kClickerParamsVersion = 1;
 }
 
@@ -33,7 +33,7 @@ ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
     buildUi();
     setRunning(false);
 
-    // 页面级滚动：窗口装不下时才出现，正常尺寸下看不到滚动条
+    // Page-level scrolling: appears only when the window is too small; no scrollbar at normal size
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 }
@@ -41,7 +41,7 @@ ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
 void ClickerPanel::buildUi() {
     auto *root = new wxBoxSizer(wxVERTICAL);
 
-    // ---- 分组一：坐标 ----
+    // ---- Group 1: coordinates ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_CLICKER_GROUP_POS));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -72,7 +72,7 @@ void ClickerPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组二：点击设置 ----
+    // ---- Group 2: click settings ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_CLICKER_GROUP_CLICK));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -124,7 +124,7 @@ void ClickerPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组三：运行模式 ----
+    // ---- Group 3: run mode ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_RUNMODE));
         auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
@@ -169,7 +169,7 @@ void ClickerPanel::buildUi() {
         root->Add(box, 0, wxEXPAND | wxALL, 8);
     }
 
-    // ---- 分组四：操作 ----
+    // ---- Group 4: actions ----
     {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_COMMON_GROUP_ACTIONS));
         auto *box = new wxStaticBoxSizer(staticBox, wxHORIZONTAL);
@@ -190,7 +190,7 @@ void ClickerPanel::buildUi() {
 
     SetSizer(root);
 
-    // ---- 事件绑定 ----
+    // ---- Event binding ----
     m_btnCapture->Bind(wxEVT_BUTTON, &ClickerPanel::onCapturePos, this);
     m_chkIgnorePos->Bind(wxEVT_CHECKBOX, &ClickerPanel::onIgnorePos, this);
     m_choiceType->Bind(wxEVT_CHOICE, &ClickerPanel::onTypeChanged, this);
@@ -200,16 +200,16 @@ void ClickerPanel::buildUi() {
     m_btnImport->Bind(wxEVT_BUTTON, &ClickerPanel::onImport, this);
     m_btnExport->Bind(wxEVT_BUTTON, &ClickerPanel::onExport, this);
 
-    // X/Y 只允许数字和负号
+    // X/Y accept only digits and the minus sign
     m_x->Bind(wxEVT_CHAR, &ClickerPanel::onCoordChar, this);
     m_y->Bind(wxEVT_CHAR, &ClickerPanel::onCoordChar, this);
 
-    // 初始状态刷新
+    // Initial state refresh
     refreshEnableStates();
 }
 
 // ============================================================
-// 参数收集 / 应用
+// Params collection / application
 // ============================================================
 
 ClickerParams ClickerPanel::collectParams() const {
@@ -217,7 +217,7 @@ ClickerParams ClickerPanel::collectParams() const {
 
     p.ignorePosition = m_chkIgnorePos->GetValue();
 
-    // 坐标用 ToLong 解析，失败时保留 0
+    // Parse coordinates with ToLong; keep 0 on failure
     long coord = 0;
     if (m_x->GetValue().ToLong(&coord)) p.x = static_cast<int>(coord);
     if (m_y->GetValue().ToLong(&coord)) p.y = static_cast<int>(coord);
@@ -264,7 +264,7 @@ void ClickerPanel::applyParams(const ClickerParams &p) {
 }
 
 // ============================================================
-// 事件处理
+// Event handling
 // ============================================================
 
 void ClickerPanel::onCapturePos(wxCommandEvent &) {
@@ -302,7 +302,7 @@ void ClickerPanel::onRunModeChanged(wxCommandEvent &) {
 void ClickerPanel::onCoordChar(wxKeyEvent &event) { // NOLINT(*-convert-member-functions-to-static)
     const int key = event.GetKeyCode();
 
-    // 控制键放行
+    // Let control keys through
     if (key == WXK_BACK || key == WXK_DELETE ||
         key == WXK_LEFT || key == WXK_RIGHT ||
         key == WXK_HOME || key == WXK_END || key == WXK_TAB) {
@@ -310,14 +310,14 @@ void ClickerPanel::onCoordChar(wxKeyEvent &event) { // NOLINT(*-convert-member-f
         return;
         }
 
-    // 数字和负号放行
+    // Let digits and the minus sign through
     if ((key >= '0' && key <= '9') || key == '-') {
         event.Skip();
         // ReSharper disable once CppRedundantControlFlowJump
         return;
     }
 
-    // 其余吞掉
+    // Swallow everything else
 }
 
 void ClickerPanel::onStart(wxCommandEvent &) {
@@ -336,8 +336,8 @@ void ClickerPanel::startWithCurrentParams() {
              p.intervalMs, static_cast<int>(p.clickType),
              runModeToString(p.run.mode));
 
-    // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
-    // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
+    // ThreadManager ignores this request while already running (the same task must not run concurrently),
+    // so ignore the return value and flip the buttons to "started"; the callback flips them back on real exit
     m_threadMgr.StartClicker(p, [this](const TaskResult res) {
         setRunning(false);
         LOG_INFO("clicker: finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
@@ -370,7 +370,7 @@ void ClickerPanel::onImport(wxCommandEvent &) {
         return;
     }
 
-    // 版本校验
+    // Version check
     if (const int fileVer = j.value("version", 1);
         fileVer > kClickerParamsVersion) {
         LOG_WARN("clicker: import version {} > supported {}",
@@ -436,18 +436,18 @@ bool ClickerPanel::isWheelTypeSelected() const {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ClickerPanel::refreshEnableStates() {
-    // ---- 坐标区 ----
+    // ---- Coordinates section ----
     const bool ignorePos = m_chkIgnorePos->GetValue();
     m_x->Enable(!ignorePos);
     m_y->Enable(!ignorePos);
     m_btnCapture->Enable(!ignorePos);
 
-    // ---- 点击设置 ----
+    // ---- Click settings ----
     const bool isWheel = isWheelTypeSelected();
     m_spinWheelSteps->Enable(isWheel);
     m_spinHoldTime->Enable(!isWheel);
 
-    // ---- 运行模式 ----
+    // ---- Run mode ----
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == kRunModeTimed);
     m_spinCount->Enable(runMode == kRunModeCounted);
@@ -455,8 +455,8 @@ void ClickerPanel::refreshEnableStates() {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ClickerPanel::setRunning(const bool running) {
-    // 运行中改参数不会影响已启动的任务（参数在 StartClicker 时已快照进闭包），
-    // 所以这里只切按钮，不去禁用输入控件
+    // Changing params while running does not affect the started task (params were snapshotted into the closure
+    // at StartClicker), so only flip the buttons here; input widgets are left enabled
     if (m_btnStart != nullptr) m_btnStart->Enable(!running);
     if (m_btnStop != nullptr) m_btnStop->Enable(running);
 }

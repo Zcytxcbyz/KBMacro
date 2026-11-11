@@ -5,12 +5,12 @@
 #include <wx/listctrl.h>
 #include <wx/scrolwin.h>
 
-// 列表相关的两个小工具，只服务"装进滚动页的短列表"。
+// Two small list helpers, only for "short lists inside scrolled pages".
 
 namespace uifit {
 
-    // 把列表撑到刚好放下全部行，让列表内部不出滚动条（滚动交给页面）。
-    // 用 GetItemRect 取最后一行的底边，跟系统 DPI、主题行高都无关。
+    // Grow the list to exactly fit all rows so it shows no inner scrollbar (the page scrolls).
+    // Use GetItemRect on the bottom edge of the last row; independent of system DPI and theme row height.
     inline void fitListToRows(wxListCtrl *list) {
         if (list == nullptr || list->GetItemCount() == 0) {
             return;
@@ -23,7 +23,7 @@ namespace uifit {
 
         const int height = lastRow.GetBottom() + list->FromDIP(6);
         if (height == list->GetMinSize().GetHeight()) {
-            return;   // 高度没变就别再 Layout，避免刷新时界面抖动
+            return;   // skip Layout when the height is unchanged to avoid flicker on refresh
         }
 
         list->SetMinSize(wxSize(wxDefaultCoord, height));
@@ -34,7 +34,7 @@ namespace uifit {
         }
         parent->Layout();
 
-        // 滚动页的虚拟尺寸要跟着更新，否则滚动范围还是旧的
+        // update the scrolled page's virtual size too, otherwise its scroll range stays stale
         for (wxWindow *w = parent; w != nullptr; w = w->GetParent()) {
             if (auto *page = wxDynamicCast(w, wxScrolledWindow)) {
                 page->FitInside();
@@ -43,8 +43,8 @@ namespace uifit {
         }
     }
 
-    // 让子控件的滚轮事件转给外层的 wxScrolledWindow。
-    // 否则鼠标停在列表上时，滚轮被列表自己吃掉，页面纹丝不动。
+    // Forward wheel events from the child control to the enclosing wxScrolledWindow.
+    // Otherwise the list swallows the wheel while the pointer is over it and the page never moves.
     inline void forwardWheelToPage(wxWindow *child) {
         if (child == nullptr) {
             return;
@@ -61,7 +61,7 @@ namespace uifit {
                 int y = 0;
                 page->GetViewStart(&x, &y);
 
-                // 一个滚轮档滚 3 行；高分辨率滚轮 rotation 是 120 的倍数
+                // one wheel detent scrolls 3 lines; high-resolution wheels report rotation as a multiple of 120
                 const int delta = (event.GetWheelDelta() != 0) ? event.GetWheelDelta() : 120;
                 const int lines = -event.GetWheelRotation() * 3 / delta;
                 y = std::max(0, y + lines);

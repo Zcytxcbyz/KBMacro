@@ -13,14 +13,14 @@ namespace coord {
             return;
         }
 
-        // 规格一致时直接跳过，省一次遍历
+        // identical specs need no work; skip the whole loop
         if (from.width == to.width && from.height == to.height) return;
 
         for (Action &action : actions) {
-            // 相对坐标是"偏移量"，跟分辨率无关，不参与换算
+            // relative coordinates are offsets and independent of resolution; do not scale them
             if (action.relative) continue;
 
-            // 拖动两端也带坐标，一起换算
+            // both ends of a drag carry coordinates and are scaled together
             const bool hasCoords = (action.type == ActionType::MouseMove ||
                                     action.type == ActionType::MouseClick ||
                                     action.type == ActionType::MouseDown ||

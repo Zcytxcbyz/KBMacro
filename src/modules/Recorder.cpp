@@ -19,104 +19,104 @@
 #include "win32/Input.hpp"
 
 // ============================================================================
-// 录制模块：两个低级钩子采集键鼠事件，归一化成 Action 序列。
+// Recording module: two low-level hooks capture keyboard/mouse events, normalized into an Action list.
 //
-// 线程模型（除了两端的 UI 调用，全部在录制线程里完成）：
+// Thread model (everything except the UI calls at both ends happens on the recording thread):
 //
-//   UI 线程                          录制线程
-//   ───────                          ────────
+//   UI thread                      recording thread
+//   ─────────                      ────────────────
 //   StartRecord(opts, cb) ────────→ run()
-//                                      ├ 开始延迟（timer.wait，可被打断）
-//                                      ├ PeekMessage(PM_NOREMOVE)  建消息队列
-//                                      ├ SetWindowsHookEx ×2       装钩子
-//                                      ├ stop_callback             停止时叫醒我
-//                                      └ 泵循环 ←── 系统在这里调用回调
+//                                      ├ start delay (timer.wait, interruptible)
+//                                      ├ PeekMessage(PM_NOREMOVE)  create message queue
+//                                      ├ SetWindowsHookEx ×2       install hooks
+//                                      ├ stop_callback             wakes me on stop
+//                                      └ pump loop ←── the system calls the callbacks here
 //   StopRecord() ─── request_stop ─────┘
-//                └── join 等待收尾
+//                └── join waits for the finish
 //
-// 两条贯穿全文件的纪律：
+// Two rules that span the whole file:
 //
-//   【纪律 1】钩子回调是热路径，只许"抄参数 + 入队 + 放行"。
-//     低级钩子直接挂在系统输入链上，系统给每次回调 300ms
-//     （LowLevelHooksTimeout，注册表默认值），超时就静默摘掉钩子、之后再也
-//     收不到事件。所以回调里没有过滤、没有采样、没有日志、没有任何分配。
+//   [Rule 1] the hook callback is a hot path, it may only "copy params + enqueue + pass through".
+//     low-level hooks sit directly on the system input chain, the system gives each callback 300ms
+//     (LowLevelHooksTimeout, the registry default); on timeout it silently removes the hook and no event
+//     arrives anymore. so the callback has no filtering, no sampling, no logging and no allocation.
 //
-//   【纪律 2】判断、过滤、翻译全部放在泵里。
-//     泵跑在自己的线程里，不受 300ms 约束，还能批量取 256 条（省原子操作）。
-//     代价是"不想要的事件"也要先进队列，所以容量按最坏情况给到 65536。
+//   [Rule 2] deciding, filtering and translating all happen in the pump.
+//     the pump runs on its own thread, is not bound by the 300ms, and can take 256 at a time (saves atomics).
+//     the price is that unwanted events must be queued first too, so capacity is worst-case sized at 65536.
 // ============================================================================
 
 namespace {
 
-    // ─────────────────────────────── 常量 ───────────────────────────────
+    // ─────────────────────────────── constants ───────────────────────────────
 
-    // 停止信号。WM_APP 以上是应用自有区间，不会与系统消息冲突。
-    //   由 stop_callback 里的 PostThreadMessage 发出，用来把阻塞在等待里的
-    //   泵立刻叫醒（而不是等下一个 1 秒节拍）。
+    // Stop signal. WM_APP and above is the application range, it never collides with system messages.
+    //   posted by PostThreadMessage inside stop_callback, to wake the pump blocked in the wait
+    //   immediately (instead of waiting for the next 1-second tick).
     constexpr UINT kStopMessage = WM_APP + 0x4B;
 
-    // 队列容量。因为回调不过滤，连不需要的移动事件也要先入队：
-    //   125Hz 鼠标 → 125 条/秒；65536 条 ≈ 8.7 分钟连续移动。
-    //   每条 RawHookEvent 约 48 字节，预分配约 3MB；一次性，之后回调里零分配。
+    // Queue capacity. Because the callback does not filter, even unwanted move events are queued first:
+    //   125Hz mouse → 125 records/s; 65536 records ≈ 8.7 minutes of continuous movement.
+    //   each RawHookEvent is about 48 bytes, so about 3MB preallocated; one-off, zero allocation afterwards.
     constexpr std::size_t kQueueCapacity = 65536;
 
-    // 一次批量取多少条。批量取是为了减少队列的原子操作次数。
+    // How many records one bulk take pulls. Bulk take reduces the queue's atomic operations.
     constexpr std::size_t kDrainBatch = 256;
 
-    // 进度日志的限频间隔（交给 RateLimiter，类本身不关心"多久"）。
+    // Rate-limit interval for progress logs (handed to RateLimiter, the class does not care about "how long").
     constexpr auto kProgressInterval = ITimer::Duration{1000};
 
-    // 原料上限的提前停止系数。一条 Action 最多由 2 个原始事件产生
-    //   （点击 = Down + Up；拖动还会多出中间的 Move，这里取最坏比 2）。
-    //   精确截断仍然由 normalize 按"动作数"做，这里只是防止无限录下去。
+    // Early-stop factor for the raw event limit. One Action comes from at most 2 raw events
+    //   (click = Down + Up; a drag adds intermediate Moves, so the worst ratio 2 is used here).
+    //   exact truncation is still done by normalize by "action count", this only prevents endless recording.
     constexpr std::size_t kRawPerAction = 2;
 
-    // 事件来源。键盘和鼠标的 msg 取值区间有重叠（都是 WM_xxx 0x0200 段），
-    //   所以必须分开记，不能只看 msg。
+    // Event source. Keyboard and mouse msg ranges overlap (both are WM_xxx in the 0x0200 range),
+    //   so the source must be recorded separately, msg alone is not enough.
     constexpr std::uint8_t kSourceKeyboard = 0;
     constexpr std::uint8_t kSourceMouse = 1;
 
-    // ───────────────────────── 回调写进队列的记录 ─────────────────────────
+    // ───────────────────────── records the callback writes to the queue ─────────────────────────
 
-    // 钩子结构体字段的逐字段拷贝，不做任何解释。
-    //   为什么不直接存 KBDLLHOOKSTRUCT / MSLLHOOKSTRUCT？
-    //   它们进同一个队列，必须能区分来源；而且把用不到的字段（如 scanCode）
-    //   剔掉能让每条记录更小，队列装得更多。
+    // Field-by-field copy of the hook struct, with no interpretation.
+    //   why not store KBDLLHOOKSTRUCT / MSLLHOOKSTRUCT directly?
+    //   they go into the same queue and the source must be distinguishable; dropping unused fields
+    //   (like scanCode) makes each record smaller, so the queue holds more.
     struct RawHookEvent {
         std::uint8_t source = kSourceKeyboard;
 
-        std::uint32_t msg = 0;            // 原始 wParam：WM_KEYDOWN / WM_LBUTTONDOWN / WM_MOUSEWHEEL …
-        std::uint32_t vk = 0;             // 键盘：vkCode
-        std::int32_t x = 0;               // 鼠标：pt.x（虚拟桌面坐标）
-        std::int32_t y = 0;               // 鼠标：pt.y
-        std::uint32_t mouseData = 0;      // 滚轮：高 16 位是有符号 delta；侧键：高 16 位是 XBUTTON1/2
+        std::uint32_t msg = 0;            // raw wParam: WM_KEYDOWN / WM_LBUTTONDOWN / WM_MOUSEWHEEL …
+        std::uint32_t vk = 0;             // keyboard: vkCode
+        std::int32_t x = 0;               // mouse: pt.x (virtual-desktop coordinates)
+        std::int32_t y = 0;               // mouse: pt.y
+        std::uint32_t mouseData = 0;      // wheel: high 16 bits are signed delta; side: high 16 bits are XBUTTON1/2
         std::uint32_t flags = 0;          // LLKHF_INJECTED / LLMHF_INJECTED
-        std::uintptr_t extraInfo = 0;     // 注入标记：我们自己发的会带 'KBMR'
-        std::uint32_t time = 0;           // 钩子结构体里的 time（GetTickCount 毫秒，会回绕）
+        std::uintptr_t extraInfo = 0;     // injection marker: our own events carry 'KBMR'
+        std::uint32_t time = 0;           // time from the hook struct (GetTickCount ms, wraps)
     };
 
-    // 回调与泵之间的唯一通道。
-    //   thread_local：钩子必须装在有它的线程上，回调也一定在同一条线程里被调用，
-    //   因此这里不需要任何锁、原子变量或内存屏障。
+    // The only channel between the callback and the pump.
+    //   thread_local: the hook must be installed on the thread owning it, and the callback is always called
+    //   on that same thread, so no lock, atomic variable or memory barrier is needed here.
     thread_local moodycamel::ConcurrentQueue<RawHookEvent> *t_queue = nullptr;
 
-    // 入队失败的次数。这是回调里唯一允许写的东西，因为"入队成功与否"只有
-    //   回调自己能看到（泵看不到丢掉的那几条）；它不对事件做任何判断，
-    //   只是记录一次客观失败，供退出时的日志使用。
+    // Count of failed enqueues. This is the only thing the callback may write, because "enqueue succeeded
+    //   or not" is visible only to the callback itself (the pump cannot see the dropped ones); it makes no
+    //   judgement about events, it just records an objective failure for the exit log.
     thread_local std::size_t t_droppedQueueFull = 0;
 
-    // 离开作用域时把 t_queue 置空：即使 run() 被异常掀翻，也不会留下
-    //   指向已析构队列的悬垂指针继续被系统回调使用。
+    // Clear t_queue when leaving scope: even if run() is torn down by an exception, no dangling
+    //   pointer to a destroyed queue is left behind for system callbacks to use.
     struct QueueGuard {
         ~QueueGuard() { t_queue = nullptr; }
     };
 
-    // ─────────────────── 钩子回调（热路径：只抄参数 + 入队） ───────────────────
+    // ─────────────────── hook callbacks (hot path: copy params + enqueue only) ───────────────────
 
-    // 键盘低级钩子。注意：
-    //   - nCode 的检查是 API 协议，不是对事件的判断（nCode < 0 时结构体无效）
-    //   - 无论丢不丢，都必须 CallNextHookEx，否则前台程序收不到这次按键
-    //   - 耗时预算：48 字节拷贝 + 一次 try_enqueue ≈ 几十纳秒
+    // Low-level keyboard hook. Note:
+    //   - the nCode check is API protocol, not an event decision (the struct is invalid when nCode < 0)
+    //   - CallNextHookEx must run whether or not the event is dropped, otherwise the app never sees the key
+    //   - time budget: 48-byte copy + one try_enqueue ≈ tens of nanoseconds
     LRESULT CALLBACK onKeyboard(const int nCode, const WPARAM wParam, const LPARAM lParam) {
         if (nCode == HC_ACTION && t_queue != nullptr) {
             const auto *data = reinterpret_cast<const KBDLLHOOKSTRUCT *>(lParam);
@@ -129,14 +129,14 @@ namespace {
             e.extraInfo = data->dwExtraInfo;
             e.time = data->time;
 
-            // 队列满：丢这条，不重试、不等待。
-            //   录制出现缺口，好过让系统输入卡在钩子链上。
+            // queue full: drop this one, no retry, no wait.
+            //   a gap in the recording is better than system input stalling on the hook chain.
             if (!t_queue->try_enqueue(e)) ++t_droppedQueueFull;
         }
         return ::CallNextHookEx(nullptr, nCode, wParam, lParam);
     }
 
-    // 鼠标低级钩子，结构与键盘完全对称。
+    // Low-level mouse hook, fully symmetric in structure to the keyboard one.
     LRESULT CALLBACK onMouse(const int nCode, const WPARAM wParam, const LPARAM lParam) {
         if (nCode == HC_ACTION && t_queue != nullptr) {
             const auto *data = reinterpret_cast<const MSLLHOOKSTRUCT *>(lParam);
@@ -156,29 +156,29 @@ namespace {
         return ::CallNextHookEx(nullptr, nCode, wParam, lParam);
     }
 
-    // ───────────────────────────── 泵侧的状态 ─────────────────────────────
+    // ───────────────────────────── pump-side state ─────────────────────────────
 
-    // 五类丢弃的计数。只为了退出时写进日志——排查"为什么没录到"时，
-    //   光看 raw/actions 两个数字看不出是被谁吃掉的。
+    // Counts of the five dropped categories. Only for the exit log -- when debugging "why nothing was
+    //   recorded", the raw/actions numbers alone do not show what ate the events.
     struct Dropped {
-        std::size_t injected = 0;  // 自家注入（'KBMR'）或用户选择滤掉的注入
-        std::size_t packet = 0;    // VK_PACKET（输入法合成，回放不了）
-        std::size_t hotkey = 0;    // 开始/停止热键的主键
-        std::size_t sampled = 0;   // 被移动采样丢掉的
+        std::size_t injected = 0;  // own injection ('KBMR') or injection the user chose to filter
+        std::size_t packet = 0;    // VK_PACKET (IME-synthesized, cannot be played back)
+        std::size_t hotkey = 0;    // main keys of the start/stop hotkeys
+        std::size_t sampled = 0;   // dropped by move sampling
     };
 
     struct CaptureState {
         const recorder::RecordOptions &opts;
 
-        std::vector<recorder::RawEvent> raw;  // 过滤翻译后的原料，最后交给 normalize
+        std::vector<recorder::RawEvent> raw;  // filtered/translated events, later handed to normalize
         Dropped dropped;
 
-        // 上一次"被接受"的鼠标移动时间。只在接受时推进——否则慢速拖动会因为
-        //   每一步都不足采样间隔而被全部吃掉。
+        // Time of the last "accepted" mouse move. Advanced only on accept -- otherwise a slow drag would
+        //   be eaten entirely because each step is below the sampling interval.
         std::uint32_t lastMoveTime = 0;
     };
 
-    // 侧键：mouseData 的高 16 位是 XBUTTON1 / XBUTTON2。
+    // Side buttons: the high 16 bits of mouseData are XBUTTON1 / XBUTTON2.
     [[nodiscard]] MouseButton buttonOf(const RawHookEvent &e) noexcept {
         switch (e.msg) {
             case WM_LBUTTONDOWN:
@@ -196,44 +196,44 @@ namespace {
         return (HIWORD(e.mouseData) == XBUTTON2) ? MouseButton::Side2 : MouseButton::Side1;
     }
 
-    // 判定表：返回 false 表示这条不要，丢弃原因计入计数。
-    //   顺序是刻意的——前三条与用户配置无关（硬性），所以排在开关前面。
+    // Decision table: returning false means drop it, the reason is counted.
+    //   order is deliberate -- the first three ignore user config (hard rules), so they precede the switches.
     [[nodiscard]] bool accept(CaptureState &state, const RawHookEvent &e) {
         const recorder::RecordOptions &opts = state.opts;
         const bool keyboard = (e.source == kSourceKeyboard);
 
-        // 1) 我们自己注入的事件：永远滤掉。不滤的话"边回放边录制"会自己录自己。
+        // 1) events we injected ourselves: always filtered. otherwise "record while playing" records itself.
         if (e.extraInfo == input::kInjectedSignature) {
             ++state.dropped.injected;
             return false;
         }
 
-        // 2) VK_PACKET：输入法合成出来的按键，vk 里没有真实键码，回放不出来。
+        // 2) VK_PACKET: keys synthesized by an IME, vk holds no real key code, they cannot be played back.
         if (keyboard && e.vk == VK_PACKET) {
             ++state.dropped.packet;
             return false;
         }
 
-        // 3) 已启用的全局热键主键：录制期间它们已被热键系统消费、前台程序收不到，
-        //    录进产物只会在回放时反过来触发自己（F1 会启动连点器、F10 会全部开始）。
-        //    只滤主键、不滤修饰键：停止热键若含 Ctrl，全程滤 Ctrl 会把用户正常按
-        //    的 Ctrl+C 吃成"只按了个 C"。修饰键残留由归一化按"头尾连续段"剔除。
+        // 3) main keys of enabled global hotkeys: consumed by the hotkey system during recording, never reaching
+        //    the app; recording them would only trigger us on playback (F1 starts the clicker, F10 starts all).
+        //    filter main keys only, never modifiers: with Ctrl in the stop hotkey, filtering Ctrl throughout would
+        //    eat a normal Ctrl+C as "only C". normalization strips the residual runs at head and tail.
         if (keyboard && e.vk != 0 &&
             std::ranges::find(opts.ignoredKeys, e.vk) != opts.ignoredKeys.end()) {
             ++state.dropped.hotkey;
             return false;
         }
 
-        // 4) 其它程序注入的事件：用户可选。默认不滤，因为"录不到"比"录到脏数据"
-        //    更难排查。键盘与鼠标的注入标志是两个不同的位，按来源取。
+        // 4) events injected by other programs: user's choice. off by default, because "nothing recorded" is
+        //    harder to debug than "dirty data recorded". the flags differ per source, so pick by source.
         const std::uint32_t injectedFlag = keyboard ? LLKHF_INJECTED : LLMHF_INJECTED;
         if (opts.ignoreInjected && (e.flags & injectedFlag) != 0) {
             ++state.dropped.injected;
             return false;
         }
 
-        // 5) 鼠标移动采样：距上一次"被接受"的移动不足间隔就丢掉。
-        //    time 会回绕，所以必须用无符号差值比较（不能用 < 直接比大小）。
+        // 5) mouse move sampling: dropped when the gap since the last "accepted" move is below the interval.
+        //    time wraps, so the comparison must use unsigned differences (not a plain < on the values).
         if (!keyboard && e.msg == WM_MOUSEMOVE) {
             const auto interval = static_cast<std::uint32_t>(std::max(0, opts.moveIntervalMs));
             if (interval > 0 && (e.time - state.lastMoveTime) < interval) {
@@ -246,7 +246,7 @@ namespace {
         return true;
     }
 
-    // 翻译表：RawHookEvent → 归一化用的 RawEvent。返回空表示这条不认识（丢弃）。
+    // Translation table: RawHookEvent → the RawEvent used by normalization. Empty means unknown (drop).
     [[nodiscard]] std::optional<recorder::RawEvent> translate(const RawHookEvent &e) {
         recorder::RawEvent r;
         r.time = e.time;
@@ -283,7 +283,7 @@ namespace {
                 break;
             case WM_MOUSEWHEEL:
                 r.kind = recorder::RawKind::Wheel;
-                r.wheelDelta = static_cast<std::int16_t>(HIWORD(e.mouseData));  // 有符号
+                r.wheelDelta = static_cast<std::int16_t>(HIWORD(e.mouseData));  // signed
                 r.horizontal = false;
                 break;
             case WM_MOUSEHWHEEL:
@@ -300,10 +300,10 @@ namespace {
         return r;
     }
 
-    // ─────────────────────────────── 泵 ───────────────────────────────
+    // ─────────────────────────────── pump ───────────────────────────────
 
-    // 把队列里现存的事件全部搬出来：批量取 → 判定 → 翻译 → 追加。
-    //   返回 true 表示原料数已达早停阈值（调用方据此退出）。
+    // Move every event currently in the queue out: bulk take → decide → translate → append.
+    //   returning true means the raw count reached the early-stop threshold (the caller exits on it).
     bool drainInto(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &queue) {
         static thread_local std::array<RawHookEvent, kDrainBatch> batch{};
 
@@ -323,7 +323,7 @@ namespace {
         return false;
     }
 
-    // 泵主循环。退出条件只有三个：收到停止信号、达到原料上限、等待失败。
+    // Pump main loop. Only three exit conditions: stop signal received, raw limit reached, wait failed.
     void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &queue,
                   const std::stop_token &st) {
         RateLimiter progress{kProgressInterval};
@@ -333,10 +333,10 @@ namespace {
         bool limitReached = false;
 
         while (true) {
-            // ① 先把队列搬空（过滤/翻译都在这里，不在回调里）
+            // ① drain the queue first (filtering/translation live here, not in the callback)
             limitReached = drainInto(state, queue);
 
-            // ② 进度：RateLimiter 保证每秒最多一条；首次调用立即放行
+            // ② progress: RateLimiter allows at most one per second; the first call passes immediately
             if (progress.allow()) {
                 const auto elapsed =
                     std::chrono::duration_cast<std::chrono::seconds>(ITimer::now() - started).count();
@@ -346,21 +346,21 @@ namespace {
                          state.dropped.hotkey, state.dropped.sampled, t_droppedQueueFull);
             }
 
-            // ③ 达到原料上限：精确截断留给 normalize
+            // ③ raw limit reached: exact truncation is left to normalize
             if (limitReached) {
                 LOG_WARN("recorder: action limit reached");
                 break;
             }
-            // ④ 已经有人请求停止（stop_callback 之外的第二道保险）
+            // ④ someone already requested stop (the second safety net besides stop_callback)
             if (st.stop_requested()) break;
 
-            // ⑤ 等输入：有消息立刻返回（≈0 延迟），没有就 1 秒后返回打进度
+            // ⑤ wait for input: returns at once with a message (≈0 delay), otherwise after 1s to log progress
             const DWORD waited = ::MsgWaitForMultipleObjects(
                 0, nullptr, FALSE, static_cast<DWORD>(kProgressInterval.count()), QS_ALLINPUT);
 
             if (waited == WAIT_OBJECT_0) {
-                // ⑥ 取出消息。低级钩子的回调就是在这里面被系统调用的
-                //    （PeekMessage 内部派发），所以这一步本身就是"收输入"。
+                // ⑥ take messages. the system calls the low-level hook callbacks right inside this
+                //    (PeekMessage dispatches internally), so this step is "receiving input" itself.
                 bool stopMessage = false;
                 while (::PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
                     if (msg.message == kStopMessage) {
@@ -370,14 +370,14 @@ namespace {
                 }
                 if (stopMessage) break;
             } else if (waited == WAIT_FAILED) {
-                // 不应该发生；真发生了当停止处理，至少不会无限转下去
+                // should not happen; if it does, treat it as stop so the loop cannot spin forever
                 LOG_WARN("recorder: message wait failed");
                 break;
             }
-            // WAIT_TIMEOUT：什么都不做，回到 ①（顺便到了下一次进度的时间点）
+            // WAIT_TIMEOUT: do nothing, go back to ① (which is also the next progress time point)
         }
 
-        // 退出前再搬一次：停止信号到达与最后一次入队之间可能还有残余
+        // drain once more before exiting: events may still be left between the stop signal and the last enqueue
         static_cast<void>(drainInto(state, queue));
     }
 
@@ -394,15 +394,15 @@ namespace {
 } // namespace
 
 // ============================================================================
-// 对外入口
+// Public entry point
 // ============================================================================
 
 std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer,
                                   const std::stop_token &st) {
-    // ── 1. 开始延迟 ─────────────────────────────────────────────────────
-    // 位置在装钩子之前：这段等待里还没有任何输入被我们拦着，晚几毫秒无所谓；
-    // 反过来如果先装钩子再等，就等于"前 200ms 什么都不录，但系统已经被拦着"。
-    // 主要目的是让开始热键那一组按键先抬起来，头尾剔除是第二道保险。
+    // ── 1. start delay ─────────────────────────────────────────────────────
+    // placed before installing hooks: nothing is intercepted during this wait, a few ms late does not matter;
+    // the other way round, installing hooks first means "nothing recorded for 200ms while the system is hooked".
+    // the main goal is letting the start hotkey's keys come up first, head/tail stripping is the second net.
     if (const int startDelayMs = std::max(0, opts.startDelayMs); startDelayMs > 0) {
         if (!timer.wait(ITimer::Duration{startDelayMs}, st)) {
             LOG_DEBUG("recorder: stopped during start delay");
@@ -410,24 +410,24 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
         }
     }
 
-    // ── 2. 先让本线程拥有消息队列 ────────────────────────────────────────
-    // Windows 的线程消息队列是懒创建的；没有队列时 PostThreadMessage 会失败，
-    // 停止信号就永远发不出去，StopRecord 会一直卡在 join 上。
-    // 这里用"最小的代价"把它摸出来：只看 WM_USER 这一个值、且不取走消息。
+    // ── 2. make this thread own a message queue first ────────────────────────────────────────
+    // a Windows thread message queue is created lazily; without one PostThreadMessage fails,
+    // the stop signal never gets posted and StopRecord stays blocked in join forever.
+    // touch it at minimal cost here: look only at WM_USER and do not remove the message.
     MSG msg{};
     ::PeekMessageW(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
 
-    // ── 3. 队列与回调入口 ───────────────────────────────────────────────
-    moodycamel::ConcurrentQueue<RawHookEvent> queue{kQueueCapacity};  // 预分配，回调里零分配
+    // ── 3. queue and callback entry ───────────────────────────────────────────────
+    moodycamel::ConcurrentQueue<RawHookEvent> queue{kQueueCapacity};  // preallocated, zero allocation in callbacks
     t_droppedQueueFull = 0;
     t_queue = &queue;
-    QueueGuard queueGuard;  // 任何路径离开本函数都会把 t_queue 置空
+    QueueGuard queueGuard;  // any exit path from this function clears t_queue
 
-    // ── 4. 装两个钩子 ──────────────────────────────────────────────────
-    // 顺序构造：第二个失败时第一个已经由 wil::unique_hhook 自动卸掉，
-    //   "要么都装上、要么都不装"是结构上成立的，不需要手写回滚。
-    // hMod 传自身 EXE 的句柄；低级钩子的回调在我们自己的线程里执行，
-    //   所以不需要（也没有）额外的 DLL。
+    // ── 4. install both hooks ──────────────────────────────────────────────────
+    // constructed in order: if the second fails the first is already removed by wil::unique_hhook,
+    //   "either both installed or neither" holds structurally, no hand-written rollback needed.
+    // hMod is our own EXE handle; low-level hook callbacks run on our own thread,
+    //   so no extra DLL is needed (and none exists).
     const DWORD threadId = ::GetCurrentThreadId();
 
     wil::unique_hhook keyboardHook{
@@ -438,10 +438,10 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
         ::SetWindowsHookExW(WH_MOUSE_LL, &onMouse, ::GetModuleHandleW(nullptr), 0)};
     THROW_LAST_ERROR_IF_NULL(mouseHook);
 
-    // ── 5. 停止回调：把阻塞在等待里的泵叫醒 ──────────────────────────────
-    // request_stop 可能在任意时刻发生（UI 线程的 StopRecord），甚至就在注册的
-    //   这一瞬间——std::stop_callback 在 stop 已被请求时会立即执行回调，
-    //   于是这条消息会先于泵就躺在队列里，泵第一次拿消息就会看到它。
+    // ── 5. stop callback: wake the pump blocked in the wait ──────────────────────────────
+    // request_stop may happen at any moment (StopRecord on the UI thread), even right at registration --
+    //   std::stop_callback runs the callback immediately when stop was already requested,
+    //   so this message is already in the queue before the pump starts and the first take sees it.
     std::stop_callback onStop{st, [threadId] {
         ::PostThreadMessageW(threadId, kStopMessage, 0, 0);
     }};
@@ -450,22 +450,22 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
              "maxActions={})",
              std::max(0, opts.startDelayMs), opts.moveIntervalMs, opts.ignoreInjected, opts.maxActions);
 
-    // ── 6. 泵：等输入、搬队列、打进度，直到停止或达到上限 ─────────────────
+    // ── 6. pump: wait for input, drain the queue, log progress until stopped or the limit is hit ─────────────────
     CaptureState state{opts};
     pumpLoop(state, queue, st);
 
-    // ── 7. 收尾顺序（顺序本身就是正确性） ────────────────────────────────
-    // ① 先断回调入口：从这一刻起即便还有回调进来，也不会往即将析构的队列里写
-    // ② 再卸钩子：此后系统不再调用我们的回调
-    // ③ 最后 drain 一次（在 pumpLoop 末尾已完成）：卸钩子前那一瞬间可能还有
-    //    事件刚入队、泵还没取走；不做这一步会丢尾部
+    // ── 7. teardown order (the order itself is the correctness) ────────────────────────────────
+    // ① cut the callback entry first: from now on even a late callback never writes to the queue about to die
+    // ② then remove the hooks: from here the system no longer calls our callbacks
+    // ③ finally drain once (already done at the end of pumpLoop): an event may have been queued just before
+    //    the hooks were removed and not yet taken by the pump; skipping this loses the tail
     t_queue = nullptr;
     mouseHook.reset();
     keyboardHook.reset();
 
-    // ── 8. 归一化 ──────────────────────────────────────────────────────
-    // 纯函数：头尾修饰键剔除、自动重复合并、点击/拖动判定、滚轮累积、
-    //   delayMs 计算、maxActions 精确截断，全在这里完成（不在钩子回调里）。
+    // ── 8. normalization ──────────────────────────────────────────────────────
+    // pure function: head/tail modifier stripping, auto-repeat merge, click/drag decision, wheel accumulation,
+    //   delayMs computation, exact maxActions truncation, all done here (not in the hook callback).
     std::vector<Action> actions = normalize(state.raw, makeNormalizeOptions(opts));
 
     LOG_INFO("recorder: recording finished, raw={}, actions={}, dropped injected={} packet={} "
@@ -473,6 +473,6 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
              state.raw.size(), actions.size(), state.dropped.injected, state.dropped.packet,
              state.dropped.hotkey, state.dropped.sampled, t_droppedQueueFull);
 
-    // 空表是合法结果："没录到动作"由面板决定提示什么
+    // an empty list is a valid result: "no action recorded" is for the panel to message
     return actions;
 }

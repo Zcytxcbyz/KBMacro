@@ -10,39 +10,39 @@
 #include "common/Log.hpp"
 
 // ============================================================
-// 实现要点
+// Implementation notes
 //
-// 坐标：SendInput 的绝对坐标是 0–65535 的归一化值，配合
-//   MOUSEEVENTF_VIRTUALDESK 映射到整个虚拟桌面（多显示器、负坐标都算在内），
-//   所以先用 SM_X/YVIRTUALSCREEN + SM_CX/CYVIRTUALSCREEN 换算。
-//   分母取"宽 - 1"：65535 对应最后一个像素；用"宽"的话最右/最下一列会落到
-//   屏幕外点不中。MulDiv 带四舍五入，比整数除法准半个像素。
+// Coordinates: SendInput's absolute coordinate is a normalized 0–65535 value, which together with
+//   MOUSEEVENTF_VIRTUALDESK maps onto the whole virtual desktop (multi-monitor, negative coords included),
+//   so it is first converted with SM_X/YVIRTUALSCREEN + SM_CX/CYVIRTUALSCREEN.
+//   the divisor is "width - 1": 65535 maps to the last pixel; with "width" the rightmost/bottom row would
+//   land outside the screen and miss. MulDiv rounds, half a pixel more accurate than integer division.
 //
-// 键盘：只填 wVk，不填 wScan、不加 KEYEVENTF_EXTENDEDKEY。系统会自己把 VK
-//   翻成扫描码；手工填扫描码却不加扩展前缀，反而会让读扫描码的程序认错键。
-//   真遇到某个程序不认（老游戏之类）再针对性补。
+// Keyboard: fill only wVk, no wScan, no KEYEVENTF_EXTENDEDKEY. the system translates the VK into a
+//   scan code itself; filling a scan code by hand without the extended prefix makes scan-code readers
+//   pick the wrong key instead. patch for a specific program (old games etc.) only if it really rejects it.
 //
-// 标记：所有事件都带 dwExtraInfo = kInjectedSignature。Recorder 的低级钩子会
-//   收到我们自己注入的事件（回放时尤其明显），钩子靠这个值过滤掉，否则
-//   边回放边录制会自己录自己。
+// Marker: every event carries dwExtraInfo = kInjectedSignature. recorder's low-level hook receives
+//   our own injected events (most visible during playback) and filters them out by this value, otherwise
+//   recording while playing would record itself.
 // ============================================================
 
 namespace {
-    // 与 win32/Input.hpp 中的公开常量是同一个值；这里只是取个别名，
-    // 让下面的 makeMouse / makeKeyboard 不用每次写限定名。
+    // Same value as the public constant in win32/Input.hpp; this is just an alias
+    // so makeMouse / makeKeyboard below do not need the qualified name every time.
     constexpr ULONG_PTR kInjectedSignature = input::kInjectedSignature;
 
-    // 干跑模式：打开 ENABLE_DRY_RUN 时只记日志、不调 SendInput——
-    // 连那次调用都不会编进去，所以对整个系统零影响。
-    // 除"发不发"之外，行为与真实模式完全一致：照样等 holdMs、照样记日志、
-    // 照样返回 true，日志格式只多一个 dry 标记。
+    // Dry-run mode: with ENABLE_DRY_RUN defined it only logs and never calls SendInput --
+    // the call is not even compiled in, so it has zero effect on the system.
+    // apart from "send or not" the behavior matches the real mode exactly: it still waits holdMs, logs,
+    // and returns true, the log format just gains a dry flag.
 #ifdef KBMACRO_DRY_RUN
     constexpr bool kDryRun = true;
 #else
     constexpr bool kDryRun = false;
 #endif
 
-    // 修饰键的按下顺序：Ctrl → Shift → Alt → Win；抬起时反过来。
+    // Modifier press order: Ctrl → Shift → Alt → Win; reversed on release.
     struct ModifierKey {
         unsigned mask;
         WORD vk;
@@ -55,7 +55,7 @@ namespace {
         {.mask = hk::kModWin,   .vk = VK_LWIN},
     };
 
-    // 合成一个鼠标事件。结构体必须整体清零（值初始化）。
+    // Build a mouse event. The struct must be fully zeroed (value-initialized).
     [[nodiscard]] INPUT makeMouse(const DWORD flags, const LONG dx = 0, const LONG dy = 0,
                                   const DWORD data = 0) {
         INPUT in{};
@@ -77,7 +77,7 @@ namespace {
         return in;
     }
 
-    // 每个鼠标键对应的 按下/抬起 标志，以及侧键编号。
+    // The down/up flags for each mouse button, plus the side-button index.
     struct ButtonFlags {
         DWORD down;
         DWORD up;
@@ -100,8 +100,8 @@ namespace {
         return {.down = MOUSEEVENTF_LEFTDOWN, .up = MOUSEEVENTF_LEFTUP, .data = 0};
     }
 
-    // 键盘事件序列：按下时修饰键在前、主键在后；抬起时主键在前、修饰键在后。
-    // 主键未设置（vk == 0）时只发修饰键；两者都没有就返回空表。
+    // Keyboard event sequence: on press modifiers lead, then the main key; on release main key leads, then modifiers.
+    // when no main key is set (vk == 0) only the modifiers are sent; if neither exists an empty list is returned.
     [[nodiscard]] std::vector<INPUT> keyEvents(const Hotkey &hk, const bool down) {
         const DWORD flags = down ? 0u : KEYEVENTF_KEYUP;
 
@@ -125,15 +125,15 @@ namespace {
         return main;
     }
 
-    // 日志里描述一个按键组合。
+    // Describe a key combination for the log.
     [[nodiscard]] std::string keyLabel(const Hotkey &hk) {
         return "vk=" + std::to_string(hk.vk) + " mods=" + std::to_string(hk.modifiers);
     }
 
-    // 发一组事件：一次 SendInput = 一行 DEBUG。
-    // 失败（返回值小于预期）→ 一行 WARN → 补发 cleanup（抬起类事件）→ 抛。
-    //   what    : 日志与异常里的动作描述
-    //   cleanup : 失败后补发的事件；nullptr = 无需收拾现场（移动、滚轮）
+    // Send a batch of events: one SendInput = one DEBUG line.
+    // failure (return value below expected) → one WARN line → replay cleanup (release-type events) → throw.
+    //   what    : action description for the log and the exception
+    //   cleanup : events replayed after a failure; nullptr = nothing to clean up (move, wheel)
     void sendEvents(std::vector<INPUT> events, std::string what,
                     std::vector<INPUT> *cleanup = nullptr) {
         if (events.empty()) {
@@ -143,7 +143,7 @@ namespace {
 
         const auto expected = static_cast<UINT>(events.size());
 
-        // 干跑：不调 SendInput，直接认为全部插入成功
+        // dry run: no SendInput call, assume everything was inserted
         UINT sent = expected;
         if constexpr (!kDryRun) {
             sent = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));
@@ -155,8 +155,8 @@ namespace {
             return;
         }
 
-        // 插入失败基本只有两种原因：前台窗口完整性更高（UIPI 挡掉注入）、
-        // 或者 BlockInput 生效。两者都是持续性的，重试没有意义。
+        // insertion fails for basically two reasons: the foreground window has higher integrity (UIPI blocks
+        // the injection), or BlockInput is active. both are persistent, retrying is pointless.
         const DWORD error = ::GetLastError();
         LOG_WARN("input: {} failed: sent={}/{}, GetLastError={}", what, sent, expected, error);
 
@@ -203,7 +203,7 @@ void moveTo(const int x, const int y) {
     const int screenW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
     const int screenH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-    // 65535 对应最后一个像素 → 分母是 宽/高 - 1；1 像素宽的退化情况用 1 兜底。
+    // 65535 maps to the last pixel → the divisor is width/height - 1; a 1-pixel edge case falls back to 1.
     const int spanW = (screenW > 1) ? screenW - 1 : 1;
     const int spanH = (screenH > 1) ? screenH - 1 : 1;
 
@@ -212,7 +212,7 @@ void moveTo(const int x, const int y) {
 
     std::string what = "move to (" + std::to_string(x) + ", " + std::to_string(y) + ")";
     if constexpr (kDryRun) {
-        // 干跑时把归一化结果也记出来：排查"坐标偏"不用再手推公式
+        // in dry run also log the normalized result: no need to recompute the formula by hand when coords are off
         what += " norm=(" + std::to_string(normX) + ", " + std::to_string(normY) + ")";
     }
 
@@ -222,15 +222,15 @@ void moveTo(const int x, const int y) {
 }
 
 void moveBy(const int dx, const int dy) {
-    // 相对移动：只发 MOUSEEVENTF_MOVE，不带 ABSOLUTE / VIRTUALDESK，
-    // dx/dy 就是物理像素位移（系统会在屏幕边缘自动截断）。
+    // relative move: send MOUSEEVENTF_MOVE only, without ABSOLUTE / VIRTUALDESK,
+    // dx/dy are physical pixel deltas (the system clamps them at the screen edge).
     sendEvents({makeMouse(MOUSEEVENTF_MOVE, dx, dy)},
                "move by (" + std::to_string(dx) + ", " + std::to_string(dy) + ")");
 }
 
 void buttonDown(const MouseButton button) {
     const auto [down, up, data] = buttonFlags(button);
-    // 按下失败时补一次抬起：无论是完全没按下去还是只落了一部分，抬起都无害。
+    // on a failed press replay one release: harmless whether nothing went down or only part of it did.
     std::vector<INPUT> cleanup{makeMouse(up, 0, 0, data)};
     sendEvents({makeMouse(down, 0, 0, data)},
                std::string(mouseButtonToString(button)) + " down", &cleanup);
@@ -248,8 +248,8 @@ void wheel(const WheelDirection direction, const int steps) {
     const bool negative = (direction == WheelDirection::Down || direction == WheelDirection::Left);
     const LONG delta    = steps * WHEEL_DELTA;
 
-    // 纵向用 MOUSEEVENTF_WHEEL（正 = 上滚），横向用 MOUSEEVENTF_HWHEEL（正 = 右滚）。
-    // 多步累加进一条事件的 mouseData，一次 SendInput 一行日志。
+    // vertical uses MOUSEEVENTF_WHEEL (positive = up), horizontal uses MOUSEEVENTF_HWHEEL (positive = right).
+    // multiple steps accumulate into one event's mouseData, one SendInput per log line.
     sendEvents({makeMouse(vertical ? MOUSEEVENTF_WHEEL : MOUSEEVENTF_HWHEEL, 0, 0,
                           static_cast<DWORD>(negative ? -delta : delta))},
                std::string(wheelDirectionToString(direction)) + " x" + std::to_string(steps));
@@ -263,7 +263,7 @@ void keyDown(const Hotkey &hk) {
 
 void keyUp(const Hotkey &hk) {
     std::vector<INPUT> events = keyEvents(hk, false);
-    std::vector<INPUT> retry  = events;   // 抬起失败就再补一次抬起
+    std::vector<INPUT> retry  = events;   // on a failed release replay one more release
     sendEvents(std::move(events), "key up " + keyLabel(hk), &retry);
 }
 
@@ -272,7 +272,7 @@ bool click(const MouseButton button, const int holdMs, const ITimer &timer,
     if (st.stop_requested()) return false;
 
     buttonDown(button);
-    // 按住时长走计时器。被打断也要抬起：不能把鼠标键留在按下状态。
+    // the hold duration runs on the timer. release even when interrupted: never leave a mouse button down.
     const bool completed = timer.wait(ITimer::Duration{holdMs}, st);
     buttonUp(button);
     return completed;

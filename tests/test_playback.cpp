@@ -1,14 +1,14 @@
 // ============================================================
-// 回放模块测试：
-//   - 轮数与动作条数口径、delayMs 前置等待、每轮补平
-//   - 开始延迟只在最前面等一次，被打断时直接返回 0
+// Playback module tests:
+//   - round count vs action count, delayMs pre-wait, release stuck keys each round
+//   - the start delay waits once up front and returns 0 at once if interrupted
 //
-// 三个前提：
-//   1. 不测 Timed 的轮数与截断：ITimer::now() 是静态的，FakeTimer 改不了时钟；
-//      clampWait 的裁剪由 RunController 的用例覆盖。
-//   2. input::click 内部的按住等待也走 FakeTimer，所以 waited() 里混着
-//      holdMs（5ms）和动作间隔（95ms）两种时长，分开数。
-//   3. 本目标已定义 KBMACRO_DRY_RUN，输入事件只记日志不真发。
+// Three assumptions:
+//   1. Timed rounds and clamping are not tested: ITimer::now() is static, so FakeTimer
+//      cannot move the clock; RunController cases cover clampWait trimming.
+//   2. the hold wait inside input::click also uses FakeTimer, so waited() mixes
+//      holdMs (5ms) and the action gap (95ms); count them separately.
+//   3. this target defines KBMACRO_DRY_RUN, so input events are only logged, not sent.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -25,8 +25,8 @@
 
 namespace {
 
-    constexpr ITimer::Duration kHold{5};     // 一次按住的等待
-    constexpr ITimer::Duration kDelay{95};   // 动作之间的间隔
+    constexpr ITimer::Duration kHold{5};     // one hold wait
+    constexpr ITimer::Duration kDelay{95};   // gap between actions
     constexpr ITimer::Duration kStartDelay{300};
 
     RunSpec countedRun(const int count) {
@@ -37,7 +37,7 @@ namespace {
         return Action{.type = ActionType::MouseMove, .x = 10, .y = 20, .delayMs = delayMs};
     }
 
-    // 按住 5ms 的点击：input::click 里会多出一次 5ms 等待
+    // a click with a 5ms hold: input::click adds one extra 5ms wait
     Action clickAction(const int delayMs) {
         return Action{.type = ActionType::MouseClick,
                       .x = 0,
@@ -56,7 +56,7 @@ namespace {
 
 } // namespace
 
-// ---- 空列表与零轮 ----
+// ---- empty list and zero rounds ----
 
 TEST(PlaybackRun, EmptyListReturnsZero) {
     const std::vector<Action> actions;
@@ -74,10 +74,10 @@ TEST(PlaybackRun, CountedZeroDoesNothing) {
     EXPECT_EQ(timer.waitCalls(), 0);
 }
 
-// ---- 轮数与等待 ----
+// ---- rounds and waits ----
 
 TEST(PlaybackRun, CountedRepeatsScript) {
-    // 两条动作，跑 2 轮 → 4 条、4 次延迟等待
+    // two actions, 2 rounds → 4 actions, 4 delay waits
     const std::vector<Action> actions{moveAction(95), moveAction(95)};
     FakeTimer timer;
 
@@ -87,7 +87,7 @@ TEST(PlaybackRun, CountedRepeatsScript) {
 }
 
 TEST(PlaybackRun, ZeroDelaySkipsWait) {
-    // delayMs == 0 不产生等待（wait(0) 没有意义）
+    // delayMs == 0 produces no wait (wait(0) is meaningless)
     const std::vector<Action> actions{moveAction(0), moveAction(0), moveAction(0)};
     FakeTimer timer;
 
@@ -100,13 +100,13 @@ TEST(PlaybackRun, ClickHoldWaitIsDistinctFromDelay) {
     FakeTimer timer;
 
     EXPECT_EQ(playback::run(actions, countedRun(2), timer, std::stop_token{}), 2);
-    EXPECT_EQ(timer.countWaits(kHold), 2u);    // 每轮一次按住等待
-    EXPECT_EQ(timer.countWaits(kDelay), 2u);   // 每轮一次前置间隔
+    EXPECT_EQ(timer.countWaits(kHold), 2u);    // one hold wait per round
+    EXPECT_EQ(timer.countWaits(kDelay), 2u);   // one pre-action gap per round
     EXPECT_EQ(timer.waitCalls(), 4);
 }
 
 TEST(PlaybackRun, KeyboardPairDoesNotLeak) {
-    // Down 的 delay 为 0，Up 的 delay 为 95 → 只有一次等待
+    // Down has delay 0, Up has delay 95 → only one wait
     const std::vector<Action> actions{keyAction(KeyEventType::Down, 0),
                                       keyAction(KeyEventType::Up, 95)};
     FakeTimer timer;
@@ -116,11 +116,11 @@ TEST(PlaybackRun, KeyboardPairDoesNotLeak) {
     EXPECT_EQ(timer.waitCalls(), 1);
 }
 
-// ---- 打断 ----
+// ---- interruption ----
 
 TEST(PlaybackRun, StopDuringDelay) {
     const std::vector<Action> actions{moveAction(95)};
-    FakeTimer timer(1);   // 第 1 次 wait 就返回 false
+    FakeTimer timer(1);   // wait 1 already returns false
 
     EXPECT_EQ(playback::run(actions, RunSpec{.mode = RunMode::Infinite}, timer,
                             std::stop_token{}), 0);
@@ -128,7 +128,7 @@ TEST(PlaybackRun, StopDuringDelay) {
 }
 
 TEST(PlaybackRun, ClickInterruptedInsideHold) {
-    // 第 1 次 wait 是前置延迟（成功），第 2 次是 click 的按住等待（被打断）
+    // wait 1 is the pre-delay (success), wait 2 is the click hold wait (interrupted)
     const std::vector<Action> actions{clickAction(95)};
     FakeTimer timer(2);
 
@@ -137,7 +137,7 @@ TEST(PlaybackRun, ClickInterruptedInsideHold) {
     EXPECT_EQ(timer.waitCalls(), 2);
 }
 
-// ---- 开始延迟 ----
+// ---- start delay ----
 
 TEST(PlaybackRun, StartDelayBeforeFirstAction) {
     const std::vector<Action> actions{moveAction(95)};
@@ -161,7 +161,7 @@ TEST(PlaybackRun, StartDelayInterruptedReturnsZero) {
     EXPECT_EQ(timer.waitCalls(), 1);
 }
 
-// ---- 拖动：MouseDown / MouseUp 是独立的原子动作 ----
+// ---- drag: MouseDown / MouseUp are independent atomic actions ----
 
 TEST(Playback, MouseDownUpCountsTwoActions) {
     const std::vector<Action> actions{
@@ -194,7 +194,7 @@ TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
     };
 
     FakeTimer timer;
-    // 3 轮 × 2 条动作
+    // 3 rounds × 2 actions
     EXPECT_EQ(playback::run(actions, countedRun(3), timer, std::stop_token{}), 6);
     EXPECT_EQ(timer.countWaits(kDelay), 3u);
 }
@@ -207,7 +207,7 @@ TEST(PlaybackRun, DelayActsAsPureWait) {
     FakeTimer timer;
     EXPECT_EQ(playback::run(script, countedRun(1), timer, std::stop_token{}), 1);
 
-    // 延迟动作只产生一次等待，不产生任何输入事件
+    // a delay action produces one wait and no input events
     ASSERT_EQ(timer.waited().size(), 1u);
     EXPECT_EQ(timer.waited()[0], ITimer::Duration{200});
 }
@@ -226,7 +226,7 @@ TEST(PlaybackRun, RelativeClickKeepsHoldWait) {
     FakeTimer timer;
     EXPECT_EQ(playback::run(script, countedRun(1), timer, std::stop_token{}), 1);
 
-    // 相对点击 = 相对偏移 + 按住等待；waited() 里只有那一次 holdMs
+    // relative click = relative offset + hold wait; waited() holds only that one holdMs
     ASSERT_EQ(timer.waited().size(), 1u);
     EXPECT_EQ(timer.waited()[0], ITimer::Duration{40});
 }

@@ -4,11 +4,11 @@
 
 #include "common/Types.hpp"
 
-// 键盘模拟器参数
+// keyboard simulator parameters
 struct KeyboardParams {
-    Hotkey hotkey;          // 要发送的按键组合
-    int intervalMs = 100;   // 重复间隔
-    int holdMs = 50;        // 按键保持时间
+    Hotkey hotkey;          // key combination to send
+    int intervalMs = 100;   // repeat interval
+    int holdMs = 50;        // key hold duration
     RunSpec run;
 };
 

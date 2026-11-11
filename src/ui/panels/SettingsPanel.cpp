@@ -23,7 +23,7 @@
 #include "ui/ListHelpers.hpp"
 
 namespace {
-    // 计时器模式下拉框的索引，与 kTimerModeEntries 顺序一致
+    // Timer mode combo box indexes, matching the order of kTimerModeEntries
     constexpr int kTimerModeSleep  = 0;
     constexpr int kTimerModeSpin   = 1;
     constexpr int kTimerModeHybrid = 2;
@@ -52,8 +52,8 @@ SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
       m_hotkeyMgr(hotkeyMgr) {
     buildUi();
 
-    // 五个分组比一屏高：竖向滚动，步长一行 ≈ 10 DIP；
-    // 横向不滚（0 = 关闭），标签文字靠 sizer 的 growable col 自适应
+    // The five groups are taller than one screen: vertical scrolling, one row ≈ 10 DIP per step;
+    // no horizontal scrolling (0 = off); label text adapts via the sizer's growable col
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
 
@@ -73,11 +73,11 @@ void SettingsPanel::buildUi() {
 
     SetSizer(root);
 
-    // ---- 事件绑定 ----
+    // ---- Event binding ----
     m_choiceLanguage->Bind(wxEVT_CHOICE, &SettingsPanel::onLanguageChanged, this);
     m_choiceTimerMode->Bind(wxEVT_CHOICE, &SettingsPanel::onTimerModeChanged, this);
-    // wxMSW 的 wxSpinCtrl：按上下箭头发 wxEVT_SPINCTRL，手输数字发 wxEVT_TEXT
-    // （手输越界值两者都不发，靠焦点离开时的夹取兜底）。两个都接。
+    // wxMSW's wxSpinCtrl: clicking the arrows sends wxEVT_SPINCTRL, typing digits sends wxEVT_TEXT
+    // (typing an out-of-range value sends neither; the focus-out clamp catches it). Bind both.
     m_spinHybridMs->Bind(wxEVT_SPINCTRL, &SettingsPanel::onHybridSpinChanged, this);
     m_spinHybridMs->Bind(wxEVT_TEXT, &SettingsPanel::onHybridSpinChanged, this);
     m_chkAlwaysOnTop->Bind(wxEVT_CHECKBOX, &SettingsPanel::onAlwaysOnTopToggled, this);
@@ -87,7 +87,7 @@ void SettingsPanel::buildUi() {
     m_btnClearSpinConfirm->Bind(wxEVT_BUTTON, &SettingsPanel::onClearSpinConfirm, this);
     m_btnResetDefaults->Bind(wxEVT_BUTTON, &SettingsPanel::onResetDefaults, this);
     m_btnDeletePortableConfig->Bind(wxEVT_BUTTON, &SettingsPanel::onDeletePortableConfig, this);
-    // 录制四项：spins 同样要 SPINCTRL + TEXT 双绑（手输走 TEXT）
+    // Recording group: the spins also need the SPINCTRL + TEXT double binding (typing goes through TEXT)
     m_spinRecMoveInterval->Bind(wxEVT_SPINCTRL, &SettingsPanel::onRecorderMoveIntervalChanged, this);
     m_spinRecMoveInterval->Bind(wxEVT_TEXT, &SettingsPanel::onRecorderMoveIntervalChanged, this);
     m_spinRecStartDelay->Bind(wxEVT_SPINCTRL, &SettingsPanel::onRecorderStartDelayChanged, this);
@@ -98,7 +98,7 @@ void SettingsPanel::buildUi() {
 }
 
 // ============================================================
-// 分组一：通用
+// Group 1: general
 // ============================================================
 void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_GENERAL));
@@ -107,7 +107,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
     form->AddGrowableCol(1, 1);
 
-    // 语言：从 kLangs 遍历，索引 ↔ 语言一一对应
+    // Language: iterate kLangs, index ↔ language is one-to-one
     m_choiceLanguage = new wxChoice(staticBox, wxID_ANY);
     for (const auto &lang: kLangs) {
         m_choiceLanguage->Append(wxString(lang.displayName.data(), lang.displayName.size()));
@@ -121,7 +121,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_RESTART)),
               1, wxEXPAND);
 
-    // 计时器模式
+    // Timer mode
     m_choiceTimerMode = new wxChoice(staticBox, wxID_ANY);
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SLEEP));
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SPIN));
@@ -131,7 +131,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
               0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_choiceTimerMode, 1, wxEXPAND);
 
-    // 混合模式：末尾忙等时长（仅 Hybrid 时可编辑，见 refreshFromConfig）
+    // Hybrid mode: end-of-run busy-wait duration (editable only in Hybrid; see refreshFromConfig)
     m_spinHybridMs = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                     wxDefaultPosition, FromDIP(wxSize(80, -1)),
                                     wxSP_ARROW_KEYS,
@@ -143,7 +143,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
 
-    // 窗口置顶
+    // Always on top
     m_chkAlwaysOnTop = new wxCheckBox(staticBox, wxID_ANY, TR(IDS_SETTINGS_CHK_ONTOP));
     box->Add(m_chkAlwaysOnTop, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
 
@@ -151,7 +151,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
 }
 
 // ============================================================
-// 分组二：热键
+// Group 2: hotkeys
 // ============================================================
 void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_HOTKEYS));
@@ -164,7 +164,7 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, FromDIP(200));
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_HOTKEY), wxLIST_FORMAT_LEFT, FromDIP(150));
 
-    // 列表内容由 refreshHotkeyList() 填，构造末尾会调一次
+    // The list content is filled by refreshHotkeyList(), called once at the end of construction
 
     box->Add(m_hotkeyList, 0, wxEXPAND | wxALL, 8);
 
@@ -182,19 +182,19 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED,
                        &SettingsPanel::onHotkeySelectionChanged, this);
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED,
-                       &SettingsPanel::onHotkeyChecked, this);      // ← 新增
+                       &SettingsPanel::onHotkeyChecked, this);      // ← added
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED,
-                       &SettingsPanel::onHotkeyChecked, this);      // ← 新增
+                       &SettingsPanel::onHotkeyChecked, this);      // ← added
 
-    // 鼠标停在列表上也要能滚页面
+    // Still scroll the page when the mouse is over the list
     uifit::forwardWheelToPage(m_hotkeyList);
 
-    // 初始无选中 → 按钮禁用
+    // Initially nothing selected → button disabled
     m_btnModifyHotkey->Enable(false);
 }
 
 // ============================================================
-// 分组三：配置管理
+// Group 3: config management
 // ============================================================
 void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_CONFIG));
@@ -226,7 +226,7 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
 }
 
 // ============================================================
-// 分组：录制
+// Group: recording
 // ============================================================
 void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_RECORD));
@@ -235,7 +235,7 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
     auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
     form->AddGrowableCol(1, 1);
 
-    // 鼠标移动采样间隔：0 = 不采样
+    // Mouse move sampling interval: 0 = no sampling
     m_spinRecMoveInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                            wxDefaultPosition, FromDIP(wxSize(80, -1)),
                                            wxSP_ARROW_KEYS,
@@ -248,7 +248,7 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MOVE_INTERVAL)),
               1, wxEXPAND);
 
-    // 开始延迟：过滤开始热键自身的按键
+    // Start delay: filters the keys of the start hotkey itself
     m_spinRecStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                          wxDefaultPosition, FromDIP(wxSize(80, -1)),
                                          wxSP_ARROW_KEYS,
@@ -258,7 +258,7 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
               0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_spinRecStartDelay, 0, wxALIGN_CENTER_VERTICAL);
 
-    // 动作上限：0 = 不限
+    // Max actions: 0 = unlimited
     m_spinRecMaxActions = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
                                          wxDefaultPosition, FromDIP(wxSize(110, -1)),
                                          wxSP_ARROW_KEYS,
@@ -273,7 +273,7 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
 
-    // 注入事件过滤（自家注入的永远不录，这个开关管的是"别的程序注入的"）
+    // Injected event filter (our own injections are never recorded; this covers "injected by other apps")
     m_chkRecIgnoreInjected = new wxCheckBox(staticBox, wxID_ANY,
                                             TR(IDS_SETTINGS_CHK_REC_IGNORE_INJECTED));
     box->Add(m_chkRecIgnoreInjected, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
@@ -282,7 +282,7 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
 }
 
 // ============================================================
-// 分组四：重置
+// Group 4: reset
 // ============================================================
 void SettingsPanel::buildResetGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_RESET));
@@ -303,13 +303,13 @@ void SettingsPanel::buildResetGroup(wxSizer *parent) {
 }
 
 // ============================================================
-// 从 ConfigManager 同步到控件
+// Sync from ConfigManager to the widgets
 // ============================================================
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::refreshFromConfig() {
     const auto &cfg = ConfigManager::instance().config();
 
-    // 语言：按 LanguageManager 当前状态定位
+    // Language: select the entry matching LanguageManager's current state
     const Lang cur = LanguageManager::instance().currentLang();
     for (std::size_t i = 0; i < std::size(kLangs); ++i) {
         if (kLangs[i].id == cur) {
@@ -318,17 +318,17 @@ void SettingsPanel::refreshFromConfig() {
         }
     }
 
-    // 计时器模式
+    // Timer mode
     m_choiceTimerMode->SetSelection(timerModeToIndex(cfg.timerMode));
 
-    // 末尾忙等时长：只有 Hybrid 模式下才有意义
+    // End-of-run busy-wait duration: only meaningful in Hybrid mode
     m_spinHybridMs->SetValue(cfg.timerHybridSpinMs);
     m_spinHybridMs->Enable(cfg.timerMode == TimerMode::Hybrid);
 
-    // 窗口置顶
+    // Always on top
     m_chkAlwaysOnTop->SetValue(cfg.alwaysOnTop);
 
-    // 录制四项：只影响"下一次开始录制"（RecordOptions 在点开始时才组装）
+    // Recording options only affect "the next recording start" (RecordOptions is built on start)
     m_spinRecMoveInterval->SetValue(cfg.recordMoveIntervalMs);
     m_spinRecStartDelay->SetValue(cfg.recordStartDelayMs);
     m_spinRecMaxActions->SetValue(cfg.recordMaxActions);
@@ -350,7 +350,7 @@ void SettingsPanel::refreshHotkeyList() {
         m_hotkeyList->CheckItem(row, cfg.hotkeyEnabled[i]);
     }
 
-    // 11 行全部撑开显示，列表内部不出滚动条（滚动统一交给页面）
+    // Spread all 11 rows out, no scrollbar inside the list (the page handles scrolling)
     uifit::fitListToRows(m_hotkeyList);
 }
 
@@ -361,7 +361,7 @@ void SettingsPanel::refreshConfigPathText() {
 }
 
 // ============================================================
-// 事件处理
+// Event handling
 // ============================================================
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
@@ -372,12 +372,12 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     const Lang newLang = kLangs[sel].id;
     const Lang curLang = LanguageManager::instance().currentLang();
 
-    // 用户切回当前语言：什么也不做
+    // User switched back to the current language: do nothing
     if (newLang == curLang) return;
 
-    // 三选一：立即重启 / 稍后重启 / 取消。
-    // 不用 wxMessageDialog：它的父类只提供 SetOKLabel / SetYesNoLabels /
-    // SetYesNoCancelLabels，没有 SetCancelLabel，取消按钮会一直是英文 Cancel。
+    // Three-way choice: restart now / restart later / cancel.
+    // Not wxMessageDialog: its parent classes only provide SetOKLabel / SetYesNoLabels /
+    // SetYesNoCancelLabels, no SetCancelLabel, so the cancel button would always read "Cancel".
     wxDialog dlg(this, wxID_ANY, TR(IDS_APP_TITLE));
 
     auto *text = new wxStaticText(&dlg, wxID_ANY, TR(IDS_SETTINGS_MSG_RESTART_ASK));
@@ -394,19 +394,19 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     root->Add(text, 0, wxALL, FromDIP(16));
     root->Add(btnRow, 0, wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, FromDIP(12));
 
-    // wxDialog 只自动 EndModal 肯定按钮（默认 wxID_OK）与退出按钮（默认 wxID_CANCEL），
-    // wxID_YES / wxID_NO 不在其中，所以显式绑定，否则点了没反应。
+    // wxDialog auto-calls EndModal only for the affirmative button (wxID_OK) and the escape button
+    // (wxID_CANCEL); wxID_YES / wxID_NO are not included, so bind them explicitly or clicks do nothing.
     btnNow->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_YES); });
     btnLater->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_NO); });
     btnCancel->Bind(wxEVT_BUTTON, [&dlg](wxCommandEvent &) { dlg.EndModal(wxID_CANCEL); });
 
     dlg.SetSizerAndFit(root);
     dlg.CentreOnParent();
-    btnNow->SetDefault();        // 回车 = 立即重启
+    btnNow->SetDefault();        // Enter = restart now
     const int ret = dlg.ShowModal();
 
     if (ret == wxID_CANCEL) {
-        // 回退控件到当前语言
+        // Revert the widget to the current language
         for (std::size_t i = 0; i < std::size(kLangs); ++i) {
             if (kLangs[i].id == curLang) {
                 m_choiceLanguage->SetSelection(static_cast<int>(i));
@@ -417,47 +417,47 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
         return;
     }
 
-    // 落盘（用户主动选过 = 记住）
+    // Persist (an explicit user choice = remember it)
     ConfigManager::instance().setLanguage(kLangs[sel].code);
     LOG_INFO("settings: language changed to '{}'", kLangs[sel].code);
 
     if (ret == wxID_YES) {
-        // 立即重启
+        // Restart now
         const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
         LOG_INFO("settings: restarting immediately, exe={}",
                  utils::ToUtf8(exePath.ToStdWstring()));
 
-        // 接下来走 ExitMainLoop，不会触发 wxEVT_CLOSE_WINDOW，
-        // 而新进程紧接着就要读配置。所以主动保存一次窗口状态。
-        // 顺序很关键：保存 → 让出热键 → 启动新进程 → 退出旧进程。
+        // The path below goes through ExitMainLoop, which does not fire wxEVT_CLOSE_WINDOW,
+        // and the new process reads the config right away. So save the window state explicitly.
+        // The order matters: save → yield hotkeys → launch the new process → exit the old one.
         if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
             frame->saveWindowState();
         }
 
-        // 重启前必须先让出这 11 个全局热键：RegisterHotKey 是系统独占的，
-        // 新进程起来后几十毫秒内就会注册，旧进程还占着就会全部失败（1409）。
-        // 注销必须在启动新进程之前完成，顺序不能换。
+        // These 11 global hotkeys must be yielded before restarting: RegisterHotKey is exclusive,
+        // and the new process registers within tens of milliseconds; if the old process still holds
+        // them, all registrations fail (1409). Unregister before launching, the order must not change.
         m_hotkeyMgr.unregisterAll();
 
         if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
-            // 新进程已启动。
-            // 用 ExitMainLoop 而非 Close(true)：
-            //   Close 是"请求关闭窗口"，依赖事件循环处理，
-            //   在事件 handler 内调用容易被推迟或不生效（表现为新旧窗口并存）。
-            //   ExitMainLoop 直接退出事件循环，保证旧进程一定退出。
-            // OnExit 会被正常调用，日志 flush 不丢。
+            // New process started.
+            // Use ExitMainLoop rather than Close(true):
+            //   Close is a "request to close the window" handled by the event loop;
+            //   calling it inside an event handler is easily deferred or ignored (old window stays).
+            //   ExitMainLoop exits the event loop directly, guaranteeing the old process quits.
+            // OnExit is still called normally, so logs are flushed.
             wxTheApp->ExitMainLoop();
         } else {
-            // 新进程启动失败：不退出，让用户继续用当前实例
-            // 配置已落盘，用户下次手动启动仍是新语言。
-            // 但热键刚被我们注销掉了，必须注册回来，否则当前实例的热键静默失效。
+            // Failed to launch the new process: do not exit, let the user keep using this instance
+            // The config is already saved, so the next manual start still uses the new language.
+            // But we just unregistered the hotkeys, so register them back or this instance loses them.
             LOG_ERROR("settings: failed to launch new instance");
             m_hotkeyMgr.registerAll();
             LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}",
                      m_hotkeyMgr.failedCount());
         }
     }
-    // wxID_NO = 稍后重启：什么都不做，配置已落盘
+    // wxID_NO = restart later: do nothing, the config is already saved
 }
 
 void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
@@ -469,37 +469,37 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
     const TimerMode newMode = indexToTimerMode(sel);
     auto &cfgMgr = ConfigManager::instance();
 
-    // Spin 与 Hybrid 都会烧 CPU（Hybrid 只烧末尾那一段），共用同一条警告
+    // Spin and Hybrid both burn CPU (Hybrid only at the end); they share one warning
     if (newMode != TimerMode::Sleep && !cfgMgr.config().flags.spinWarningConfirmed) {
-        // 用 wxRichMessageDialog：带复选框，让用户主动选择是否记住
+        // Use wxRichMessageDialog: it has a checkbox so the user can ask to remember the choice
         wxRichMessageDialog dlg(this,
                                 TR(IDS_SETTINGS_MSG_SPIN_WARNING),
                                 TR(IDS_APP_TITLE),
                                 wxYES_NO | wxICON_WARNING);              // wxOK|wxCANCEL → wxYES_NO
-        // ↓ 新增这一行，让两个按钮也跟着语言走
+        // ↓ added this line so both buttons follow the language
         dlg.SetYesNoLabels(uibtn::label(IDS_COMMON_BTN_YES), uibtn::label(IDS_COMMON_BTN_NO));
         dlg.ShowCheckBox(TR(IDS_SETTINGS_CHK_SPIN_DONT_ASK));
         const int ret = dlg.ShowModal();
 
         if (ret != wxID_YES) {
-            // 用户取消：控件回退到当前生效的模式，配置不动
+            // User cancelled: revert the widget to the active mode, leave the config untouched
             m_choiceTimerMode->SetSelection(timerModeToIndex(cfgMgr.config().timerMode));
             return;
         }
 
-        // 只有勾选了"不再提醒"才记住；否则下次切换还会弹
+        // Remember only when "don't ask again" is checked; otherwise the next switch prompts again
         if (dlg.IsCheckBoxChecked()) {
             LOG_DEBUG("settings: spin warning marked as acknowledged");
             cfgMgr.setSpinWarningConfirmed(true);
         }
     }
 
-    // 末尾忙等时长只对 Hybrid 有意义
+    // The end-of-run busy-wait duration only matters for Hybrid
     m_spinHybridMs->Enable(newMode == TimerMode::Hybrid);
 
     cfgMgr.setTimerMode(newMode);
 
-    // 通知主窗口重建计时器实例：只影响此后启动的任务
+    // Tell the main window to rebuild the timer instance: it only affects tasks started after this
     if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
         frame->rebuildTimer();
     } else {
@@ -511,19 +511,19 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
 // ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
-    (void)event;   // 两个事件类型不同，统一读控件当前值，不依赖 event.GetInt()
+    (void)event;   // the two event types differ, so read the widget value instead of event.GetInt()
 
     const int ms = m_spinHybridMs->GetValue();
     auto &cfgMgr = ConfigManager::instance();
 
-    // 手输数字时 wxEVT_TEXT 每敲一个字符就发一次，值没变就什么都不做
-    // （"25" 会先收到 2、再收到 25，只有真正变化的那次才落盘 + 重建）。
+    // Typing digits fires wxEVT_TEXT on every keystroke; do nothing when the value is unchanged
+    // ("25" arrives as 2, then 25; only a real change persists + rebuilds).
     if (ms == cfgMgr.config().timerHybridSpinMs) return;
 
     LOG_DEBUG("settings: hybrid spin tail = {}ms", ms);
     cfgMgr.setTimerHybridSpinMs(ms);
 
-    // 阈值是 HybridTimer 的构造参数，不重建就不生效
+    // The threshold is a HybridTimer constructor argument, so it takes effect only after a rebuild
     if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
         frame->rebuildTimer();
     }
@@ -532,12 +532,12 @@ void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::onRecorderMoveIntervalChanged(wxCommandEvent &event) {
-    (void)event;   // SPINCTRL 与 TEXT 共用，统一读控件当前值
+    (void)event;   // SPINCTRL and TEXT share this handler, so always read the widget value
 
     const int ms = m_spinRecMoveInterval->GetValue();
     auto &cfgMgr = ConfigManager::instance();
 
-    // 手输时每敲一个字符发一次，值没变就什么都不做
+    // Typing fires once per keystroke; do nothing when the value is unchanged
     if (ms == cfgMgr.config().recordMoveIntervalMs) return;
 
     LOG_DEBUG("settings: record move interval = {}ms", ms);
@@ -591,10 +591,10 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
     const bool on = event.IsChecked();
     LOG_DEBUG("settings: always on top = {}", on);
 
-    // 落盘
+    // Persist
     ConfigManager::instance().setAlwaysOnTop(on);
 
-    // 立即作用于窗口
+    // Apply to the window immediately
     auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame);
     if (!frame) {
         LOG_WARN("settings: top-level frame not found");
@@ -609,8 +609,8 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
     }
     frame->SetWindowStyleFlag(style);
 
-    // MSW 下 SetWindowStyleFlag 对 wxSTAY_ON_TOP 的切换不会自动重排 z-order，
-    // 手动 Raise 一次让窗口状态立即反映
+    // On MSW, SetWindowStyleFlag toggling wxSTAY_ON_TOP does not reorder the z-order automatically,
+    // so Raise once to make the window state take effect immediately
     frame->Raise();
 }
 
@@ -628,7 +628,7 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     LOG_DEBUG("settings: modify hotkey[{}], current='{}'",
               index, utils::ToUtf8(utils::hotkeyToString(current)));
 
-    // 冲突检测：闭包捕获 index，排除自身
+    // Conflict check: the closure captures index to exclude this row
     HotkeyCaptureDialog dlg(
         this,
         TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
@@ -646,8 +646,8 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     const Hotkey wanted = dlg.getHotkey();
     const std::string wantedStr = utils::ToUtf8(utils::hotkeyToString(wanted));
 
-    // setHotkey 内部：冲突检查 → 注销旧 → 落盘 → 注册新
-    // 冲突时会弹提示（HotkeyCaptureDialog 已先行检查），此处失败一般是"被其他程序占用"
+    // setHotkey does: conflict check → unregister old → persist → register new
+    // Conflicts prompt here (HotkeyCaptureDialog checks first); a failure here usually means "occupied"
     if (!m_hotkeyMgr.setHotkey(index, wanted)) {
         LOG_WARN("settings: hotkey[{}] set to '{}' failed (occupied?)",
                  index, wantedStr);
@@ -663,12 +663,12 @@ void SettingsPanel::onExportConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: export config clicked");
 
     if (ConfigManager::instance().exportToPortable()) {
-        // 成功：路径已切到便携文件，刷新显示
+        // Success: the path switched to the portable file, refresh the display
         refreshConfigPathText();
         uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
     } else {
-        // 失败：状态不变（仍是 APPDATA），路径显示不动
+        // Failure: state unchanged (still APPDATA), leave the path display alone
         uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
     }
@@ -707,16 +707,16 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
 
     ConfigManager::instance().resetToDefaults();
 
-    // 重置后：配置里的热键都变空，需要重新注册
-    // HotkeyManager::registerAll 会遍历 config，逐个注册（空热键跳过）
+    // After the reset: every hotkey in the config is empty, so register them again
+    // HotkeyManager::registerAll walks the config and registers each one (empty hotkeys are skipped)
     m_hotkeyMgr.registerAll();
 
-    // 刷新所有控件回默认状态
+    // Refresh all widgets back to their defaults
     refreshFromConfig();
     refreshHotkeyList();
     refreshConfigPathText();
 
-    // 窗口置顶也要回默认（false）
+    // Always-on-top also returns to its default (false)
     if (auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame)) {
         int style = frame->GetWindowStyleFlag();
         style &= ~wxSTAY_ON_TOP;
@@ -744,12 +744,12 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     if (ret != wxID_YES) return;
 
     if (ConfigManager::instance().deletePortable()) {
-        // 成功：路径已切回 APPDATA，刷新显示
+        // Success: the path switched back to APPDATA, refresh the display
         refreshConfigPathText();
         uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE),
                      wxOK | wxICON_INFORMATION, this);
     } else {
-        // 失败：状态不变（仍是便携），路径显示不动
+        // Failure: state unchanged (still portable), leave the path display alone
         uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE),
                      wxOK | wxICON_ERROR, this);
     }
@@ -774,8 +774,8 @@ void SettingsPanel::onHotkeyChecked(wxListEvent &event) {
     const int index = static_cast<int>(row);
     const bool checked = m_hotkeyList->IsItemChecked(row);
 
-    // 幂等：编程式 CheckItem（refreshHotkeyList）可能触发本事件。
-    // 读一遍 config 的当前值，一致就什么都不做。
+    // Idempotent: the programmatic CheckItem (refreshHotkeyList) may fire this event.
+    // Read the current config value; do nothing when it already matches.
     const auto idx = static_cast<std::size_t>(index);
     if (checked == ConfigManager::instance().config().hotkeyEnabled[idx]) {
         event.Skip();
@@ -785,9 +785,9 @@ void SettingsPanel::onHotkeyChecked(wxListEvent &event) {
     LOG_DEBUG("settings: hotkey[{}] checked={}", index, checked);
 
     if (!m_hotkeyMgr.setEnabled(index, checked)) {
-        // 失败一般是 enable 时键位被别的程序占用。
-        // config 已经记录了用户意图（下次启动 registerAll 会重试），
-        // 所以不回退 UI；失败状态通过 HotkeyManager::failedCount 反映。
+        // A failure usually means the key is taken by another app when enabling.
+        // The config already records the user's intent (the next start retries via registerAll),
+        // so the UI is not reverted; the failure shows up through HotkeyManager::failedCount.
         LOG_WARN("settings: hotkey[{}] setEnabled({}) failed (occupied?)",
                  index, checked);
     }

@@ -10,11 +10,11 @@
 #include "managers/LanguageManager.hpp"
 
 namespace {
-    // 整体不透明度：0 = 全透，255 = 不透明。
-    // 太淡看不清提示，太暗看不见屏幕内容。100 左右是折中。
+    // overall opacity: 0 = fully transparent, 255 = opaque.
+    // too faint hides the hint, too dark hides the screen. around 100 is the compromise.
     constexpr int kOverlayAlpha = 100;
 
-    // 提示文字背景框的 padding
+    // padding of the hint text background box
     constexpr int kHintPadding = 24;
 }
 
@@ -23,7 +23,7 @@ ScreenCaptureOverlay::ScreenCaptureOverlay(wxWindow *parent, Callback callback)
               wxDefaultPosition, wxDefaultSize,
               wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP | wxBORDER_NONE),
       m_callback(std::move(callback)) {
-    // 覆盖虚拟桌面（多显示器展开后的完整范围，可能含负数坐标）
+    // cover the virtual desktop (full span of all monitors, may include negative coordinates)
     const int x = ::GetSystemMetrics(SM_XVIRTUALSCREEN);
     const int y = ::GetSystemMetrics(SM_YVIRTUALSCREEN);
     const int w = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
@@ -45,7 +45,7 @@ ScreenCaptureOverlay::ScreenCaptureOverlay(wxWindow *parent, Callback callback)
 }
 
 // ============================================================
-// 绘制：半透明黑底（窗口本身的 alpha）+ 中央不透明提示框
+// paint: translucent black backdrop (window alpha) + opaque hint box in the center
 // ============================================================
 void ScreenCaptureOverlay::onPaint(wxPaintEvent &) {
     wxPaintDC dc(this);
@@ -65,18 +65,18 @@ void ScreenCaptureOverlay::onPaint(wxPaintEvent &) {
         textSize.x + kHintPadding * 2,
         textSize.y + kHintPadding * 2);
 
-    // 提示框背景：纯黑矩形
+    // hint box background: solid black rectangle
     dc.SetBrush(*wxBLACK_BRUSH);
     dc.SetPen(*wxTRANSPARENT_PEN);
     dc.DrawRectangle(box);
 
-    // 提示文字：纯白，居中
+    // hint text: pure white, centered
     dc.SetTextForeground(*wxWHITE);
     dc.DrawLabel(hint, box, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL);
 }
 
 // ============================================================
-// 交互
+// interaction
 // ============================================================
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void ScreenCaptureOverlay::onLeftDown(wxMouseEvent &event) {
@@ -102,7 +102,7 @@ void ScreenCaptureOverlay::onSetCursor(wxSetCursorEvent &event) { // NOLINT(*-co
 }
 
 // ============================================================
-// 结束：回调 + 自毁
+// finish: callback + self-destroy
 // ============================================================
 void ScreenCaptureOverlay::finish(const bool captured, const wxPoint pos) {
     if (m_finished) return;
@@ -114,7 +114,7 @@ void ScreenCaptureOverlay::finish(const bool captured, const wxPoint pos) {
         LOG_DEBUG("overlay: cancelled");
     }
 
-    // 先移出屏幕，避免闪烁
+    // move off-screen first to avoid flicker
     Show(false);
 
     if (m_callback) {

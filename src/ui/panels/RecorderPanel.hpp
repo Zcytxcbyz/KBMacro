@@ -11,20 +11,20 @@
 
 #include "managers/ThreadManager.hpp"
 
-// 录制与编排面板。
+// Recording and orchestration panel.
 //
-// 当前为过渡期：面板自己持有 std::vector<Action> 作为数据源，
-// 将来 Recorder 模块做出来后，数据挪到模块里，本面板通过接口读写。
+// Currently in a transition period: the panel holds std::vector<Action> itself as the data source;
+// once the Recorder module lands, the data moves into the module and this panel reads/writes through the interface.
 //
-// 本阶段：
-//   - 提供公开方法（供热键路径调用）
-//   - 支持宏脚本的导入 / 导出（*.macro.json，整体替换语义）
+// At this stage:
+//   - exposes public methods (for the hotkey path)
+//   - supports macro script import / export (*.macro.json, whole-list replacement semantics)
 class RecorderPanel : public wxScrolledWindow {
 public:
     RecorderPanel(wxWindow *parent, ThreadManager &threadMgr);
 
-    // 供 MainFrame 从热键路径调用，与用户点击对应按钮等价。
-    // 录制与回放互斥，由 ThreadManager 内部保证；面板只管发起请求。
+    // Called by MainFrame from the hotkey path, equivalent to the user clicking the corresponding button.
+    // Recording and playback are mutually exclusive, enforced inside ThreadManager; the panel only issues requests.
     void startRecording();
     void stopRecording();
     void startPlayback();
@@ -33,24 +33,24 @@ public:
 private:
     void buildUi();
 
-    // 从控件组装 RunSpec（回放用）
+    // Assemble RunSpec from the widgets (for playback)
     [[nodiscard]] RunSpec collectRunSpec() const;
 
-    // 把 RunSpec 同步到控件（导入脚本用）
+    // Sync RunSpec into the widgets (for script import)
     void applyRunSpec(const RunSpec &run);
 
-    // 屏幕规格不一致时询问用户如何处理坐标
+    // Ask the user how to handle coordinates when the screen spec differs
     enum class AdaptChoice {
         Adapt,
         KeepOriginal,
         Cancelled,
     };
 
-    // 弹窗询问用户是否适配坐标。内部会先查 adaptationPreference 记忆。
+    // Pop up a dialog asking whether to adapt coordinates. Checks the adaptationPreference memory first.
     [[nodiscard]] AdaptChoice askAdaptCoordinates(
         const ScreenSpec &scriptSpec, const ScreenSpec &currentSpec);
 
-    // ---- 录制 / 回放 / 导入导出 ----
+    // ---- Recording / playback / import-export ----
     void onStartRecord(wxCommandEvent &event);
     void onStopRecord(wxCommandEvent &event);
     void onStartPlayback(wxCommandEvent &event);
@@ -58,7 +58,7 @@ private:
     void onImportScript(wxCommandEvent &event);
     void onExportScript(wxCommandEvent &event);
 
-    // ---- 动作列表操作 ----
+    // ---- Action list operations ----
     void onAdd(wxCommandEvent &event);
     void onEdit(wxCommandEvent &event);
     void onDelete(wxCommandEvent &event);
@@ -68,37 +68,37 @@ private:
 
     void onListSelectionChanged(wxListEvent &event);
 
-    // ---- 运行模式 ----
+    // ---- Run mode ----
     void onRunModeChanged(wxCommandEvent &event);
-    // 从 config 同步回放倍率下拉框（页面显示时调用）
+    // Sync the playback speed combo box from config (called when the page is shown)
     void syncSpeedFromConfig();
     void onShow(wxShowEvent &event);
-    // 回放倍率变化：归一化到档位后立即落盘
+    // Playback speed changed: normalize to a step and persist immediately
     void onSpeedChanged(wxCommandEvent &event);
     void refreshEnableStates();
 
-    // ---- 列表维护 ----
+    // ---- List maintenance ----
     void refreshList();
     void refreshButtonStates();
     void selectRow(long row);
     [[nodiscard]] long getSelectedRow() const;
 
-    // 切换回放按钮状态；同时按"列表是否为空"决定能不能开始
+    // Toggle the playback button state; also decides whether starting is allowed based on whether the list is empty
     void setRunning(bool running);
 
-    // 切换录制按钮状态；录制期间同时锁住列表编辑、导入导出与回放
+    // Toggle the recording button state; while recording, also lock editing, import/export and playback
     void setRecording(bool recording);
 
-    // 录制线程结束（停止或达到上限）后的交付：空表提示、非空走三选一弹窗
+    // Delivery after recording ends (stopped or limit reached): hint on empty list, three-way dialog otherwise
     void onRecordFinished(const TaskResult &res);
     void deliverRecording(const std::vector<Action> &actions);
 
-    // ---- 数据 ----
+    // ---- Data ----
     std::vector<Action> m_actions;
     bool m_recording = false;
     ThreadManager &m_threadMgr;
 
-    // ---- 控件 ----
+    // ---- Widgets ----
     wxButton *m_btnStartRecord{};
     wxButton *m_btnStopRecord{};
 

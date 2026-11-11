@@ -11,34 +11,34 @@
 
 class ThreadManager;
 
-// 键盘模拟器面板。
+// Keyboard simulator panel.
 //
-//   - 参数在本面板组装（collectParams / applyParams），启动时快照给 ThreadManager
-//   - 计时器从 MainFrame 借用（引用 shared_ptr 本身，切换模式后自动跟着换新的）
-//   - "发送一次"是同步的一次性动作，不走线程也不经过 ThreadManager
+//   - Params are assembled in this panel (collectParams / applyParams), snapshotted to ThreadManager on start
+//   - The timer is borrowed from MainFrame (a reference to the shared_ptr itself, so it follows mode switches)
+//   - "Send once" is a synchronous one-shot action: no thread, no ThreadManager
 class KeyboardPanel : public wxScrolledWindow {
 public:
     KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
                   std::shared_ptr<ITimer> &timerRef);
 
-    // 供 MainFrame 从热键路径调用，与用户点击"开始"/"停止"按钮等价。
+    // Called by MainFrame from the hotkey path, equivalent to the user clicking "Start"/"Stop".
     void startWithCurrentParams();
     void stop();
 
-    // 供 MainFrame 从热键路径调用，与用户点击"发送一次"按钮等价。
-    // 不涉及 RunSpec / 线程，直接调 SendInput 发一次当前热键。
+    // Called by MainFrame from the hotkey path, equivalent to the user clicking "Send once".
+    // No RunSpec / thread involved: calls SendInput once with the current hotkey.
     void sendOnce();
 
 private:
-    // 切换"运行中"的按钮状态：运行中禁用开始、启用停止
+    // Toggle the "running" button state: disable Start and enable Stop while running
     void setRunning(bool running);
 
     void buildUi();
 
-    // 从控件组装 KeyboardParams
+    // Assemble KeyboardParams from the widgets
     [[nodiscard]] KeyboardParams collectParams() const;
 
-    // 把 KeyboardParams 同步到控件
+    // Sync KeyboardParams into the widgets
     void applyParams(const KeyboardParams &p);
 
     void onSetKey(wxCommandEvent &event);
@@ -56,28 +56,28 @@ private:
     void refreshEnableStates();
     void onRunModeChanged(wxCommandEvent &event);
 
-    // 刷新按键显示框
+    // Refresh the key display field
     void refreshKeyDisplay();
 
     ThreadManager &m_threadMgr;
     std::shared_ptr<ITimer> &m_timerRef;
 
-    // ---- 按键 ----
+    // ---- Key ----
     Hotkey m_hotkey;
     wxTextCtrl *m_keyDisplay{};
     wxButton *m_btnSetKey{};
 
-    // ---- 参数 ----
+    // ---- Params ----
     wxSpinCtrl *m_spinInterval{};
     wxSpinCtrl *m_spinHoldTime{};
 
-    // ---- 运行模式 ----
+    // ---- Run mode ----
     wxChoice *m_choiceRunMode{};
     wxSpinCtrl *m_spinDuration{};
     wxSpinCtrl *m_spinCount{};
     wxSpinCtrl *m_spinStartDelay{};
 
-    // ---- 操作 ----
+    // ---- Actions ----
     wxButton *m_btnSendOnce{};
     wxButton *m_btnStart{};
     wxButton *m_btnStop{};

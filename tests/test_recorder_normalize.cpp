@@ -1,10 +1,10 @@
 // ============================================================
-// 归一化纯函数测试：
-//   - 键盘：不带修饰键、自动重复合并、无 Down 的 Up 丢弃
-//   - 鼠标：点击 vs 拖动（2px 阈值）、拖动端点坐标、多键同按
-//   - 滚轮：累积成整格、残量保留
-//   - 通用：头尾修饰键剔除、主键过滤、delayMs、动作上限
-// 不测钩子与消息泵。
+// Normalization pure-function tests:
+//   - keyboard: no modifiers, auto-repeat merged, Up without Down dropped
+//   - mouse: click vs drag (2px threshold), drag endpoints, multiple buttons at once
+//   - wheel: accumulate into whole notches, keep the remainder
+//   - general: trim head/tail modifiers, filter main keys, delayMs, action cap
+// Hooks and the message pump are not tested.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -23,7 +23,7 @@ namespace {
     using recorder::RawEvent;
     using recorder::RawKind;
 
-    // 测试文件不 include <windows.h>，这里直接写 VK 值
+    // this test file does not include <windows.h>, so the VK values are written directly
     constexpr unsigned kVkShift = 0x10;     // VK_SHIFT
     constexpr unsigned kVkControl = 0x11;   // VK_CONTROL
 
@@ -54,13 +54,13 @@ namespace {
 
 } // namespace
 
-// ---- 空输入 ----
+// ---- empty input ----
 
 TEST(Normalize, EmptyInputYieldsNothing) {
     EXPECT_TRUE(recorder::normalize({}, plainOpts()).empty());
 }
 
-// ---- 键盘 ----
+// ---- keyboard ----
 
 TEST(Normalize, KeyPairBecomesDownThenUp) {
     const std::vector<RawEvent> events{
@@ -89,7 +89,7 @@ TEST(Normalize, KeyboardActionsCarryNoModifiers) {
     const auto actions = recorder::normalize(events, plainOpts());
     ASSERT_EQ(actions.size(), 2u);
 
-    // 和弦靠事件序列表达，单条动作的 modifiers 必须恒为 0
+    // chords are expressed by the event sequence, a single action's modifiers must always be 0
     EXPECT_EQ(actions[0].hotkey.modifiers, 0u);
     EXPECT_EQ(actions[1].hotkey.modifiers, 0u);
 }
@@ -138,7 +138,7 @@ TEST(Normalize, HeadModifierReleaseIsTrimmed) {
 
     const auto actions = recorder::normalize(events, opts);
     ASSERT_EQ(actions.size(), 2u);
-    EXPECT_EQ(actions[0].delayMs, 0);   // 剔除后重新归零
+    EXPECT_EQ(actions[0].delayMs, 0);   // reset to zero after trimming
 }
 
 TEST(Normalize, TailModifierReleaseIsTrimmed) {
@@ -160,10 +160,10 @@ TEST(Normalize, TrimStopsAtFirstRealAction) {
     opts.startMods = hk::kModCtrl;
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyUp, kVkControl, 0),    // 头部修饰键，剔除
+        keyEvent(RawKind::KeyUp, kVkControl, 0),    // head modifier, trimmed
         keyEvent(RawKind::KeyDown, 65, 5),
         keyEvent(RawKind::KeyUp, 65, 10),
-        keyEvent(RawKind::KeyDown, kVkControl, 15), // 用户真按的 Ctrl，保留
+        keyEvent(RawKind::KeyDown, kVkControl, 15), // a real Ctrl press by the user, kept
         keyEvent(RawKind::KeyUp, kVkControl, 20),
     };
 
@@ -172,7 +172,7 @@ TEST(Normalize, TrimStopsAtFirstRealAction) {
     EXPECT_EQ(actions[2].hotkey.vk, kVkControl);
 }
 
-// ---- 鼠标：点击 vs 拖动 ----
+// ---- mouse: click vs drag ----
 
 TEST(Normalize, ClickWithinThresholdBecomesMouseClick) {
     const std::vector<RawEvent> events{
@@ -239,7 +239,7 @@ TEST(Normalize, DragEndpointsKeepCoordinates) {
     EXPECT_EQ(actions[2].y, 400);
 }
 
-// ---- 滚轮 ----
+// ---- wheel ----
 
 TEST(Normalize, WheelAccumulatesToNotches) {
     const std::vector<RawEvent> events{
@@ -265,13 +265,13 @@ TEST(Normalize, WheelRemainderIsKept) {
 
     EXPECT_EQ(actions[0].wheelDirection, WheelDirection::Up);
     EXPECT_EQ(actions[0].wheelSteps, 1);
-    EXPECT_EQ(actions[0].delayMs, 0);    // 第一条动作，delay 恒为 0
+    EXPECT_EQ(actions[0].delayMs, 0);    // the first action, delay is always 0
 
     EXPECT_EQ(actions[1].wheelDirection, WheelDirection::Down);
     EXPECT_EQ(actions[1].wheelSteps, 1);
-    EXPECT_EQ(actions[1].delayMs, 10);   // 归到"凑满一格"的那条事件上
+    EXPECT_EQ(actions[1].delayMs, 10);   // attributed to the event that completed the notch
 }
-// ---- 时序与上限 ----
+// ---- timing and cap ----
 
 TEST(Normalize, DelayIsRelativeToPreviousAction) {
     const std::vector<RawEvent> events{

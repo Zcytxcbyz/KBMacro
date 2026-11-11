@@ -6,14 +6,14 @@
 #include <wx/spinctrl.h>
 
 // ============================================================
-// 设置面板。
+// Settings panel.
 //
-// 数据来源：
-//   - 通用 / 计时器 / 置顶 / 配置路径：ConfigManager 单例
-//   - 热键：HotkeyManager（注入引用），数据本身存在 ConfigManager
+// Data sources:
+//   - General / timer / always-on-top / config path: ConfigManager singleton
+//   - Hotkeys: HotkeyManager (injected reference); the data itself lives in ConfigManager
 //
-// 构造时 refreshFromConfig() 把当前配置同步到各控件；
-// 用户操作走 ConfigManager::setXxx / HotkeyManager::setHotkey，内部落盘。
+// Construction calls refreshFromConfig() to sync the current config into all widgets;
+// user actions go through ConfigManager::setXxx / HotkeyManager::setHotkey, which persist internally.
 // ============================================================
 
 class HotkeyManager;
@@ -31,13 +31,13 @@ private:
     void buildConfigGroup(wxSizer *parent);
     void buildResetGroup(wxSizer *parent);
 
-    // 从 ConfigManager 读当前配置，同步到所有控件（不触发事件回写）
+    // Read the current config from ConfigManager and sync it to all widgets (no event write-back)
     void refreshFromConfig();
 
-    // 重填热键列表（数据源：ConfigManager::config().hotkeys）
+    // Refill the hotkey list (data source: ConfigManager::config().hotkeys)
     void refreshHotkeyList();
 
-    // 刷新配置文件路径显示
+    // Refresh the config file path display
     void refreshConfigPathText();
 
     void onLanguageChanged(wxCommandEvent &event);
@@ -57,31 +57,31 @@ private:
     void onHotkeySelectionChanged(wxListEvent &event);
     void onHotkeyChecked(wxListEvent &event);
 
-    // ---- 服务（外部注入）----
+    // ---- Services (injected) ----
     HotkeyManager &m_hotkeyMgr;
 
-    // ---- 通用 ----
+    // ---- General ----
     wxChoice *m_choiceLanguage{};
     wxChoice *m_choiceTimerMode{};
-    // 混合模式的末尾忙等时长；仅 Hybrid 时启用
+    // End-of-hybrid busy-wait duration; enabled only in Hybrid mode
     wxSpinCtrl *m_spinHybridMs{};
     wxCheckBox *m_chkAlwaysOnTop{};
 
-    // ---- 录制 ----
+    // ---- Recording ----
     wxSpinCtrl *m_spinRecMoveInterval{};
     wxSpinCtrl *m_spinRecStartDelay{};
     wxSpinCtrl *m_spinRecMaxActions{};
     wxCheckBox *m_chkRecIgnoreInjected{};
 
-    // ---- 热键 ----
+    // ---- Hotkeys ----
     wxListCtrl *m_hotkeyList{};
     wxButton *m_btnModifyHotkey{};
 
-    // ---- 配置管理 ----
+    // ---- Config management ----
     wxStaticText *m_configPathText{};
     wxButton *m_btnExportConfig{};
 
-    // ---- 重置 ----
+    // ---- Reset ----
     wxButton *m_btnClearAdaptation{};
     wxButton *m_btnClearSpinConfirm{};
     wxButton *m_btnResetDefaults{};

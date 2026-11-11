@@ -1,10 +1,10 @@
 // ============================================================
-// 枚举 ↔ 字符串 转换测试
+// enum ↔ string conversion tests
 //
-// 覆盖所有表驱动枚举，检查：
-//   1. 每个枚举值都能转成非空字符串
-//   2. to → from 往返一致
-//   3. 未知字符串走 fallback 到默认值
+// covers all table-driven enums and checks:
+//   1. every enum value converts to a non-empty string
+//   2. to → from round-trips consistently
+//   3. unknown strings fall back to the default value
 // ============================================================
 
 #include <gtest/gtest.h>

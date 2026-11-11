@@ -5,20 +5,20 @@
 
 #include "common/Action.hpp"
 
-// 动作编辑对话框。
+// Action edit dialog.
 //
-// 用法：
+// usage:
 //     ActionEditDialog dlg(this, TR(IDS_ACTION_DIALOG_TITLE_ADD), Action{});
 //     if (dlg.ShowModal() == wxID_OK) {
 //         Action result = dlg.getAction();
 //     }
 //
-// "添加"和"编辑"共用本对话框，标题由调用方决定。
+// The "add" and "edit" modes share this dialog; the caller decides the title.
 //
-// 交互：
-//   - 顶部 wxChoice 选动作类型，切换时重建下方参数表
-//   - 参数用 wxPropertyGrid 显示，可编辑
-//   - 辅助按钮"捕捉坐标" / "设置按键"按当前动作类型启用
+// interaction:
+//   - the top wxChoice selects the action type; switching it rebuilds the parameter table below
+//   - parameters are shown in an editable wxPropertyGrid
+//   - aux buttons "capture coordinate" / "set key" are enabled by the current action type
 class ActionEditDialog : public wxDialog {
 public:
     ActionEditDialog(wxWindow *parent, const wxString &title, const Action &action);
@@ -38,13 +38,13 @@ private:
 
     void onRelativeToggled(wxCommandEvent &event);
 
-    // 按 m_action.type 重建参数表
+    // rebuild the parameter grid from m_action.type
     void rebuildParamGrid();
 
-    // 从网格读回所有字段到 m_action
+    // read all fields from the grid back into m_action
     void collectFromGrid();
 
-    // 刷新辅助按钮的启用状态
+    // refresh the enabled state of the aux buttons
     void refreshAuxButtons();
 
     Action m_action;

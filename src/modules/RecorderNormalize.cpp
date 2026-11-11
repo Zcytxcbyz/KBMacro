@@ -8,13 +8,13 @@
 
 namespace {
 
-    // 位移超过这么多像素就算拖动，否则压成一次点击
+    // movement beyond this many pixels counts as a drag, otherwise it collapses into one click
     constexpr int kDragThreshold = 2;
 
-    // 滚轮一格的粒度
+    // granularity of one wheel notch
     constexpr int kWheelDelta = 120;
 
-    // 这条事件是不是"某个热键的修饰键"
+    // whether this event is "a modifier key of some hotkey"
     [[nodiscard]] bool isModifierEventOf(const recorder::RawEvent &e, const unsigned mask) noexcept {
         if (mask == 0) return false;
         if (e.kind != recorder::RawKind::KeyDown && e.kind != recorder::RawKind::KeyUp) return false;
@@ -31,16 +31,16 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
     std::vector<Action> out;
     if (events.empty()) return out;
 
-    // ---- 1. 头尾剔除 ----
-    // 头部是"开始热键的修饰键"（用户在按热键之前就按下了 Ctrl 之类），
-    // 尾部是"停止热键的修饰键"（停止热键本身已经把线程停了，松开动作是它的回声）。
+    // ---- 1. head/tail stripping ----
+    // head is "modifier keys of the start hotkey" (the user pressed Ctrl etc. before pressing the hotkey),
+    // tail is "modifier keys of the stop hotkey" (the hotkey already stopped the thread, releases are its echo).
     std::size_t begin = 0;
     std::size_t end = events.size();
 
     while (begin < end && isModifierEventOf(events[begin], opts.startMods)) ++begin;
     while (end > begin && isModifierEventOf(events[end - 1], opts.stopMods)) --end;
 
-    // ---- 2. 逐事件归一化 ----
+    // ---- 2. per-event normalization ----
     bool haveLast = false;
     std::uint32_t lastTime = 0;
 
@@ -55,10 +55,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         return opts.maxActions > 0 && static_cast<int>(out.size()) >= opts.maxActions;
     };
 
-    // 键盘：还按着的键（自动重复合并 + 丢弃没有对应 Down 的 Up）
+    // keyboard: keys still held down (auto-repeat merge + drop Up without matching Down)
     std::unordered_set<unsigned> keysDown;
 
-    // 鼠标：挂起中的按下（可能压成点击，也可能升级成拖动）
+    // mouse: pending press (may collapse into a click, or escalate into a drag)
     bool havePendingDown = false;
     MouseButton pendingButton = MouseButton::Left;
     int pendingX = 0;
@@ -66,31 +66,31 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
     std::uint32_t pendingTime = 0;
     bool dragging = false;
 
-    // 鼠标：已经落地成 MouseDown 的键（多键同按时用），保证 Up 能配对
+    // mouse: buttons already emitted as MouseDown (for multi-button press), so Up can be paired
     std::unordered_set<MouseButton> emittedButtons;
 
-    // 滚轮：不足一格的残量
+    // wheel: leftover below one notch
     int wheelPending = 0;
     bool wheelHorizontal = false;
 
     for (std::size_t i = begin; i < end && !limitReached(); ++i) {
         const RawEvent &e = events[i];
 
-        // ---- 键盘 ----
+        // ---- keyboard ----
         if (e.kind == RawKind::KeyDown || e.kind == RawKind::KeyUp) {
-            // 开始/停止热键的主键永不进产物（钩子已经滤过一遍，这里是第二道，
-            // 同时让本函数自身完备、可单测）
+            // start/stop hotkey main keys never enter the output (the hook already filters them, this is the
+            // second pass, and it also makes this function self-contained and unit-testable)
             if ((opts.startKeyVk != 0 && e.vk == opts.startKeyVk) ||
                 (opts.stopKeyVk != 0 && e.vk == opts.stopKeyVk)) {
                 continue;
             }
 
             if (e.kind == RawKind::KeyDown) {
-                // 自动重复：按住不放会连发 Down，只留第一次
+                // auto-repeat: holding the key sends repeated Down, keep only the first
                 if (!keysDown.insert(e.vk).second) continue;
             } else {
-                // 没有对应 Down 的 Up（比如录制开始前就按着）直接丢，
-                // 否则回放会去松一个从没按过的键
+                // an Up without a matching Down (e.g. held before recording started) is dropped outright,
+                // otherwise playback would release a key that was never pressed
                 if (keysDown.erase(e.vk) == 0) continue;
             }
 
@@ -102,15 +102,15 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
             continue;
         }
 
-        // ---- 鼠标移动 ----
+        // ---- mouse move ----
         if (e.kind == RawKind::Move) {
             if (havePendingDown && !dragging) {
                 if (std::abs(e.x - pendingX) <= kDragThreshold &&
                     std::abs(e.y - pendingY) <= kDragThreshold) {
-                    continue;   // 抖动，不算拖动
+                    continue;   // jitter, not a drag
                 }
 
-                // 越过阈值：先补按下（起点），再补这一条移动
+                // threshold crossed: emit the press (start point) first, then this move
                 push(Action{.type = ActionType::MouseDown,
                             .x = pendingX,
                             .y = pendingY,
@@ -124,10 +124,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
             continue;
         }
 
-        // ---- 鼠标按下 ----
+        // ---- mouse down ----
         if (e.kind == RawKind::ButtonDown) {
             if (havePendingDown) {
-                // 已经按着一个键了：这个键直接落地，不参与点击合并（多键同按）
+                // a button is already down: emit this one directly, it does not join click merging (multi-press)
                 push(Action{.type = ActionType::MouseDown,
                             .x = e.x,
                             .y = e.y,
@@ -146,7 +146,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
             continue;
         }
 
-        // ---- 鼠标松开 ----
+        // ---- mouse up ----
         if (e.kind == RawKind::ButtonUp) {
             if (havePendingDown && e.button == pendingButton) {
                 const bool moved = dragging || std::abs(e.x - pendingX) > kDragThreshold ||
@@ -154,7 +154,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
 
                 if (moved) {
                     if (!dragging) {
-                        // 一步就拖到位了，中间没有 Move 事件：把起点补上
+                        // dragged in one step with no Move event in between: emit the start point
                         push(Action{.type = ActionType::MouseDown,
                                     .x = pendingX,
                                     .y = pendingY,
@@ -167,7 +167,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
                                 .button = e.button},
                          e.time);
                 } else {
-                    // 原地按松：压成一条点击，按住时长取真实间隔
+                    // pressed and released in place: collapse into one click, hold duration is the real span
                     auto click = Action{.type = ActionType::MouseClick,
                                         .x = pendingX,
                                         .y = pendingY,
@@ -181,7 +181,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
                 continue;
             }
 
-            // 不是挂起中的那个键：只在这个键真的落下过 MouseDown 时才补 Up
+            // not the pending button: emit Up only if this button really produced a MouseDown
             if (emittedButtons.erase(e.button) > 0) {
                 push(Action{.type = ActionType::MouseUp, .x = e.x, .y = e.y, .button = e.button},
                      e.time);
@@ -189,10 +189,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
             continue;
         }
 
-        // ---- 滚轮 ----
+        // ---- wheel ----
         if (e.kind == RawKind::Wheel) {
             if (wheelHorizontal != e.horizontal && wheelPending != 0) {
-                // 横竖方向切换时，不足一格的残量丢弃（极少见，不替用户凑整）
+                // on a horizontal/vertical switch the sub-notch leftover is dropped (rare, no rounding for the user)
                 wheelPending = 0;
             }
             wheelHorizontal = e.horizontal;
@@ -218,8 +218,8 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         }
     }
 
-    // 收尾时还按着的键、还挂起的按下、不足一格的滚轮都不产出：
-    // 录制端不替用户补动作，回放端的补平机制负责收尾。
+    // keys still down, a still-pending press, and sub-notch wheel leftovers emit nothing at the end:
+    // the recorder does not invent actions for the user, playback's release stuck keys handles the tail.
     return out;
 }
 

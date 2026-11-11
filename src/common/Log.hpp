@@ -1,22 +1,22 @@
 #pragma once
 
 // ============================================================
-// 日志门面
+// logging facade
 //
-// ENABLE_LOGGING 未定义时：
-//   - LOG_* 宏展开为空，参数不求值，零运行时开销
-//   - Log::Init/Shutdown 是空操作
+// when ENABLE_LOGGING is not defined:
+//   - LOG_* macros expand to nothing, arguments are not evaluated, zero runtime cost
+//   - Log::Init/Shutdown are no-ops
 //
-// ENABLE_LOGGING 定义时：
-//   - 转发到 spdlog 的 SPDLOG_* 宏，保留源位置（%s:%#）
+// when ENABLE_LOGGING is defined:
+//   - forwards to spdlog's SPDLOG_* macros, keeping the source location (%s:%#)
 // ============================================================
 
 #ifdef ENABLE_LOGGING
 
-// spdlog 默认 SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_INFO，
-// 会把 TRACE / DEBUG 在编译期直接剪掉，运行期无论 logger->set_level
-// 设成什么都不会输出。这里显式放开到 TRACE，让运行期级别
-// （Log.cpp 里 logger->set_level(debug)）成为唯一过滤器。
+// spdlog defaults SPDLOG_ACTIVE_LEVEL == SPDLOG_LEVEL_INFO,
+// which strips TRACE / DEBUG at compile time, so whatever logger->set_level
+// is set to at runtime, nothing is emitted. this file explicitly opens it up to TRACE so the runtime level
+// (logger->set_level(debug) in Log.cpp) becomes the only filter.
 #ifndef SPDLOG_ACTIVE_LEVEL
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 #endif

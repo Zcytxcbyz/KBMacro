@@ -1,11 +1,11 @@
 // ============================================================
-// 序列化 round-trip 测试
+// Serialization round-trip tests
 //
-// 覆盖：Action / Hotkey / RunSpec / ClickerParams /
+// covers: Action / Hotkey / RunSpec / ClickerParams /
 //       KeyboardParams / ScreenSpec / Config
 //
-// 每个测试都是 to_json → from_json → 逐字段比较。
-// 目的是抓住"改 from_json 漏了一个字段"这类静默 bug。
+// every test is to_json → from_json → field-by-field comparison.
+// the goal is to catch silent bugs like "from_json forgot a field".
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -249,7 +249,7 @@ TEST(ConfigRoundTrip, TopLevelFields) {
     EXPECT_EQ(b.tabIndex, 3);
 }
 
-// 手改配置可能写出越界值：加载时夹到 [kTimerHybridSpinMsMin, kTimerHybridSpinMsMax]
+// hand-edited configs may hold out-of-range values: clamp on load to [kTimerHybridSpinMsMin, kTimerHybridSpinMsMax]
 TEST(ConfigRoundTrip, HybridSpinMsIsClamped) {
     nlohmann::json j = Config{};
 
@@ -259,7 +259,7 @@ TEST(ConfigRoundTrip, HybridSpinMsIsClamped) {
     j["timerHybridSpinMs"] = -3;
     EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsMin);
 
-    j.erase("timerHybridSpinMs");   // 旧配置没有这个字段
+    j.erase("timerHybridSpinMs");   // an old config has no such field
     EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsDefault);
 }
 
@@ -306,7 +306,7 @@ TEST(ConfigRoundTrip, WindowAndFlags) {
 }
 
 TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
-    // 模拟一个"老配置"：只有 language，没有 window / flags / hotkeys
+    // simulate an "old config": only language, no window / flags / hotkeys
     const nlohmann::json j = {
         {"version", 1},
         {"language", "zh-CN"},
@@ -318,13 +318,13 @@ TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
     EXPECT_EQ(b.timerMode, TimerMode::Sleep);
     EXPECT_EQ(b.alwaysOnTop, false);
     EXPECT_EQ(b.window.x, -1);
-    // 缺字段时回落到 Config 的默认值；这里引用默认值本身，
-    // 不再硬编码数字——否则改一次默认尺寸就会弄挂这条测试
+    // missing fields fall back to Config defaults; this references the default itself,
+    // instead of hard-coding numbers, which would break once the default size changes
     EXPECT_EQ(b.window.width, Config{}.window.width);
     EXPECT_EQ(b.window.height, Config{}.window.height);
     EXPECT_EQ(b.flags.spinWarningConfirmed, false);
     EXPECT_EQ(b.flags.adaptationPreference, AdaptationPreference::Ask);
-    // hotkeyEnabled 默认全 true
+    // hotkeyEnabled defaults to all true
     for (const bool e: b.hotkeyEnabled) {
         EXPECT_TRUE(e);
     }
@@ -357,7 +357,7 @@ TEST(ConfigRoundTrip, RecorderSettingsAreClamped) {
     EXPECT_EQ(back.recordStartDelayMs, kRecordStartDelayMsMin);
     EXPECT_EQ(back.recordMaxActions, kRecordMaxActionsMax);
 
-    // 字段整体缺失 → 全走默认值
+    // fields entirely missing → all defaults
     const auto empty = nlohmann::json::object().get<Config>();
     EXPECT_EQ(empty.recordMoveIntervalMs, kRecordMoveIntervalMsDefault);
     EXPECT_EQ(empty.recordIgnoreInjected, false);
@@ -385,7 +385,7 @@ TEST(ActionJson, RelativeIsWrittenOnlyWhenSet) {
     Action absolute = relative;
     absolute.relative = false;
     const nlohmann::json j2 = absolute;
-    EXPECT_FALSE(j2.contains("relative")) << "false 不应写进 JSON";
+    EXPECT_FALSE(j2.contains("relative")) << "false must not be written into the JSON";
 }
 
 TEST(ActionJson, DelayRoundTrips) {
@@ -403,7 +403,7 @@ TEST(ActionJson, DelayRoundTrips) {
 }
 
 TEST(ActionJson, OldScriptWithoutRelativeStillParses) {
-    // 兼容性：没有 relative 字段的旧脚本按绝对坐标处理
+    // compatibility: old scripts without a relative field are treated as absolute
     const nlohmann::json j = {{"type", "MouseClick"}, {"button", "Left"},
                               {"x", 100}, {"y", 200}, {"holdMs", 50},
                               {"delayMs", 0}};
@@ -425,20 +425,20 @@ TEST(ConfigRoundTrip, PlaybackSpeedRoundTrips) {
 }
 
 TEST(ConfigRoundTrip, PlaybackSpeedIsSnapped) {
-    // 手改的配置里可能是任意值：读入时归到最近档位
+    // a hand-edited config may hold any value: snap to the nearest step on load
     nlohmann::json j = Config{};
     j["playbackSpeed"] = 1.37;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 1.5);   // 离 1.5 最近
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 1.5);   // closest to 1.5
 
     j["playbackSpeed"] = 10.0;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 4.0);   // 最大的档
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 4.0);   // the largest step
 
     j["playbackSpeed"] = 0.1;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 0.25);  // 最小的档
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 0.25);  // the smallest step
 
     j["playbackSpeed"] = 0.0;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // 回默认
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // back to default
 
     j.erase("playbackSpeed");
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // 缺字段同理
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // same for a missing field
 }

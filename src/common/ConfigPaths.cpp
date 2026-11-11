@@ -8,15 +8,15 @@
 #include "common/Utils.hpp"
 
 // ============================================================
-// 路径判定
+// path resolution
 // ============================================================
 
 namespace config {
 
 ResolvedPath resolveConfigPath(const std::filesystem::path &exePath,
                                const std::filesystem::path &appDataDir) {
-    // 便携模式：EXE 同目录 {exe}.json（如 KBMacro.exe.json）
-    // 命名规则和 SettingsPanel 现有实现一致
+    // portable mode: {exe}.json next to the EXE (e.g. KBMacro.exe.json)
+    // naming rule matches the existing SettingsPanel implementation
     std::filesystem::path portable = exePath;
     portable.concat(L".json");
 
@@ -24,13 +24,13 @@ ResolvedPath resolveConfigPath(const std::filesystem::path &exePath,
         return {.path = std::move(portable), .portable = true};
     }
 
-    // APPDATA 模式：{appDataDir}/KBMacro/config.json
+    // APPDATA mode: {appDataDir}/KBMacro/config.json
     const auto regular = appDataDir / L"KBMacro" / L"config.json";
     return {.path = regular, .portable = false};
 }
 
 // ============================================================
-// 读取
+// load
 // ============================================================
 
 bool loadFrom(const std::filesystem::path &path, Config &out) {
@@ -55,8 +55,8 @@ bool loadFrom(const std::filesystem::path &path, Config &out) {
         return false;
     }
 
-    // 版本校验：文件版本高于当前程序支持的版本 → 拒绝加载
-    // 低于或等于当前版本 → 按当前版本读取（缺字段走默认）
+    // version check: file version above the supported one → refuse to load
+    // lower or equal → read as the current version (missing fields use defaults)
     if (const int fileVersion = j.value("version", 1); fileVersion > kConfigVersion) {
         LOG_WARN("config: file version {} > supported {}, ignoring",
                  fileVersion, kConfigVersion);
@@ -75,13 +75,13 @@ bool loadFrom(const std::filesystem::path &path, Config &out) {
 }
 
 // ============================================================
-// 写入
+// save
 // ============================================================
 
 bool saveTo(const std::filesystem::path &path, const Config &cfg) {
     const std::string pathStr = utils::ToUtf8(path.wstring());
 
-    // 父目录不存在时自动创建
+    // create the parent directory when missing
     if (const auto parent = path.parent_path(); !parent.empty()) {
         std::error_code ec;
         std::filesystem::create_directories(parent, ec);

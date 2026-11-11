@@ -2,24 +2,24 @@
 
 #include "common/ITimer.hpp"
 
-// 限频开关：每隔一段间隔才放行一次。
+// rate limiter: allows one call through per interval.
 //
-// 用途：把高频事件的日志/汇报压到可读量级（例如录制进度每秒一条）。
-// 单独成类的原因：这属于通用小工具，多处都要用；复制"记时间 + 比间隔"
-//   很容易把边界写错（首次要不要立即放行、等于间隔算不算到）。
+// purpose: throttle logs/reports of high-frequency events to a readable rate (one recording line per second).
+// why a separate class: it is a generic helper used in many places; copying "record time + compare interval"
+//   easily gets the edge cases wrong (allow immediately on first call, does equal to the interval count).
 //
-// 契约：
-//   - 纯逻辑：不打日志、不读配置、不持线程；时间由调用方给，便于测试注入
-//   - 首次调用立即放行（不做"第一秒空白"）
-//   - 判定是"距上次放行 >= interval"，不是固定节拍（不累积、不补偿）
+// contract:
+//   - pure logic: no logging, no config reads, no threads; time comes from the caller, easy to inject in tests
+//   - the first call is allowed immediately (no "blank first second")
+//   - the test is "time since last allow >= interval", not a fixed tick (no accumulation, no compensation)
 class RateLimiter final {
 public:
     explicit RateLimiter(const ITimer::Duration interval) noexcept : m_interval(interval) {}
 
-    // 用当前 steady_clock 判断（不是系统调用）
+    // check against the current steady_clock (not a system call)
     [[nodiscard]] bool allow() noexcept { return allow(ITimer::now()); }
 
-    // 用给定时间点判断（测试注入）
+    // check against a given time point (test injection)
     [[nodiscard]] bool allow(const ITimer::TimePoint now) noexcept {
         if (!m_started) {
             m_started = true;

@@ -4,21 +4,21 @@
 #include "common/Types.hpp"
 
 // ============================================================
-// 运行模式判定器
+// run mode decider
 //
-// 纯逻辑：不持时间源、不 sleep、不碰 stop_token、不碰 UI/线程。
-//   - "停止"  由 ITimer::wait 的返回值决定，与本类正交
-//   - "现在"  由调用方传入（ITimer::now()），便于测试注入时间点
+// pure logic: no time source, no sleep, no stop_token, no UI/threads.
+//   - "stop" comes from ITimer::wait's return value and is orthogonal to this class
+//   - "now" is passed in by the caller (ITimer::now()), so tests can inject time points
 //
-// 每个工作线程独占一个，在调用内部构造（不进线程函数参数）。
+// one per worker thread, constructed inside the call (not passed as a thread function parameter).
 //
-// 用法（三模块共用的循环骨架）：
+// usage (the loop skeleton shared by the three modules):
 //   RunController rc(p.run, ITimer::now());
 //   while (rc.shouldRun(ITimer::now())) {
 //       doOneAction();
 //       rc.noteIteration();
 //       if (!timer->wait(rc.clampWait(Duration(p.intervalMs), ITimer::now()), st))
-//           break;                    // 被 stop：跳出
+//           break;                    // stopped: leave the loop
 //   }
 // ============================================================
 
@@ -27,31 +27,31 @@ public:
     using TimePoint = ITimer::TimePoint;
     using Duration = ITimer::Duration;
 
-    // start 由调用方传（通常是线程启动时的 ITimer::now()）。
-    // 定时模式的截止点固定为 start + durationSec，不做累计计时。
+    // start comes from the caller (usually ITimer::now() at thread start).
+    // the Timed deadline is fixed at start + durationSec, no accumulated timing.
     RunController(const RunSpec &spec, TimePoint start);
 
-    // 还能不能再跑一轮？
-    //   Infinite: 恒 true
-    //   Timed   : now < start + durationSec（严格小于）
-    //   Counted : 已执行轮数 < count
+    // may another iteration run?
+    //   Infinite: always true
+    //   Timed   : now < start + durationSec (strict less-than)
+    //   Counted : executed iterations < count
     [[nodiscard]] bool shouldRun(TimePoint now) const;
 
-    // 本轮实际该等多久？
-    //   Infinite / Counted: 原样返回 interval
-    //   Timed             : min(interval, 距截止点的剩余)，已过截止点返回 0
+    // how long should this iteration actually wait?
+    //   Infinite / Counted: return interval unchanged
+    //   Timed             : min(interval, time left to the deadline); 0 once past it
     //
-    // 为什么要裁剪：间隔 60s + 定时 10s 时，若老实等满 60s，
-    // 任务要跑 60s 才结束——"定时 10 秒"就成了假话。
+    // why clamp: with interval 60s + timed 10s, waiting the full 60s would make
+    // the task run 60s before it ends — "timed 10 sec" would be a lie.
     [[nodiscard]] Duration clampWait(Duration interval, TimePoint now) const;
 
-    // 一轮完成，记账（Counted 用它递增）
+    // one iteration done, keep count (Counted increments it here)
     void noteIteration();
 
 private:
     RunMode m_mode = RunMode::Infinite;
     TimePoint m_start{};
-    Duration m_duration{};      // Timed：总时长
-    int m_totalCount = 0;       // Counted：目标轮数
-    int m_executedCount = 0;    // Counted：已完成轮数
+    Duration m_duration{};      // Timed: total duration
+    int m_totalCount = 0;       // Counted: target iteration count
+    int m_executedCount = 0;    // Counted: completed iterations
 };

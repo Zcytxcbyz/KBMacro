@@ -1,14 +1,14 @@
 // ============================================================
-// 连点器模块测试：
-//   - toClickStep：纯函数，十个 ClickType 全覆盖
-//   - run：轮数口径、轮间等待、被 stop 打断
+// Clicker module tests:
+//   - toClickStep: a pure function, covers all ten ClickType values
+//   - run: round counting, waits between rounds, interrupted by stop
 //
-// 两个前提：
-//   1. 不测 Timed 的轮数：ITimer::now() 是静态的，FakeTimer 改不了时钟。
-//      定时判定由 RunController 的用例覆盖。
-//   2. input::click 内部的按住等待也走 FakeTimer，所以 waited() 里混着
-//      holdMs（5ms）和轮间隔（95ms）两种时长，分开数。
-// 本目标已定义 KBMACRO_DRY_RUN，输入事件只记日志不真发。
+// Two assumptions:
+//   1. Timed round counts are not tested: ITimer::now() is static, so FakeTimer
+//      cannot move the clock; RunController cases cover the timed decision.
+//   2. the hold wait inside input::click also uses FakeTimer, so waited() mixes
+//      holdMs (5ms) and the round gap (95ms); count them separately.
+// This target defines KBMACRO_DRY_RUN, so input events are only logged, not sent.
 // ============================================================
 
 #include <gtest/gtest.h>
@@ -21,9 +21,9 @@
 
 namespace {
 
-    // ignorePosition = true：跳过每轮 moveTo，测试只关心点击与等待。
-    // intervalMs = 100、holdMs = 5 → 按钮类轮间等 95ms，与按住的 5ms 不同，
-    // 这样 countWaits 才能把两种等待分开。
+    // ignorePosition = true: skip moveTo each round, the test only checks click and wait.
+    // intervalMs = 100, holdMs = 5 → button rounds wait 95ms, unlike the 5ms hold,
+    // so countWaits can tell the two kinds of waits apart.
     ClickerParams makeParams(const RunMode mode, const int count,
                              const ClickType type = ClickType::Left) {
         ClickerParams p;
@@ -36,8 +36,8 @@ namespace {
         return p;
     }
 
-    constexpr ITimer::Duration kHold{5};    // 一次按住的等待
-    constexpr ITimer::Duration kGap{95};    // 按钮类的轮间隔（100 - 5）
+    constexpr ITimer::Duration kHold{5};    // one hold wait
+    constexpr ITimer::Duration kGap{95};    // button round gap (100 - 5)
 
 } // namespace
 
@@ -89,7 +89,7 @@ TEST(Run, CountedRunsExactRounds) {
 
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 3);
 
-    // 三轮回合：三次按住等待 + 两次轮间隔（最后一轮之后不再等）
+    // three rounds: three hold waits + two round gaps (no wait after the last round)
     EXPECT_EQ(timer.countWaits(kHold), 3u);
     EXPECT_EQ(timer.countWaits(kGap), 2u);
     EXPECT_EQ(timer.waitCalls(), 5);
@@ -107,7 +107,7 @@ TEST(Run, DoubleCountsAsOneRound) {
     FakeTimer timer;
     const ClickerParams p = makeParams(RunMode::Counted, 2, ClickType::Double);
 
-    // 双击一轮算一次（与 Counted 的次数口径一致）；两轮共四次按住等待、一次间隔
+    // a double click counts as one round (same as Counted); two rounds = four holds, one gap
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
     EXPECT_EQ(timer.countWaits(kHold), 4u);
     EXPECT_EQ(timer.countWaits(kGap), 1u);
@@ -119,7 +119,7 @@ TEST(Run, GapDeductsHoldTime) {
 
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
-    // intervalMs = 100、holdMs = 5 → 轮间隔 95，不是 100
+    // intervalMs = 100, holdMs = 5 → the round gap is 95, not 100
     EXPECT_EQ(timer.countWaits(kGap), 1u);
     EXPECT_EQ(timer.countWaits(ITimer::Duration{100}), 0u);
 }
@@ -130,23 +130,23 @@ TEST(Run, WheelUsesFullInterval) {
 
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
-    // 滚轮没有按住，等待就是完整间隔；整个测试里只有这一次等待
+    // wheels have no hold, so the wait is the full interval; this is the only wait here
     EXPECT_EQ(timer.waitCalls(), 1);
     EXPECT_EQ(timer.countWaits(ITimer::Duration{100}), 1u);
 }
 
 TEST(Run, StopOnFirstWaitCountsFirstRound) {
-    FakeTimer timer(1);   // 第一次等待（第 1 轮的按住）就"被打断"
+    FakeTimer timer(1);   // interrupted on the first wait (the hold of round 1)
     const ClickerParams p = makeParams(RunMode::Infinite, 0);
 
-    // 按下已经发出去了，所以算一轮
+    // the press was already sent, so it counts as one round
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 1);
     EXPECT_EQ(timer.waitCalls(), 1);
 }
 
 TEST(Run, InfiniteStopsOnThirdRound) {
-    // 调用序列：hold, gap, hold, gap, hold, gap, ...
-    // 第 6 次等待 = 第 3 轮之后的间隔 → 打断后正好跑满 3 轮
+    // call sequence: hold, gap, hold, gap, hold, gap, ...
+    // the 6th wait = the gap after round 3 → stopping there leaves exactly 3 rounds
     FakeTimer timer(6);
     const ClickerParams p = makeParams(RunMode::Infinite, 0);
 
@@ -154,7 +154,7 @@ TEST(Run, InfiniteStopsOnThirdRound) {
     EXPECT_EQ(timer.countWaits(kHold), 3u);
 }
 
-// ---- 开始延迟 ----
+// ---- start delay ----
 
 TEST(Run, StartDelayHappensBeforeFirstAction) {
     ClickerParams p = makeParams(RunMode::Counted, 2);
@@ -163,9 +163,9 @@ TEST(Run, StartDelayHappensBeforeFirstAction) {
     FakeTimer timer;
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
-    // 第一次等待就是开始延迟，之后的按住/间隔不受影响
+    // the first wait is the start delay; later holds/gaps are unaffected
     const auto &w = timer.waited();
-    ASSERT_EQ(w.size(), 4u);   // 1 次延迟 + 2 次按住 + 1 次轮间隔
+    ASSERT_EQ(w.size(), 4u);   // 1 delay + 2 holds + 1 round gap
     EXPECT_EQ(w[0], ITimer::Duration{300});
     EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
     EXPECT_EQ(timer.countWaits(kHold), 2u);
@@ -176,7 +176,7 @@ TEST(Run, StartDelayInterruptedByStop) {
     ClickerParams p = makeParams(RunMode::Infinite, 0);
     p.run.startDelayMs = 500;
 
-    FakeTimer timer(1);   // 第 1 次 wait 就是开始延迟，直接被打断
+    FakeTimer timer(1);   // wait 1 is the start delay, interrupted right away
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 0);
     EXPECT_EQ(timer.waitCalls(), 1);
     ASSERT_EQ(timer.waited().size(), 1u);

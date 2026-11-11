@@ -6,20 +6,20 @@
 
 #include "common/Types.hpp"
 
-// 热键捕获对话框。
+// Hotkey capture dialog.
 //
-// 用法：
-//     HotkeyCaptureDialog dlg(this, "设置按键", currentHotkey, false);
+// usage:
+//     HotkeyCaptureDialog dlg(this, "Set Key", currentHotkey, false);
 //     if (dlg.ShowModal() == wxID_OK) {
 //         Hotkey result = dlg.getHotkey();
 //     }
 //
-// requireMainKey == true  必须有主键（全局热键用）
-// requireMainKey == false 允许纯修饰键或纯主键（键盘模拟用）
+// requireMainKey == true  requires a main key (for global hotkeys)
+// requireMainKey == false allows modifier-only or main-key-only (for keyboard simulation)
 //
-// checkConflict（可选）：外部冲突检测函数。非空时，onOk 会调用它，
-//   返回 true 表示该热键与已有热键冲突，此时弹出提示且不关闭对话框。
-//   用于 SettingsPanel 修改全局热键时的"与其他热键重复"检查。
+// checkConflict (optional): external conflict checker. When non-empty, onOk calls it;
+//   true means the hotkey conflicts with an existing one; a warning is shown and the dialog stays open.
+//   Used by SettingsPanel to detect duplicates when changing a global hotkey.
 class HotkeyCaptureDialog : public wxDialog {
 public:
     using ConflictChecker = std::function<bool(const Hotkey &)>;
@@ -41,6 +41,6 @@ private:
 
     Hotkey m_hotkey;
     bool m_requireMainKey = false;
-    ConflictChecker m_checkConflict;   // 空 = 不检查冲突
+    ConflictChecker m_checkConflict;   // empty = no conflict check
     wxTextCtrl *m_display{};
 };
