@@ -53,6 +53,7 @@
 #define IDS_MSG_EXPORT_SUCCESS          1222
 #define IDS_MSG_EXPORT_FAILED           1223
 #define IDS_MSG_MACRO_REPLACE_CONFIRM   1224
+#define IDS_MSG_NO_KEY_CONFIGURED       1225
 
 // ---- 坐标适配对话框 ----
 #define IDS_MSG_ADAPT_CONFIRM           1230

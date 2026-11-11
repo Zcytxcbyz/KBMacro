@@ -44,6 +44,7 @@ BEGIN
     L(IDS_MSG_EXPORT_SUCCESS)                   "导出成功。"
     L(IDS_MSG_EXPORT_FAILED)                    "导出失败，请检查文件路径。"
     L(IDS_MSG_MACRO_REPLACE_CONFIRM)            "将替换当前动作列表，是否继续？"
+    L(IDS_MSG_NO_KEY_CONFIGURED)                "请先在键盘模拟器里设置按键。"
 
     // ---- 坐标适配对话框 ----
     L(IDS_MSG_ADAPT_CONFIRM)                    "脚本录制于 %d×%d（DPI %d），\n当前屏幕为 %d×%d（DPI %d）。\n\n是否按比例调整坐标？"

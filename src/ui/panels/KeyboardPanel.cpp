@@ -254,6 +254,7 @@ void KeyboardPanel::sendOnce() {
 
     if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
         LOG_WARN("keyboard: send once ignored, no key configured");
+        uibtn::messageBox(TR(IDS_MSG_NO_KEY_CONFIGURED), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
         return;
     }
 
@@ -280,8 +281,10 @@ void KeyboardPanel::startWithCurrentParams() {
     const KeyboardParams p = collectParams();
 
     if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
-        // TODO(wiring): switch to a status bar hint + i18n resource
+        // A hotkey without a main key can never produce an event, and this path is reachable from
+        // the global hotkey too, so tell the user instead of failing silently.
         LOG_WARN("keyboard: start ignored, no key configured");
+        uibtn::messageBox(TR(IDS_MSG_NO_KEY_CONFIGURED), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
         return;
     }
 
@@ -291,6 +294,7 @@ void KeyboardPanel::startWithCurrentParams() {
              runModeToString(p.run.mode));
 
     // ThreadManager ignores this request while already running, so ignore the return value and flip the buttons
+    // ReSharper disable once CppPassValueParameterByConstReference
     m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
         setRunning(false);
         LOG_INFO("keyboard: finished, reason={}, executed={}", static_cast<int>(res.reason), res.executed);

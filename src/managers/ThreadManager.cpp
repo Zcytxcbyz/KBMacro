@@ -25,7 +25,8 @@
 //     and only these three kinds may be captured: pointer / shared_ptr / small POD
 //   - state logs: start / stop / finish (with reason) / exception, all low frequency, straight to LOG_*
 //     start params are logged by the panel layer, not repeated here
-//   - modules/* not wired up yet: each body is a placeholder; the real loop replaces TODO(wiring)
+//   - each body calls its module (clicker/keyboard/playback/recorder) and returns a TaskResult;
+//     only launch() notifies, exactly once
 // ============================================================
 
 namespace {
