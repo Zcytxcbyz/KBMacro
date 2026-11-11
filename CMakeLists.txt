@@ -83,6 +83,7 @@ set(SOURCES
         src/common/CoordAdapt.cpp
         src/modules/RecorderNormalize.cpp
         src/modules/Recorder.cpp
+        src/common/ActionScale.cpp
         # 在这里添加 .cpp 文件
 )
 
@@ -128,6 +129,7 @@ set(HEADERS
         src/common/RateLimiter.hpp
         src/ui/DialogButtons.hpp
         src/ui/ListHelpers.hpp
+        src/common/ActionScale.hpp
         # 在这里添加 .h 文件
 )
 
