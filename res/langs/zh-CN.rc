@@ -104,6 +104,7 @@ BEGIN
     L(IDS_RECORDER_LIST_COL_PARAM)       "参数"
     L(IDS_RECORDER_LIST_COL_DELAY)       "延时 (ms)"
     L(IDS_RECORDER_LIST_COL_HOLD)        "保持 (ms)"
+    L(IDS_RECORDER_LABEL_PLAYBACK_SPEED) "回放倍率："
 
     // ---- Recorder 交付 ----
     L(IDS_MSG_RECORD_EMPTY)      "没有录到动作。"

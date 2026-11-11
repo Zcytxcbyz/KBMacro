@@ -104,6 +104,7 @@ BEGIN
     L(IDS_RECORDER_LIST_COL_PARAM)       "Parameter"
     L(IDS_RECORDER_LIST_COL_DELAY)       "Delay (ms)"
     L(IDS_RECORDER_LIST_COL_HOLD)        "Hold (ms)"
+    L(IDS_RECORDER_LABEL_PLAYBACK_SPEED) "Speed:"
 
     // ---- Recorder delivery ----
     L(IDS_MSG_RECORD_EMPTY)      "No action was recorded."

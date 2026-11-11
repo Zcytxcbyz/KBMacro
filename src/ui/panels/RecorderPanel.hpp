@@ -70,6 +70,8 @@ private:
 
     // ---- 运行模式 ----
     void onRunModeChanged(wxCommandEvent &event);
+    // 回放倍率变化：归一化到档位后立即落盘
+    void onSpeedChanged(wxCommandEvent &event);
     void refreshEnableStates();
 
     // ---- 列表维护 ----
@@ -106,6 +108,7 @@ private:
     wxButton *m_btnClear{};
 
     wxChoice *m_choiceRunMode{};
+    wxChoice *m_choiceSpeed{};
     wxSpinCtrl *m_spinDuration{};
     wxSpinCtrl *m_spinCount{};
     wxSpinCtrl *m_spinStartDelay{};

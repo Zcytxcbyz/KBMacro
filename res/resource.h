@@ -121,6 +121,7 @@
 #define IDS_MSG_RECORD_REPLACE              4033
 #define IDS_MSG_RECORD_APPEND               4034
 #define IDS_MSG_RECORD_CANCEL               4035
+#define IDS_RECORDER_LABEL_PLAYBACK_SPEED   4036
 
 // ---- Settings 面板 ----
 #define IDS_SETTINGS_GROUP_GENERAL                  5001

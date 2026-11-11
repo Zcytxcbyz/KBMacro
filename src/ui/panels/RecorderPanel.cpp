@@ -7,7 +7,9 @@
 #include <wx/statbox.h>
 #include <wx/richmsgdlg.h>
 #include <cassert>
+#include <iterator>
 
+#include "common/ActionScale.hpp"
 #include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
 #include "common/JsonIO.hpp"
@@ -228,11 +230,35 @@ void RecorderPanel::buildUi() {
         auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_RECORDER_GROUP_PLAYBACK));
         auto *box = new wxStaticBoxSizer(staticBox, wxHORIZONTAL);
 
+        m_choiceSpeed = new wxChoice(staticBox, wxID_ANY);
+
+        // 档位表与配置文件共用 Config.hpp 里的 kPlaybackSpeeds，UI 不另存一份
+        for (const double speed: kPlaybackSpeeds) {
+            m_choiceSpeed->Append(wxString::Format("%0.2fx", speed));
+        }
+
+        {
+            const double speed = ConfigManager::instance().config().playbackSpeed;
+            int selection = 0;
+            int index = 0;
+            for (const double candidate: kPlaybackSpeeds) {
+                if (candidate == speed) {
+                    selection = index;
+                    break;
+                }
+                ++index;
+            }
+            m_choiceSpeed->SetSelection(selection);
+        }
+
         m_btnStartPlayback = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_START_PLAYBACK));
         m_btnStopPlayback = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_STOP_PLAYBACK));
         m_btnImportScript = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_IMPORT_SCRIPT));
         m_btnExportScript = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_EXPORT_SCRIPT));
 
+        box->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_RECORDER_LABEL_PLAYBACK_SPEED)),
+         0, wxALIGN_CENTER_VERTICAL | wxLEFT, 4);
+        box->Add(m_choiceSpeed, 0, wxALIGN_CENTER_VERTICAL | wxALL, 4);
         box->Add(m_btnStartPlayback, 0, wxALL, 4);
         box->Add(m_btnStopPlayback, 0, wxALL, 4);
         box->AddStretchSpacer(1);
@@ -267,6 +293,7 @@ void RecorderPanel::buildUi() {
     refreshList();
 
     // ---- 运行模式下拉框事件 ----
+    m_choiceSpeed->Bind(wxEVT_CHOICE, &RecorderPanel::onSpeedChanged, this);
     m_choiceRunMode->Bind(wxEVT_CHOICE, &RecorderPanel::onRunModeChanged, this);
     refreshEnableStates();
 }
@@ -453,6 +480,18 @@ void RecorderPanel::onRunModeChanged(wxCommandEvent &) {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
+void RecorderPanel::onSpeedChanged(wxCommandEvent &) {
+    const int sel = m_choiceSpeed->GetSelection();
+    if (sel < 0 || sel >= static_cast<int>(std::size(kPlaybackSpeeds))) {
+        return;
+    }
+
+    const double speed = kPlaybackSpeeds[sel];
+    ConfigManager::instance().setPlaybackSpeed(speed);
+    LOG_DEBUG("recorder: playback speed selected {}x", speed);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == 1);
@@ -530,12 +569,18 @@ void RecorderPanel::stopRecording() {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::startPlayback() {
     const RunSpec run = collectRunSpec();
-    LOG_INFO("recorder: start playback requested (actions={}, mode={})",
-             m_actions.size(), runModeToString(run.mode));
+
+    // 倍率在"开始这一刻"快照：回放中途改下拉框，不影响已经在跑的这一次
+    const double speed = ConfigManager::instance().config().playbackSpeed;
+    std::vector<Action> script = m_actions;
+    action::scaleActions(script, speed);
+
+    LOG_INFO("recorder: start playback requested (actions={}, mode={}, speed={}x)",
+             script.size(), runModeToString(run.mode), speed);
 
     // 已在跑时 ThreadManager 会忽略这次请求（同一任务不允许并发），
     // 所以不看返回值，直接按"已启动"切按钮；真结束时回调会再切回来
-    m_threadMgr.StartPlayback(m_actions, run, [this](const TaskResult& res) {
+    m_threadMgr.StartPlayback(std::move(script), run, [this](const TaskResult& res) {
         setRunning(false);
         LOG_INFO("recorder: playback finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
                  static_cast<int>(res.reason), res.executed);
