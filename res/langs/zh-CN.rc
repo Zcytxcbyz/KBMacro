@@ -193,6 +193,12 @@ BEGIN
     // ---- 状态栏 ----
     L(IDS_STATUS_READY)             "就绪"
     L(IDS_STATUS_HOTKEY_FAILED)     "热键注册失败：%d 个"
+    L(IDS_STATUS_RUNNING)           "运行中：%s"
+    L(IDS_STATUS_TASK_SEP)          "、"
+    L(IDS_TASK_CLICKER)             "连点器"
+    L(IDS_TASK_KEYBOARD)            "键盘"
+    L(IDS_TASK_RECORD)              "录制"
+    L(IDS_TASK_PLAYBACK)            "回放"
 
     // ---- 动作编辑对话框 ----
     L(IDS_ACTION_TYPE_MOUSE_MOVE)      "鼠标移动"

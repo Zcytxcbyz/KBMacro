@@ -56,6 +56,9 @@ private:
     // 注册失败时把数量写到状态栏
     void reportHotkeyFailures();
 
+    void refreshStatus();
+    void onStatusTimer(wxTimerEvent &event);
+
     // ---- 计时器 ----
     // 声明位置有讲究：接线阶段 m_threadMgr 拿的是这个 shared_ptr 的引用，
     // 所以它必须排在 m_threadMgr 之前（析构顺序反过来，先停线程再放计时器）。
@@ -80,4 +83,5 @@ private:
 
     // ---- 状态栏 ----
     KBMacroStatusBar *m_statusBar{};
+    wxTimer m_statusTimer{this};   // 300ms 轮询任务状态，驱动状态栏三态
 };

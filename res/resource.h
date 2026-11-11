@@ -204,6 +204,13 @@
 // ---- 状态栏 ----
 #define IDS_STATUS_READY                9001
 #define IDS_STATUS_HOTKEY_FAILED        9002
+#define IDS_STATUS_RUNNING              9003
+#define IDS_STATUS_TASK_SEP             9004
+
+#define IDS_TASK_CLICKER                9011
+#define IDS_TASK_KEYBOARD               9012
+#define IDS_TASK_RECORD                 9013
+#define IDS_TASK_PLAYBACK               9014
 
 // ---- 动作编辑对话框 ----
 #define IDS_ACTION_TYPE_MOUSE_MOVE      10001

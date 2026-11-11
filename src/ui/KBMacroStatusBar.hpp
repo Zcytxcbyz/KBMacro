@@ -15,6 +15,10 @@ public:
     // 显示状态文本（覆盖当前内容）
     void SetMessage(const wxString &text);
 
+    // 右侧常驻提示（热键注册失败、配置异常之类）。
+    // 与左边"运行状态"互不覆盖：状态每 300ms 重算，提示只在有事时写。
+    void SetNotice(const wxString &text);
+
     // 清空状态文本
     void Clear();
 };

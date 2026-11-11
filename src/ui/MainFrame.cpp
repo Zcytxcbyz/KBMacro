@@ -180,7 +180,12 @@ MainFrame::MainFrame()
     m_hotkeyMgr->registerAll();
     reportHotkeyFailures();
 
-    // ---- 8. 关闭时保存几何 + 标签页 ----
+    // ---- 8. 状态栏三态由计时器驱动：任务状态只在 ThreadManager 里，
+    //        面板各自刷自己的按钮，主窗口靠轮询汇总（迟 ≤300ms，无耦合）
+    Bind(wxEVT_TIMER, &MainFrame::onStatusTimer, this);
+    m_statusTimer.Start(300);
+
+    // ---- 9. 关闭时保存几何 + 标签页 ----
     Bind(wxEVT_CLOSE_WINDOW, &MainFrame::onClose, this);
 }
 
@@ -330,6 +335,45 @@ void MainFrame::reportHotkeyFailures() {
     }
 
     const wxString msg = wxString::Format(TR(IDS_STATUS_HOTKEY_FAILED).data(), failed);
-    m_statusBar->SetMessage(msg);
+    m_statusBar->SetNotice(msg);
     LOG_WARN("mainframe: {} hotkey(s) failed to register", failed);
+}
+
+// ============================================================
+// 状态栏：三态 = 就绪 / 运行中（列出在跑的任务）
+// ============================================================
+// ReSharper disable once CppMemberFunctionMayBeConst
+void MainFrame::refreshStatus() {
+    static constexpr struct {
+        TaskKind kind;
+        int resId;
+    } kTasks[] = {
+        {TaskKind::Clicker,  IDS_TASK_CLICKER},
+        {TaskKind::Keyboard, IDS_TASK_KEYBOARD},
+        {TaskKind::Record,   IDS_TASK_RECORD},
+        {TaskKind::Playback, IDS_TASK_PLAYBACK},
+    };
+
+    wxString names;
+    for (const auto &task: kTasks) {
+        if (!m_threadMgr || !m_threadMgr->IsRunning(task.kind)) {
+            continue;
+        }
+
+        if (!names.empty()) {
+            names += TR(IDS_STATUS_TASK_SEP);
+        }
+        names += TR(task.resId);
+    }
+
+    if (names.empty()) {
+        m_statusBar->SetMessage(TR(IDS_STATUS_READY));
+        return;
+    }
+
+    m_statusBar->SetMessage(wxString::Format(TR(IDS_STATUS_RUNNING).data(), names.wc_str()));
+}
+
+void MainFrame::onStatusTimer(wxTimerEvent &) {
+    refreshStatus();
 }
