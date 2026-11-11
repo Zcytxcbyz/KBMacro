@@ -3,11 +3,11 @@
 #include <filesystem>
 #include <iterator>
 
-#include <wx/statbox.h>
 #include <wx/msgdlg.h>
-#include <wx/stdpaths.h>
 #include <wx/richmsgdlg.h>
 #include <wx/spinctrl.h>
+#include <wx/statbox.h>
+#include <wx/stdpaths.h>
 #include <wx/utils.h>
 
 #include "common/Hotkey.hpp"
@@ -17,38 +17,43 @@
 #include "managers/ConfigManager.hpp"
 #include "managers/HotkeyManager.hpp"
 #include "managers/LanguageManager.hpp"
-#include "ui/dialogs/HotkeyCaptureDialog.hpp"
-#include "ui/MainFrame.hpp"
 #include "ui/DialogButtons.hpp"
 #include "ui/ListHelpers.hpp"
+#include "ui/MainFrame.hpp"
+#include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
-    // Timer mode combo box indexes, matching the order of kTimerModeEntries
-    constexpr int kTimerModeSleep  = 0;
-    constexpr int kTimerModeSpin   = 1;
-    constexpr int kTimerModeHybrid = 2;
+// Timer mode combo box indexes, matching the order of kTimerModeEntries
+constexpr int kTimerModeSleep = 0;
+constexpr int kTimerModeSpin = 1;
+constexpr int kTimerModeHybrid = 2;
 
-    [[nodiscard]] int timerModeToIndex(const TimerMode mode) {
-        switch (mode) {
-            case TimerMode::Hybrid: return kTimerModeHybrid;
-            case TimerMode::Spin: return kTimerModeSpin;
-            case TimerMode::Sleep:
-            default: return kTimerModeSleep;
-        }
-    }
-
-    [[nodiscard]] TimerMode indexToTimerMode(const int index) {
-        switch (index) {
-            case kTimerModeHybrid: return TimerMode::Hybrid;
-            case kTimerModeSpin: return TimerMode::Spin;
-            default: return TimerMode::Sleep;
-        }
+[[nodiscard]] int timerModeToIndex(const TimerMode mode) {
+    switch (mode) {
+        case TimerMode::Hybrid:
+            return kTimerModeHybrid;
+        case TimerMode::Spin:
+            return kTimerModeSpin;
+        case TimerMode::Sleep:
+        default:
+            return kTimerModeSleep;
     }
 }
 
+[[nodiscard]] TimerMode indexToTimerMode(const int index) {
+    switch (index) {
+        case kTimerModeHybrid:
+            return TimerMode::Hybrid;
+        case kTimerModeSpin:
+            return TimerMode::Spin;
+        default:
+            return TimerMode::Sleep;
+    }
+}
+} // namespace
+
 SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                   wxVSCROLL | wxHSCROLL),
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL | wxHSCROLL),
       m_hotkeyMgr(hotkeyMgr) {
     buildUi();
 
@@ -109,17 +114,15 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
 
     // Language: iterate kLangs, index ↔ language is one-to-one
     m_choiceLanguage = new wxChoice(staticBox, wxID_ANY);
-    for (const auto &lang: kLangs) {
+    for (const auto &lang : kLangs) {
         m_choiceLanguage->Append(wxString(lang.displayName.data(), lang.displayName.size()));
     }
 
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_LANGUAGE)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_LANGUAGE)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_choiceLanguage, 1, wxEXPAND);
 
     form->AddSpacer(0);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_RESTART)),
-              1, wxEXPAND);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_RESTART)), 1, wxEXPAND);
 
     // Timer mode
     m_choiceTimerMode = new wxChoice(staticBox, wxID_ANY);
@@ -127,18 +130,20 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_SPIN));
     m_choiceTimerMode->Append(TR(IDS_SETTINGS_TIMER_HYBRID));
 
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_TIMER)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_TIMER)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_choiceTimerMode, 1, wxEXPAND);
 
     // Hybrid mode: end-of-run busy-wait duration (editable only in Hybrid; see refreshFromConfig)
-    m_spinHybridMs = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                    wxDefaultPosition, FromDIP(wxSize(80, -1)),
+    m_spinHybridMs = new wxSpinCtrl(staticBox,
+                                    wxID_ANY,
+                                    wxEmptyString,
+                                    wxDefaultPosition,
+                                    FromDIP(wxSize(80, -1)),
                                     wxSP_ARROW_KEYS,
-                                    kTimerHybridSpinMsMin, kTimerHybridSpinMsMax,
+                                    kTimerHybridSpinMsMin,
+                                    kTimerHybridSpinMsMax,
                                     kTimerHybridSpinMsDefault);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_HYBRID_SPIN)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_HYBRID_SPIN)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_spinHybridMs, 0, wxALIGN_CENTER_VERTICAL);
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -157,9 +162,8 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
     auto *staticBox = new wxStaticBox(this, wxID_ANY, TR(IDS_SETTINGS_GROUP_HOTKEYS));
     auto *box = new wxStaticBoxSizer(staticBox, wxVERTICAL);
 
-    m_hotkeyList = new wxListCtrl(staticBox, wxID_ANY,
-                                  wxDefaultPosition, FromDIP(wxSize(-1, 150)),
-                                  wxLC_REPORT | wxLC_SINGLE_SEL);
+    m_hotkeyList = new wxListCtrl(
+            staticBox, wxID_ANY, wxDefaultPosition, FromDIP(wxSize(-1, 150)), wxLC_REPORT | wxLC_SINGLE_SEL);
     m_hotkeyList->EnableCheckBoxes(true);
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_ACTION), wxLIST_FORMAT_LEFT, FromDIP(200));
     m_hotkeyList->AppendColumn(TR(IDS_SETTINGS_LIST_COL_HOTKEY), wxLIST_FORMAT_LEFT, FromDIP(150));
@@ -177,14 +181,10 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
 
     parent->Add(box, 0, wxEXPAND | wxALL, 8);
 
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_SELECTED,
-                       &SettingsPanel::onHotkeySelectionChanged, this);
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED,
-                       &SettingsPanel::onHotkeySelectionChanged, this);
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED,
-                       &SettingsPanel::onHotkeyChecked, this);      // ← added
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED,
-                       &SettingsPanel::onHotkeyChecked, this);      // ← added
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_SELECTED, &SettingsPanel::onHotkeySelectionChanged, this);
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED, &SettingsPanel::onHotkeySelectionChanged, this);
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED, &SettingsPanel::onHotkeyChecked, this); // ← added
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED, &SettingsPanel::onHotkeyChecked, this); // ← added
 
     // Still scroll the page when the mouse is over the list
     uifit::forwardWheelToPage(m_hotkeyList);
@@ -206,8 +206,7 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     m_configPathText = new wxStaticText(staticBox, wxID_ANY, wxEmptyString);
     m_configPathText->SetMinSize(wxSize(FromDIP(280), -1));
 
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_CONFIG_PATH)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_CONFIG_PATH)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_configPathText, 1, wxEXPAND);
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -236,46 +235,56 @@ void SettingsPanel::buildRecorderGroup(wxSizer *parent) {
     form->AddGrowableCol(1, 1);
 
     // Mouse move sampling interval: 0 = no sampling
-    m_spinRecMoveInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                           wxDefaultPosition, FromDIP(wxSize(80, -1)),
+    m_spinRecMoveInterval = new wxSpinCtrl(staticBox,
+                                           wxID_ANY,
+                                           wxEmptyString,
+                                           wxDefaultPosition,
+                                           FromDIP(wxSize(80, -1)),
                                            wxSP_ARROW_KEYS,
-                                           kRecordMoveIntervalMsMin, kRecordMoveIntervalMsMax,
+                                           kRecordMoveIntervalMsMin,
+                                           kRecordMoveIntervalMsMax,
                                            kRecordMoveIntervalMsDefault);
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_MOVE_INTERVAL)),
-              0, wxALIGN_CENTER_VERTICAL);
+              0,
+              wxALIGN_CENTER_VERTICAL);
     form->Add(m_spinRecMoveInterval, 0, wxALIGN_CENTER_VERTICAL);
     form->AddSpacer(0);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MOVE_INTERVAL)),
-              1, wxEXPAND);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MOVE_INTERVAL)), 1, wxEXPAND);
 
     // Start delay: filters the keys of the start hotkey itself
-    m_spinRecStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                         wxDefaultPosition, FromDIP(wxSize(80, -1)),
+    m_spinRecStartDelay = new wxSpinCtrl(staticBox,
+                                         wxID_ANY,
+                                         wxEmptyString,
+                                         wxDefaultPosition,
+                                         FromDIP(wxSize(80, -1)),
                                          wxSP_ARROW_KEYS,
-                                         kRecordStartDelayMsMin, kRecordStartDelayMsMax,
+                                         kRecordStartDelayMsMin,
+                                         kRecordStartDelayMsMax,
                                          kRecordStartDelayMsDefault);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_START_DELAY)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(
+            new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_START_DELAY)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_spinRecStartDelay, 0, wxALIGN_CENTER_VERTICAL);
 
     // Max actions: 0 = unlimited
-    m_spinRecMaxActions = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                         wxDefaultPosition, FromDIP(wxSize(110, -1)),
+    m_spinRecMaxActions = new wxSpinCtrl(staticBox,
+                                         wxID_ANY,
+                                         wxEmptyString,
+                                         wxDefaultPosition,
+                                         FromDIP(wxSize(110, -1)),
                                          wxSP_ARROW_KEYS,
-                                         kRecordMaxActionsMin, kRecordMaxActionsMax,
+                                         kRecordMaxActionsMin,
+                                         kRecordMaxActionsMax,
                                          kRecordMaxActionsDefault);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_MAX_ACTIONS)),
-              0, wxALIGN_CENTER_VERTICAL);
+    form->Add(
+            new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_REC_MAX_ACTIONS)), 0, wxALIGN_CENTER_VERTICAL);
     form->Add(m_spinRecMaxActions, 0, wxALIGN_CENTER_VERTICAL);
     form->AddSpacer(0);
-    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MAX_ACTIONS)),
-              1, wxEXPAND);
+    form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_HINT_REC_MAX_ACTIONS)), 1, wxEXPAND);
 
     box->Add(form, 0, wxEXPAND | wxALL, 8);
 
     // Injected event filter (our own injections are never recorded; this covers "injected by other apps")
-    m_chkRecIgnoreInjected = new wxCheckBox(staticBox, wxID_ANY,
-                                            TR(IDS_SETTINGS_CHK_REC_IGNORE_INJECTED));
+    m_chkRecIgnoreInjected = new wxCheckBox(staticBox, wxID_ANY, TR(IDS_SETTINGS_CHK_REC_IGNORE_INJECTED));
     box->Add(m_chkRecIgnoreInjected, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
 
     parent->Add(box, 0, wxEXPAND | wxALL, 8);
@@ -341,12 +350,9 @@ void SettingsPanel::refreshHotkeyList() {
 
     const auto &cfg = ConfigManager::instance().config();
     for (std::size_t i = 0; i < std::size(kHotkeyActionResIds); ++i) {
-        const long row = m_hotkeyList->InsertItem(static_cast<long>(i),
-                                                  TR(kHotkeyActionResIds[i]));
+        const long row = m_hotkeyList->InsertItem(static_cast<long>(i), TR(kHotkeyActionResIds[i]));
         const std::wstring s = utils::hotkeyToString(cfg.hotkeys[i]);
-        m_hotkeyList->SetItem(row, 1,
-                              s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET)
-                                        : wxString(s));
+        m_hotkeyList->SetItem(row, 1, s.empty() ? TR(IDS_SETTINGS_HOTKEY_UNSET) : wxString(s));
         m_hotkeyList->CheckItem(row, cfg.hotkeyEnabled[i]);
     }
 
@@ -402,7 +408,7 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
 
     dlg.SetSizerAndFit(root);
     dlg.CentreOnParent();
-    btnNow->SetDefault();        // Enter = restart now
+    btnNow->SetDefault(); // Enter = restart now
     const int ret = dlg.ShowModal();
 
     if (ret == wxID_CANCEL) {
@@ -424,8 +430,7 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     if (ret == wxID_YES) {
         // Restart now
         const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
-        LOG_INFO("settings: restarting immediately, exe={}",
-                 utils::ToUtf8(exePath.ToStdWstring()));
+        LOG_INFO("settings: restarting immediately, exe={}", utils::ToUtf8(exePath.ToStdWstring()));
 
         // The path below goes through ExitMainLoop, which does not fire wxEVT_CLOSE_WINDOW,
         // and the new process reads the config right away. So save the window state explicitly.
@@ -453,8 +458,7 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
             // But we just unregistered the hotkeys, so register them back or this instance loses them.
             LOG_ERROR("settings: failed to launch new instance");
             m_hotkeyMgr.registerAll();
-            LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}",
-                     m_hotkeyMgr.failedCount());
+            LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}", m_hotkeyMgr.failedCount());
         }
     }
     // wxID_NO = restart later: do nothing, the config is already saved
@@ -475,7 +479,7 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
         wxRichMessageDialog dlg(this,
                                 TR(IDS_SETTINGS_MSG_SPIN_WARNING),
                                 TR(IDS_APP_TITLE),
-                                wxYES_NO | wxICON_WARNING);              // wxOK|wxCANCEL → wxYES_NO
+                                wxYES_NO | wxICON_WARNING); // wxOK|wxCANCEL → wxYES_NO
         // ↓ added this line so both buttons follow the language
         dlg.SetYesNoLabels(uibtn::label(IDS_COMMON_BTN_YES), uibtn::label(IDS_COMMON_BTN_NO));
         dlg.ShowCheckBox(TR(IDS_SETTINGS_CHK_SPIN_DONT_ASK));
@@ -511,7 +515,7 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
 // ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
-    (void)event;   // the two event types differ, so read the widget value instead of event.GetInt()
+    (void)event; // the two event types differ, so read the widget value instead of event.GetInt()
 
     const int ms = m_spinHybridMs->GetValue();
     auto &cfgMgr = ConfigManager::instance();
@@ -532,7 +536,7 @@ void SettingsPanel::onHybridSpinChanged(wxCommandEvent &event) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::onRecorderMoveIntervalChanged(wxCommandEvent &event) {
-    (void)event;   // SPINCTRL and TEXT share this handler, so always read the widget value
+    (void)event; // SPINCTRL and TEXT share this handler, so always read the widget value
 
     const int ms = m_spinRecMoveInterval->GetValue();
     auto &cfgMgr = ConfigManager::instance();
@@ -546,7 +550,8 @@ void SettingsPanel::onRecorderMoveIntervalChanged(wxCommandEvent &event) {
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
-void SettingsPanel::onRecorderIgnoreInjectedToggled(wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
+void SettingsPanel::onRecorderIgnoreInjectedToggled(
+        wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
     const bool on = event.IsChecked();
     auto &cfgMgr = ConfigManager::instance();
 
@@ -615,8 +620,7 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
 }
 
 void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
-    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
-                                               wxLIST_STATE_SELECTED);
+    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
     if (row < 0) {
         LOG_DEBUG("settings: modify hotkey clicked, but no row selected");
         return;
@@ -625,18 +629,14 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     const auto index = static_cast<int>(row);
     const Hotkey current = ConfigManager::instance().config().hotkeys[index];
 
-    LOG_DEBUG("settings: modify hotkey[{}], current='{}'",
-              index, utils::ToUtf8(utils::hotkeyToString(current)));
+    LOG_DEBUG("settings: modify hotkey[{}], current='{}'", index, utils::ToUtf8(utils::hotkeyToString(current)));
 
     // Conflict check: the closure captures index to exclude this row
-    HotkeyCaptureDialog dlg(
-        this,
-        TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
-        current,
-        /*requireMainKey=*/true,
-        [this, index](const Hotkey &hk) {
-            return m_hotkeyMgr.isConflicting(hk, index);
-        });
+    HotkeyCaptureDialog dlg(this,
+                            TR(IDS_SETTINGS_BTN_MODIFY_HOTKEY),
+                            current,
+                            /*requireMainKey=*/true,
+                            [this, index](const Hotkey &hk) { return m_hotkeyMgr.isConflicting(hk, index); });
 
     if (dlg.ShowModal() != wxID_OK) {
         LOG_DEBUG("settings: hotkey[{}] modify cancelled", index);
@@ -649,11 +649,9 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     // setHotkey does: conflict check → unregister old → persist → register new
     // Conflicts prompt here (HotkeyCaptureDialog checks first); a failure here usually means "occupied"
     if (!m_hotkeyMgr.setHotkey(index, wanted)) {
-        LOG_WARN("settings: hotkey[{}] set to '{}' failed (occupied?)",
-                 index, wantedStr);
+        LOG_WARN("settings: hotkey[{}] set to '{}' failed (occupied?)", index, wantedStr);
     } else {
-        LOG_INFO("settings: hotkey[{}] set to '{}'",
-                 index, wantedStr);
+        LOG_INFO("settings: hotkey[{}] set to '{}'", index, wantedStr);
     }
 
     refreshHotkeyList();
@@ -665,21 +663,18 @@ void SettingsPanel::onExportConfig(wxCommandEvent &) {
     if (ConfigManager::instance().exportToPortable()) {
         // Success: the path switched to the portable file, refresh the display
         refreshConfigPathText();
-        uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_INFORMATION, this);
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
     } else {
         // Failure: state unchanged (still APPDATA), leave the path display alone
-        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
     }
 }
 
 void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
     LOG_DEBUG("settings: clear adaptation clicked");
 
-    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM),
-                                 TR(IDS_APP_TITLE),
-                                 wxYES_NO | wxICON_QUESTION, this);
+    const int ret = uibtn::messageBox(
+            TR(IDS_SETTINGS_MSG_CLEAR_ADAPT_CONFIRM), TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
     ConfigManager::instance().setAdaptationPreference(AdaptationPreference::Ask);
@@ -689,9 +684,8 @@ void SettingsPanel::onClearAdaptation(wxCommandEvent &) {
 void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {
     LOG_DEBUG("settings: clear spin confirmation clicked");
 
-    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM),
-                                 TR(IDS_APP_TITLE),
-                                 wxYES_NO | wxICON_QUESTION, this);
+    const int ret = uibtn::messageBox(
+            TR(IDS_SETTINGS_MSG_CLEAR_SPIN_CONFIRM), TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
     ConfigManager::instance().clearSpinWarning();
@@ -700,9 +694,8 @@ void SettingsPanel::onClearSpinConfirm(wxCommandEvent &) {
 void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     LOG_DEBUG("settings: reset defaults clicked");
 
-    const int ret = uibtn::messageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM),
-                                 TR(IDS_APP_TITLE),
-                                 wxYES_NO | wxICON_QUESTION, this);
+    const int ret =
+            uibtn::messageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM), TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
     ConfigManager::instance().resetToDefaults();
@@ -731,34 +724,28 @@ void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
     LOG_DEBUG("settings: delete portable config clicked");
 
     if (!ConfigManager::instance().isPortable()) {
-        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE),
-                     TR(IDS_APP_TITLE),
-                     wxOK | wxICON_INFORMATION, this);
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_NO_FILE), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
         return;
     }
 
-    const wxString msg = TR(IDS_SETTINGS_MSG_DELETE_CONFIRM)
-                         + L"\n\n" + ConfigManager::instance().currentPath().wstring();
-    const int ret = uibtn::messageBox(msg, TR(IDS_APP_TITLE),
-                                 wxYES_NO | wxICON_QUESTION, this);
+    const wxString msg =
+            TR(IDS_SETTINGS_MSG_DELETE_CONFIRM) + L"\n\n" + ConfigManager::instance().currentPath().wstring();
+    const int ret = uibtn::messageBox(msg, TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
     if (ConfigManager::instance().deletePortable()) {
         // Success: the path switched back to APPDATA, refresh the display
         refreshConfigPathText();
-        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_INFORMATION, this);
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_OK), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
     } else {
         // Failure: state unchanged (still portable), leave the path display alone
-        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_SETTINGS_MSG_DELETE_PORTABLE_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
     }
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::onHotkeySelectionChanged(wxListEvent &event) {
-    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL,
-                                               wxLIST_STATE_SELECTED);
+    const long row = m_hotkeyList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
     m_btnModifyHotkey->Enable(row >= 0);
     event.Skip();
 }
@@ -788,8 +775,7 @@ void SettingsPanel::onHotkeyChecked(wxListEvent &event) {
         // A failure usually means the key is taken by another app when enabling.
         // The config already records the user's intent (the next start retries via registerAll),
         // so the UI is not reverted; the failure shows up through HotkeyManager::failedCount.
-        LOG_WARN("settings: hotkey[{}] setEnabled({}) failed (occupied?)",
-                 index, checked);
+        LOG_WARN("settings: hotkey[{}] setEnabled({}) failed (occupied?)", index, checked);
     }
 
     event.Skip();

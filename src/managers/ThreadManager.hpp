@@ -110,8 +110,7 @@ public:
     // actions is taken by value: the caller passes the UI-side m_actions (one copy), moved into the thread.
     // coordinate conversion is already done at import/delivery, only the final result is taken here.
     // recording is running → reject: log LOG_WARN, do not start and do not callback
-    void StartPlayback(std::vector<Action> actions, const RunSpec &run,
-                       FinishCallback onFinished);
+    void StartPlayback(std::vector<Action> actions, const RunSpec &run, FinishCallback onFinished);
     void StopPlayback();
 
     // whether this task is currently running (used by panels to refresh button state)
@@ -135,14 +134,12 @@ private:
     // reason is not computed here--launch overrides it by st.stop_requested(), an exception records Failed.
     using ThreadBody = std::function<TaskResult(std::stop_token)>;
 
-    static constexpr std::size_t kTaskCount = 4;   // matches the number of TaskKind enumerators
+    static constexpr std::size_t kTaskCount = 4; // matches the number of TaskKind enumerators
 
     static_assert(static_cast<std::size_t>(TaskKind::Playback) + 1 == kTaskCount,
                   "When adding enum values to TaskKind, you need to update kTaskCount as well");
 
-    [[nodiscard]] static constexpr std::size_t index(TaskKind kind) noexcept {
-        return static_cast<std::size_t>(kind);
-    }
+    [[nodiscard]] static constexpr std::size_t index(TaskKind kind) noexcept { return static_cast<std::size_t>(kind); }
 
     // single entry for starting a thread: conflict check → defensive reclaim → bump generation → set Running →
     // wrap in try/catch → finish notification (exactly once)
@@ -154,7 +151,7 @@ private:
     // called by ~ThreadManager only: signal all first, then join one by one
     void StopAll();
 
-    std::shared_ptr<ITimer> &m_timerRef;   // reference; read only on the UI thread
+    std::shared_ptr<ITimer> &m_timerRef; // reference; read only on the UI thread
     wxEvtHandler &m_ui;
 
     std::array<Slot, kTaskCount> m_slots{};

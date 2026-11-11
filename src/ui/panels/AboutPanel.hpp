@@ -1,9 +1,9 @@
 #pragma once
 
-#include <wx/wx.h>
 #include <wx/hyperlink.h>
-#include <wx/scrolwin.h>
 #include <wx/listctrl.h>
+#include <wx/scrolwin.h>
+#include <wx/wx.h>
 
 // About panel.
 //

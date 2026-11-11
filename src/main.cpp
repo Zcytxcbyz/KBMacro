@@ -44,5 +44,4 @@ public:
     }
 };
 
-
 wxIMPLEMENT_APP(KBMacroApp);

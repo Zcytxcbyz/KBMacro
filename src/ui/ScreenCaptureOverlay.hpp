@@ -37,5 +37,5 @@ private:
 
     Callback m_callback;
     bool m_finished = false;
-    wxPoint m_origin;   // top-left of the virtual desktop (screen coordinates)
+    wxPoint m_origin; // top-left of the virtual desktop (screen coordinates)
 };

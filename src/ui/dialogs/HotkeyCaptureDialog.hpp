@@ -41,6 +41,6 @@ private:
 
     Hotkey m_hotkey;
     bool m_requireMainKey = false;
-    ConflictChecker m_checkConflict;   // empty = no conflict check
+    ConflictChecker m_checkConflict; // empty = no conflict check
     wxTextCtrl *m_display{};
 };

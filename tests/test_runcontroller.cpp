@@ -11,16 +11,18 @@
 
 namespace {
 
-    using Duration = ITimer::Duration;
-    using TimePoint = ITimer::TimePoint;
+using Duration = ITimer::Duration;
+using TimePoint = ITimer::TimePoint;
 
-    // an arbitrary fixed base time. RunController must not depend on the real clock,
-    // so Zero is a sufficient base and assertions can be written as integers.
-    // ReSharper disable once CppVariableCanBeMadeConstexpr
-    const TimePoint kBase{};
+// an arbitrary fixed base time. RunController must not depend on the real clock,
+// so Zero is a sufficient base and assertions can be written as integers.
+// ReSharper disable once CppVariableCanBeMadeConstexpr
+const TimePoint kBase{};
 
-    // kBase + ms
-    TimePoint at(const long long ms) { return kBase + Duration(ms); }
+// kBase + ms
+TimePoint at(const long long ms) {
+    return kBase + Duration(ms);
+}
 
 } // namespace
 
@@ -32,7 +34,7 @@ TEST(RunControllerInfinite, AlwaysRuns) {
     const RunController rc(RunSpec{.mode = RunMode::Infinite}, kBase);
 
     EXPECT_TRUE(rc.shouldRun(kBase));
-    EXPECT_TRUE(rc.shouldRun(at(3'600'000)));      // one hour later
+    EXPECT_TRUE(rc.shouldRun(at(3'600'000))); // one hour later
 }
 
 TEST(RunControllerInfinite, NoteIterationDoesNotStop) {
@@ -58,15 +60,14 @@ TEST(RunControllerTimed, RunsUntilDeadline) {
     const RunController rc(RunSpec{.mode = RunMode::Timed, .durationSec = 10}, kBase);
 
     EXPECT_TRUE(rc.shouldRun(kBase));
-    EXPECT_TRUE(rc.shouldRun(at(9'999)));       // 1ms short
-    EXPECT_FALSE(rc.shouldRun(at(10'000)));     // at the deadline it is false (strictly less)
+    EXPECT_TRUE(rc.shouldRun(at(9'999))); // 1ms short
+    EXPECT_FALSE(rc.shouldRun(at(10'000))); // at the deadline it is false (strictly less)
     EXPECT_FALSE(rc.shouldRun(at(10'001)));
 }
 
 TEST(RunControllerTimed, IgnoresCount) {
     // count = 0, but Timed mode must ignore it entirely
-    const RunController rc(
-        RunSpec{.mode = RunMode::Timed, .durationSec = 10, .count = 0}, kBase);
+    const RunController rc(RunSpec{.mode = RunMode::Timed, .durationSec = 10, .count = 0}, kBase);
 
     EXPECT_TRUE(rc.shouldRun(at(5'000)));
 }
@@ -94,11 +95,11 @@ TEST(RunControllerTimed, LongIntervalDoesNotOverrun) {
     while (rc.shouldRun(now)) {
         ++iterations;
         rc.noteIteration();
-        now += rc.clampWait(Duration(60'000), now);   // simulate ITimer::wait running to completion
+        now += rc.clampWait(Duration(60'000), now); // simulate ITimer::wait running to completion
     }
 
     EXPECT_EQ(iterations, 1);
-    EXPECT_EQ(now, at(10'000));       // finishes exactly at the deadline, not after 60s
+    EXPECT_EQ(now, at(10'000)); // finishes exactly at the deadline, not after 60s
 }
 
 // ============================================================
@@ -109,16 +110,16 @@ TEST(RunControllerCounted, StopsAfterCount) {
     RunController rc(RunSpec{.mode = RunMode::Counted, .count = 3}, kBase);
 
     EXPECT_TRUE(rc.shouldRun(kBase));
-    rc.noteIteration();                                // 1
+    rc.noteIteration(); // 1
 
     EXPECT_TRUE(rc.shouldRun(kBase));
-    rc.noteIteration();                                // 2
+    rc.noteIteration(); // 2
 
     EXPECT_TRUE(rc.shouldRun(kBase));
-    rc.noteIteration();                                // 3
+    rc.noteIteration(); // 3
 
     EXPECT_FALSE(rc.shouldRun(kBase));
-    EXPECT_FALSE(rc.shouldRun(at(1'000'000)));         // once the count is used up it stops, regardless of time
+    EXPECT_FALSE(rc.shouldRun(at(1'000'000))); // once the count is used up it stops, regardless of time
 }
 
 TEST(RunControllerCounted, SingleIteration) {
@@ -139,10 +140,9 @@ TEST(RunControllerCounted, ZeroCountRunsNothing) {
 
 TEST(RunControllerCounted, IgnoresDuration) {
     // durationSec = 0, but Counted mode must ignore it entirely
-    RunController rc(
-        RunSpec{.mode = RunMode::Counted, .durationSec = 0, .count = 2}, kBase);
+    RunController rc(RunSpec{.mode = RunMode::Counted, .durationSec = 0, .count = 2}, kBase);
 
-    EXPECT_TRUE(rc.shouldRun(at(3'600'000)));   // runs as usual even after an hour
+    EXPECT_TRUE(rc.shouldRun(at(3'600'000))); // runs as usual even after an hour
     rc.noteIteration();
 
     EXPECT_TRUE(rc.shouldRun(at(7'200'000)));
@@ -170,5 +170,5 @@ TEST(RunControllerCounted, LoopRunsExactCount) {
     }
 
     EXPECT_EQ(iterations, 4);
-    EXPECT_EQ(now, at(400));     // 4 rounds × 100ms
+    EXPECT_EQ(now, at(400)); // 4 rounds × 100ms
 }

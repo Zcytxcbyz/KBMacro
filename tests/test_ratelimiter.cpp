@@ -4,8 +4,8 @@
 
 namespace {
 
-    using Duration = ITimer::Duration;
-    using TimePoint = ITimer::TimePoint;
+using Duration = ITimer::Duration;
+using TimePoint = ITimer::TimePoint;
 
 } // namespace
 
@@ -40,9 +40,9 @@ TEST(RateLimiterTest, AllowsAgainAfterInterval) {
     const TimePoint base{};
 
     ASSERT_TRUE(limiter.allow(base));
-    ASSERT_TRUE(limiter.allow(base + Duration{1500}));  // allowed; the anchor moves to 1500
+    ASSERT_TRUE(limiter.allow(base + Duration{1500})); // allowed; the anchor moves to 1500
     EXPECT_FALSE(limiter.allow(base + Duration{2000})); // only 500ms have passed
-    EXPECT_TRUE(limiter.allow(base + Duration{2500}));  // another 1000ms have passed
+    EXPECT_TRUE(limiter.allow(base + Duration{2500})); // another 1000ms have passed
 }
 
 TEST(RateLimiterTest, ResetAllowsImmediately) {

@@ -66,7 +66,7 @@ TEST(VkFromString, KnownNames) {
 }
 
 TEST(VkFromString, WholeTableRoundTrip) {
-    for (const auto &[vk, name]: kKeyNames) {
+    for (const auto &[vk, name] : kKeyNames) {
         ASSERT_NE(name, nullptr);
         EXPECT_EQ(utils::vkFromString(name), vk) << "name=" << utils::ToUtf8(name);
         EXPECT_EQ(utils::ToUtf8(utils::vkToString(vk)), utils::ToUtf8(name)) << "vk=" << vk;
@@ -87,7 +87,7 @@ TEST(HotkeyToString, ModifiersOnly) {
 
 TEST(HotkeyToString, ModifierOrderIsFixed) {
     Hotkey hk;
-    hk.modifiers = hk::kModWin | hk::kModCtrl;   // bit order does not affect display order
+    hk.modifiers = hk::kModWin | hk::kModCtrl; // bit order does not affect display order
     EXPECT_EQ(utils::ToUtf8(utils::hotkeyToString(hk)), "Ctrl+Win");
 }
 
@@ -115,19 +115,26 @@ TEST(HotkeyToString, UnknownMainKeyShowsQuestionMark) {
 
 TEST(IsModifierKey, EveryModifierVariant) {
     constexpr unsigned kModifierVks[] = {
-        VK_CONTROL, VK_LCONTROL, VK_RCONTROL,
-        VK_SHIFT,   VK_LSHIFT,   VK_RSHIFT,
-        VK_MENU,    VK_LMENU,    VK_RMENU,
-        VK_LWIN,    VK_RWIN,
+            VK_CONTROL,
+            VK_LCONTROL,
+            VK_RCONTROL,
+            VK_SHIFT,
+            VK_LSHIFT,
+            VK_RSHIFT,
+            VK_MENU,
+            VK_LMENU,
+            VK_RMENU,
+            VK_LWIN,
+            VK_RWIN,
     };
-    for (const unsigned vk: kModifierVks) {
+    for (const unsigned vk : kModifierVks) {
         EXPECT_TRUE(utils::isModifierKey(vk)) << "vk=" << vk;
     }
 }
 
 TEST(IsModifierKey, OrdinaryKeys) {
     constexpr unsigned kOrdinary[] = {0, 'A', '0', VK_F1, VK_ESCAPE, VK_SPACE, VK_TAB};
-    for (const unsigned vk: kOrdinary) {
+    for (const unsigned vk : kOrdinary) {
         EXPECT_FALSE(utils::isModifierKey(vk)) << "vk=" << vk;
     }
 }
@@ -161,8 +168,8 @@ TEST(HotkeyValidity, EmptyIsNeverValid) {
 TEST(HotkeyValidity, ModifiersOnly) {
     Hotkey hk;
     hk.modifiers = hk::kModCtrl;
-    EXPECT_TRUE(utils::isValidHotkey(hk, false));   // the panel allows modifier-only hotkeys
-    EXPECT_FALSE(utils::isValidHotkey(hk, true));   // global hotkeys must have a main key
+    EXPECT_TRUE(utils::isValidHotkey(hk, false)); // the panel allows modifier-only hotkeys
+    EXPECT_FALSE(utils::isValidHotkey(hk, true)); // global hotkeys must have a main key
 }
 
 TEST(HotkeyValidity, MainKeyOnly) {

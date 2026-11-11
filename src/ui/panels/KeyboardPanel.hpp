@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include <wx/wx.h>
 #include <wx/scrolwin.h>
+#include <wx/wx.h>
 
 #include "common/ITimer.hpp"
 #include "common/KeyboardParams.hpp"
@@ -18,8 +18,7 @@ class ThreadManager;
 //   - "Send once" is a synchronous one-shot action: no thread, no ThreadManager
 class KeyboardPanel : public wxScrolledWindow {
 public:
-    KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
-                  std::shared_ptr<ITimer> &timerRef);
+    KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr, std::shared_ptr<ITimer> &timerRef);
 
     // Called by MainFrame from the hotkey path, equivalent to the user clicking "Start"/"Stop".
     void startWithCurrentParams();

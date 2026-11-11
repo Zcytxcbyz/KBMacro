@@ -13,8 +13,7 @@ RunController::RunController(const RunSpec &spec, const TimePoint start)
     : m_mode(spec.mode),
       m_start(start),
       m_duration(std::chrono::seconds(spec.durationSec)),
-      m_totalCount(spec.count) {
-}
+      m_totalCount(spec.count) {}
 
 bool RunController::shouldRun(const TimePoint now) const {
     switch (m_mode) {
@@ -29,11 +28,10 @@ bool RunController::shouldRun(const TimePoint now) const {
             return m_executedCount < m_totalCount;
     }
 
-    return false;   // unreachable: all three RunMode values are covered
+    return false; // unreachable: all three RunMode values are covered
 }
 
-RunController::Duration RunController::clampWait(const Duration interval,
-                                                 const TimePoint now) const {
+RunController::Duration RunController::clampWait(const Duration interval, const TimePoint now) const {
     if (m_mode != RunMode::Timed) return interval;
 
     // ceil instead of truncation: Duration is milliseconds, truncation would drop the sub-1ms remainder

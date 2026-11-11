@@ -1,11 +1,10 @@
 #include <algorithm>
-#include <utility>
 #include <cmath>
+#include <utility>
 
 #include "common/Config.hpp"
-#include "common/Types.hpp"
 #include "common/Hotkey.hpp"
-
+#include "common/Types.hpp"
 
 // ============================================================
 // serialization
@@ -31,24 +30,23 @@ void to_json(nlohmann::json &j, const Config &c) {
     j["tabIndex"] = c.tabIndex;
 
     auto hotkeys = nlohmann::json::array();
-    for (const auto &hk: c.hotkeys) {
+    for (const auto &hk : c.hotkeys) {
         hotkeys.push_back(hk);
     }
     j["hotkeys"] = std::move(hotkeys);
     j["hotkeyEnabled"] = c.hotkeyEnabled;
 
     j["window"] = nlohmann::json{
-        {"x", c.window.x},
-        {"y", c.window.y},
-        {"width", c.window.width},
-        {"height", c.window.height},
-        {"maximized", c.window.maximized},
+            {"x", c.window.x},
+            {"y", c.window.y},
+            {"width", c.window.width},
+            {"height", c.window.height},
+            {"maximized", c.window.maximized},
     };
 
     j["flags"] = nlohmann::json{
-        {"spinWarningConfirmed", c.flags.spinWarningConfirmed},
-        {"adaptationPreference",
-         adaptationPreferenceToString(c.flags.adaptationPreference)},
+            {"spinWarningConfirmed", c.flags.spinWarningConfirmed},
+            {"adaptationPreference", adaptationPreferenceToString(c.flags.adaptationPreference)},
     };
 }
 
@@ -56,22 +54,18 @@ void from_json(const nlohmann::json &j, Config &c) {
     c = Config{};
 
     c.language = j.value("language", std::string{});
-    c.timerMode = timerModeFromString(
-        j.value("timerMode", std::string{"sleep"}));
+    c.timerMode = timerModeFromString(j.value("timerMode", std::string{"sleep"}));
     // hand-edited config may hold out-of-range values, clamp once on load; missing fields default (old configs)
     c.timerHybridSpinMs = std::clamp(
-        j.value("timerHybridSpinMs", kTimerHybridSpinMsDefault),
-        kTimerHybridSpinMsMin, kTimerHybridSpinMsMax);
-    c.recordMoveIntervalMs = std::clamp(
-    j.value("recordMoveIntervalMs", kRecordMoveIntervalMsDefault),
-    kRecordMoveIntervalMsMin, kRecordMoveIntervalMsMax);
+            j.value("timerHybridSpinMs", kTimerHybridSpinMsDefault), kTimerHybridSpinMsMin, kTimerHybridSpinMsMax);
+    c.recordMoveIntervalMs = std::clamp(j.value("recordMoveIntervalMs", kRecordMoveIntervalMsDefault),
+                                        kRecordMoveIntervalMsMin,
+                                        kRecordMoveIntervalMsMax);
     c.recordIgnoreInjected = j.value("recordIgnoreInjected", false);
     c.recordStartDelayMs = std::clamp(
-        j.value("recordStartDelayMs", kRecordStartDelayMsDefault),
-        kRecordStartDelayMsMin, kRecordStartDelayMsMax);
+            j.value("recordStartDelayMs", kRecordStartDelayMsDefault), kRecordStartDelayMsMin, kRecordStartDelayMsMax);
     c.recordMaxActions = std::clamp(
-        j.value("recordMaxActions", kRecordMaxActionsDefault),
-        kRecordMaxActionsMin, kRecordMaxActionsMax);
+            j.value("recordMaxActions", kRecordMaxActionsDefault), kRecordMaxActionsMin, kRecordMaxActionsMax);
     c.playbackSpeed = snapPlaybackSpeed(j.value("playbackSpeed", kPlaybackSpeedDefault));
     c.alwaysOnTop = j.value("alwaysOnTop", false);
     c.tabIndex = j.value("tabIndex", 0);
@@ -80,8 +74,7 @@ void from_json(const nlohmann::json &j, Config &c) {
     // missing entries keep the default (all-zero empty hotkeys).
     if (j.contains("hotkeys") && j["hotkeys"].is_array()) {
         const auto &arr = j["hotkeys"];
-        const auto n = std::min<std::size_t>(arr.size(),
-                                             static_cast<std::size_t>(kHotkeyCount));
+        const auto n = std::min<std::size_t>(arr.size(), static_cast<std::size_t>(kHotkeyCount));
         for (std::size_t i = 0; i < n; ++i) {
             if (arr[i].is_object()) {
                 c.hotkeys[i] = arr[i].get<Hotkey>();
@@ -93,8 +86,7 @@ void from_json(const nlohmann::json &j, Config &c) {
     // missing entries keep kHotkeyEnabledDefault (all true), old configs stay compatible.
     if (j.contains("hotkeyEnabled") && j["hotkeyEnabled"].is_array()) {
         const auto &arr = j["hotkeyEnabled"];
-        const auto n = std::min<std::size_t>(arr.size(),
-                                             static_cast<std::size_t>(kHotkeyCount));
+        const auto n = std::min<std::size_t>(arr.size(), static_cast<std::size_t>(kHotkeyCount));
         for (std::size_t i = 0; i < n; ++i) {
             if (arr[i].is_boolean()) {
                 c.hotkeyEnabled[i] = arr[i].get<bool>();
@@ -115,8 +107,8 @@ void from_json(const nlohmann::json &j, Config &c) {
     if (j.contains("flags") && j["flags"].is_object()) {
         const auto &f = j["flags"];
         c.flags.spinWarningConfirmed = f.value("spinWarningConfirmed", false);
-        c.flags.adaptationPreference = adaptationPreferenceFromString(
-            f.value("adaptationPreference", std::string{"Ask"}));
+        c.flags.adaptationPreference =
+                adaptationPreferenceFromString(f.value("adaptationPreference", std::string{"Ask"}));
     }
 }
 
@@ -128,7 +120,7 @@ double snapPlaybackSpeed(const double speed) noexcept {
 
     double best = kPlaybackSpeeds[0];
     double bestDelta = std::abs(speed - best);
-    for (const double candidate: kPlaybackSpeeds) {
+    for (const double candidate : kPlaybackSpeeds) {
         if (const double delta = std::abs(speed - candidate); delta < bestDelta) {
             best = candidate;
             bestDelta = delta;

@@ -1,6 +1,6 @@
 #include "modules/Clicker.hpp"
 
-#include <algorithm>   // std::max
+#include <algorithm> // std::max
 
 #include "common/Log.hpp"
 #include "common/RunController.hpp"
@@ -37,12 +37,11 @@ ClickStep toClickStep(const ClickType type) noexcept {
             return {.wheel = true, .direction = WheelDirection::Right};
     }
 
-    return {};   // unreachable: all enum branches covered, kept to keep the compiler quiet
+    return {}; // unreachable: all enum branches covered, kept to keep the compiler quiet
 }
 
 int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) {
-    const auto [wheel, times, button, direction] =
-        toClickStep(p.clickType);
+    const auto [wheel, times, button, direction] = toClickStep(p.clickType);
 
     // wait between rounds: intervalMs is the whole cycle, hold duration is taken out of it;
     // wheel has no "hold", so the wait is the full interval.
@@ -76,7 +75,7 @@ int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st) 
             if (wheel) {
                 input::wheel(direction, p.wheelSteps);
             } else if (!input::click(button, p.holdMs, timer, st)) {
-                interrupted = true;   // stopped during hold: release already sent
+                interrupted = true; // stopped during hold: release already sent
                 break;
             }
         }

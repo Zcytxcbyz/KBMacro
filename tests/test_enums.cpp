@@ -16,7 +16,7 @@
 // ---- TimerMode ----
 
 TEST(TimerModeConversion, RoundTrip) {
-    for (const auto &[mode, name]: kTimerModeEntries) {
+    for (const auto &[mode, name] : kTimerModeEntries) {
         EXPECT_EQ(timerModeFromString(name), mode) << "name=" << name;
         EXPECT_EQ(timerModeToString(mode), name);
     }
@@ -30,7 +30,7 @@ TEST(TimerModeConversion, UnknownFallsBackToSleep) {
 // ---- RunMode ----
 
 TEST(RunModeConversion, RoundTrip) {
-    for (const auto &[mode, name]: kRunModeEntries) {
+    for (const auto &[mode, name] : kRunModeEntries) {
         EXPECT_EQ(runModeFromString(name), mode) << "name=" << name;
         EXPECT_EQ(runModeToString(mode), name);
     }
@@ -43,7 +43,7 @@ TEST(RunModeConversion, UnknownFallsBackToInfinite) {
 // ---- AdaptationPreference ----
 
 TEST(AdaptationPreferenceConversion, RoundTrip) {
-    for (const auto &[value, name]: kAdaptationPreferenceEntries) {
+    for (const auto &[value, name] : kAdaptationPreferenceEntries) {
         EXPECT_EQ(adaptationPreferenceFromString(name), value) << "name=" << name;
         EXPECT_EQ(adaptationPreferenceToString(value), name);
     }
@@ -56,7 +56,7 @@ TEST(AdaptationPreferenceConversion, UnknownFallsBackToAsk) {
 // ---- ActionType ----
 
 TEST(ActionTypeConversion, RoundTrip) {
-    for (const auto &[value, name]: kActionTypeEntries) {
+    for (const auto &[value, name] : kActionTypeEntries) {
         EXPECT_EQ(actionTypeFromString(name), value) << "name=" << name;
         EXPECT_EQ(actionTypeToString(value), name);
     }
@@ -69,7 +69,7 @@ TEST(ActionTypeConversion, UnknownFallsBackToMouseMove) {
 // ---- MouseButton ----
 
 TEST(MouseButtonConversion, RoundTrip) {
-    for (const auto &[value, name]: kMouseButtonEntries) {
+    for (const auto &[value, name] : kMouseButtonEntries) {
         EXPECT_EQ(mouseButtonFromString(name), value) << "name=" << name;
         EXPECT_EQ(mouseButtonToString(value), name);
     }
@@ -78,7 +78,7 @@ TEST(MouseButtonConversion, RoundTrip) {
 // ---- WheelDirection ----
 
 TEST(WheelDirectionConversion, RoundTrip) {
-    for (const auto &[value, name]: kWheelDirectionEntries) {
+    for (const auto &[value, name] : kWheelDirectionEntries) {
         EXPECT_EQ(wheelDirectionFromString(name), value) << "name=" << name;
         EXPECT_EQ(wheelDirectionToString(value), name);
     }
@@ -87,7 +87,7 @@ TEST(WheelDirectionConversion, RoundTrip) {
 // ---- KeyEventType ----
 
 TEST(KeyEventTypeConversion, RoundTrip) {
-    for (const auto &[value, name]: kKeyEventTypeEntries) {
+    for (const auto &[value, name] : kKeyEventTypeEntries) {
         EXPECT_EQ(keyEventTypeFromString(name), value) << "name=" << name;
         EXPECT_EQ(keyEventTypeToString(value), name);
     }
@@ -96,7 +96,7 @@ TEST(KeyEventTypeConversion, RoundTrip) {
 // ---- ClickType ----
 
 TEST(ClickTypeConversion, RoundTrip) {
-    for (const auto &[value, name]: kClickTypeEntries) {
+    for (const auto &[value, name] : kClickTypeEntries) {
         EXPECT_EQ(clickTypeFromString(name), value) << "name=" << name;
         EXPECT_EQ(clickTypeToString(value), name);
     }

@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include <wx/wx.h>
-#include <wx/scrolwin.h>
 #include <wx/listctrl.h>
+#include <wx/scrolwin.h>
+#include <wx/wx.h>
 
 #include "common/Action.hpp"
 #include "common/Types.hpp"
@@ -47,8 +47,7 @@ private:
     };
 
     // Pop up a dialog asking whether to adapt coordinates. Checks the adaptationPreference memory first.
-    [[nodiscard]] AdaptChoice askAdaptCoordinates(
-        const ScreenSpec &scriptSpec, const ScreenSpec &currentSpec);
+    [[nodiscard]] AdaptChoice askAdaptCoordinates(const ScreenSpec &scriptSpec, const ScreenSpec &currentSpec);
 
     // ---- Recording / playback / import-export ----
     void onStartRecord(wxCommandEvent &event);

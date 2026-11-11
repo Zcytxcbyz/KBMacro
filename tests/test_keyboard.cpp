@@ -18,19 +18,18 @@
 
 namespace {
 
-    // intervalMs = 100, holdMs = 5 → the round gap is 95, unlike the 5ms hold
-    KeyboardParams makeParams(const RunMode mode, const int count,
-                              const Hotkey &hotkey = Hotkey{.vk = 0x41}) {   // default A
-        KeyboardParams p;
-        p.hotkey = hotkey;
-        p.intervalMs = 100;
-        p.holdMs = 5;
-        p.run = RunSpec{.mode = mode, .count = count};
-        return p;
-    }
+// intervalMs = 100, holdMs = 5 → the round gap is 95, unlike the 5ms hold
+KeyboardParams makeParams(const RunMode mode, const int count, const Hotkey &hotkey = Hotkey{.vk = 0x41}) { // default A
+    KeyboardParams p;
+    p.hotkey = hotkey;
+    p.intervalMs = 100;
+    p.holdMs = 5;
+    p.run = RunSpec{.mode = mode, .count = count};
+    return p;
+}
 
-    constexpr ITimer::Duration kHold{5};    // one hold wait
-    constexpr ITimer::Duration kGap{95};    // round gap (100 - 5)
+constexpr ITimer::Duration kHold{5}; // one hold wait
+constexpr ITimer::Duration kGap{95}; // round gap (100 - 5)
 
 } // namespace
 
@@ -65,7 +64,7 @@ TEST(KeyboardRun, GapDeductsHoldTime) {
 }
 
 TEST(KeyboardRun, StopOnFirstWaitCountsFirstRound) {
-    FakeTimer timer(1);   // interrupted on the first wait (the hold of round 1)
+    FakeTimer timer(1); // interrupted on the first wait (the hold of round 1)
     const KeyboardParams p = makeParams(RunMode::Infinite, 0);
 
     // the key was already pressed and released, so it counts as one round
@@ -85,7 +84,7 @@ TEST(KeyboardRun, InfiniteStopsOnThirdRound) {
 
 TEST(KeyboardRun, EmptyHotkeyIsNotRejected) {
     FakeTimer timer;
-    const KeyboardParams p = makeParams(RunMode::Counted, 1, Hotkey{});   // vk=0, no modifiers
+    const KeyboardParams p = makeParams(RunMode::Counted, 1, Hotkey{}); // vk=0, no modifiers
 
     // no validation here: an empty hotkey still runs one round, empty event table, one skipped log in input
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 1);
@@ -96,7 +95,7 @@ TEST(KeyboardRun, EmptyHotkeyIsNotRejected) {
 
 TEST(KeyboardRun, StartDelayHappensBeforeFirstAction) {
     KeyboardParams p;
-    p.hotkey = Hotkey{.modifiers = 0, .vk = 65};   // 'A'
+    p.hotkey = Hotkey{.modifiers = 0, .vk = 65}; // 'A'
     p.intervalMs = 100;
     p.holdMs = 5;
     p.run = RunSpec{.mode = RunMode::Counted, .count = 2};
@@ -106,7 +105,7 @@ TEST(KeyboardRun, StartDelayHappensBeforeFirstAction) {
     EXPECT_EQ(keyboard::run(p, timer, std::stop_token{}), 2);
 
     const auto &w = timer.waited();
-    ASSERT_EQ(w.size(), 4u);   // 1 delay + 2 holds + 1 round gap
+    ASSERT_EQ(w.size(), 4u); // 1 delay + 2 holds + 1 round gap
     EXPECT_EQ(w[0], ITimer::Duration{300});
     EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
     EXPECT_EQ(timer.countWaits(ITimer::Duration{5}), 2u);

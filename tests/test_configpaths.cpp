@@ -17,36 +17,31 @@
 
 namespace {
 
-    // each test uses a unique temp directory, removed on teardown.
-    // suffix with the current ::testing::UnitTest name to avoid concurrent clashes.
-    class ConfigPathsTest : public ::testing::Test {
-    protected:
-        void SetUp() override {
-            const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
-            m_dir = std::filesystem::temp_directory_path()
-                    / ("kbmacro_test_" + std::string(info->name()));
-            std::error_code ec;
-            std::filesystem::remove_all(m_dir, ec);
-            std::filesystem::create_directories(m_dir, ec);
-            ASSERT_FALSE(ec) << "cannot create temp dir: " << ec.message();
-        }
+// each test uses a unique temp directory, removed on teardown.
+// suffix with the current ::testing::UnitTest name to avoid concurrent clashes.
+class ConfigPathsTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
+        m_dir = std::filesystem::temp_directory_path() / ("kbmacro_test_" + std::string(info->name()));
+        std::error_code ec;
+        std::filesystem::remove_all(m_dir, ec);
+        std::filesystem::create_directories(m_dir, ec);
+        ASSERT_FALSE(ec) << "cannot create temp dir: " << ec.message();
+    }
 
-        void TearDown() override {
-            std::error_code ec;
-            std::filesystem::remove_all(m_dir, ec);
-        }
+    void TearDown() override {
+        std::error_code ec;
+        std::filesystem::remove_all(m_dir, ec);
+    }
 
-        // build a fake exe path inside the temp directory
-        [[nodiscard]] std::filesystem::path fakeExe() const {
-            return m_dir / L"KBMacro.exe";
-        }
+    // build a fake exe path inside the temp directory
+    [[nodiscard]] std::filesystem::path fakeExe() const { return m_dir / L"KBMacro.exe"; }
 
-        [[nodiscard]] std::filesystem::path fakeAppData() const {
-            return m_dir / L"AppData";
-        }
+    [[nodiscard]] std::filesystem::path fakeAppData() const { return m_dir / L"AppData"; }
 
-        std::filesystem::path m_dir;
-    };
+    std::filesystem::path m_dir;
+};
 
 } // namespace
 

@@ -58,13 +58,13 @@ struct ActionTypeEntry {
 };
 
 inline constexpr ActionTypeEntry kActionTypeEntries[] = {
-    {.value = ActionType::MouseMove,  .name = "MouseMove"},
-    {.value = ActionType::MouseClick, .name = "MouseClick"},
-    {.value = ActionType::MouseWheel, .name = "MouseWheel"},
-    {.value = ActionType::Keyboard,   .name = "Keyboard"},
-    {.value = ActionType::MouseDown,  .name = "MouseDown"},
-    {.value = ActionType::MouseUp,    .name = "MouseUp"},
-    {.value = ActionType::Delay,      .name = "Delay"},
+        {.value = ActionType::MouseMove, .name = "MouseMove"},
+        {.value = ActionType::MouseClick, .name = "MouseClick"},
+        {.value = ActionType::MouseWheel, .name = "MouseWheel"},
+        {.value = ActionType::Keyboard, .name = "Keyboard"},
+        {.value = ActionType::MouseDown, .name = "MouseDown"},
+        {.value = ActionType::MouseUp, .name = "MouseUp"},
+        {.value = ActionType::Delay, .name = "Delay"},
 };
 
 struct MouseButtonEntry {
@@ -73,11 +73,11 @@ struct MouseButtonEntry {
 };
 
 inline constexpr MouseButtonEntry kMouseButtonEntries[] = {
-    {.value = MouseButton::Left,   .name = "Left"},
-    {.value = MouseButton::Right,  .name = "Right"},
-    {.value = MouseButton::Middle, .name = "Middle"},
-    {.value = MouseButton::Side1,  .name = "Side1"},
-    {.value = MouseButton::Side2,  .name = "Side2"},
+        {.value = MouseButton::Left, .name = "Left"},
+        {.value = MouseButton::Right, .name = "Right"},
+        {.value = MouseButton::Middle, .name = "Middle"},
+        {.value = MouseButton::Side1, .name = "Side1"},
+        {.value = MouseButton::Side2, .name = "Side2"},
 };
 
 struct WheelDirectionEntry {
@@ -86,10 +86,10 @@ struct WheelDirectionEntry {
 };
 
 inline constexpr WheelDirectionEntry kWheelDirectionEntries[] = {
-    {.value = WheelDirection::Up,    .name = "Up"},
-    {.value = WheelDirection::Down,  .name = "Down"},
-    {.value = WheelDirection::Left,  .name = "Left"},
-    {.value = WheelDirection::Right, .name = "Right"},
+        {.value = WheelDirection::Up, .name = "Up"},
+        {.value = WheelDirection::Down, .name = "Down"},
+        {.value = WheelDirection::Left, .name = "Left"},
+        {.value = WheelDirection::Right, .name = "Right"},
 };
 
 struct KeyEventTypeEntry {
@@ -98,23 +98,22 @@ struct KeyEventTypeEntry {
 };
 
 inline constexpr KeyEventTypeEntry kKeyEventTypeEntries[] = {
-    {.value = KeyEventType::Down, .name = "Down"},
-    {.value = KeyEventType::Up,   .name = "Up"},
+        {.value = KeyEventType::Down, .name = "Down"},
+        {.value = KeyEventType::Up, .name = "Up"},
 };
 
 // ---- generic table lookup helpers ----
 
-template <typename Entry, typename Enum>
-[[nodiscard]] constexpr std::string_view enumToString(const Entry *entries,
-                                                       const std::size_t count,
-                                                       const Enum value) noexcept {
+template<typename Entry, typename Enum>
+[[nodiscard]] constexpr std::string_view
+enumToString(const Entry *entries, const std::size_t count, const Enum value) noexcept {
     for (std::size_t i = 0; i < count; ++i) {
         if (entries[i].value == value) return entries[i].name;
     }
     return {};
 }
 
-template <typename Entry, typename Enum>
+template<typename Entry, typename Enum>
 [[nodiscard]] constexpr Enum enumFromString(const Entry *entries,
                                             const std::size_t count,
                                             const std::string_view name,
@@ -132,8 +131,7 @@ template <typename Entry, typename Enum>
 }
 
 [[nodiscard]] constexpr ActionType actionTypeFromString(const std::string_view s) noexcept {
-    return enumFromString(kActionTypeEntries, std::size(kActionTypeEntries),
-                          s, ActionType::MouseMove);
+    return enumFromString(kActionTypeEntries, std::size(kActionTypeEntries), s, ActionType::MouseMove);
 }
 
 [[nodiscard]] constexpr std::string_view mouseButtonToString(const MouseButton b) noexcept {
@@ -141,8 +139,7 @@ template <typename Entry, typename Enum>
 }
 
 [[nodiscard]] constexpr MouseButton mouseButtonFromString(const std::string_view s) noexcept {
-    return enumFromString(kMouseButtonEntries, std::size(kMouseButtonEntries),
-                          s, MouseButton::Left);
+    return enumFromString(kMouseButtonEntries, std::size(kMouseButtonEntries), s, MouseButton::Left);
 }
 
 [[nodiscard]] constexpr std::string_view wheelDirectionToString(const WheelDirection d) noexcept {
@@ -150,8 +147,7 @@ template <typename Entry, typename Enum>
 }
 
 [[nodiscard]] constexpr WheelDirection wheelDirectionFromString(const std::string_view s) noexcept {
-    return enumFromString(kWheelDirectionEntries, std::size(kWheelDirectionEntries),
-                          s, WheelDirection::Up);
+    return enumFromString(kWheelDirectionEntries, std::size(kWheelDirectionEntries), s, WheelDirection::Up);
 }
 
 [[nodiscard]] constexpr std::string_view keyEventTypeToString(const KeyEventType e) noexcept {
@@ -159,8 +155,7 @@ template <typename Entry, typename Enum>
 }
 
 [[nodiscard]] constexpr KeyEventType keyEventTypeFromString(const std::string_view s) noexcept {
-    return enumFromString(kKeyEventTypeEntries, std::size(kKeyEventTypeEntries),
-                          s, KeyEventType::Down);
+    return enumFromString(kKeyEventTypeEntries, std::size(kKeyEventTypeEntries), s, KeyEventType::Down);
 }
 
 // value type: copyable and movable. Fields are fixed; type decides which ones matter:

@@ -10,17 +10,20 @@
 #include "managers/LanguageManager.hpp"
 
 namespace {
-    // overall opacity: 0 = fully transparent, 255 = opaque.
-    // too faint hides the hint, too dark hides the screen. around 100 is the compromise.
-    constexpr int kOverlayAlpha = 100;
+// overall opacity: 0 = fully transparent, 255 = opaque.
+// too faint hides the hint, too dark hides the screen. around 100 is the compromise.
+constexpr int kOverlayAlpha = 100;
 
-    // padding of the hint text background box
-    constexpr int kHintPadding = 24;
-}
+// padding of the hint text background box
+constexpr int kHintPadding = 24;
+} // namespace
 
 ScreenCaptureOverlay::ScreenCaptureOverlay(wxWindow *parent, Callback callback)
-    : wxFrame(parent, wxID_ANY, wxEmptyString,
-              wxDefaultPosition, wxDefaultSize,
+    : wxFrame(parent,
+              wxID_ANY,
+              wxEmptyString,
+              wxDefaultPosition,
+              wxDefaultSize,
               wxFRAME_NO_TASKBAR | wxSTAY_ON_TOP | wxBORDER_NONE),
       m_callback(std::move(callback)) {
     // cover the virtual desktop (full span of all monitors, may include negative coordinates)
@@ -59,11 +62,10 @@ void ScreenCaptureOverlay::onPaint(wxPaintEvent &) {
     const wxString hint = TR(IDS_CAPTURE_HINT);
     const wxSize textSize = dc.GetMultiLineTextExtent(hint);
 
-    const wxRect box(
-        (sz.x - textSize.x) / 2 - kHintPadding,
-        (sz.y - textSize.y) / 2 - kHintPadding,
-        textSize.x + kHintPadding * 2,
-        textSize.y + kHintPadding * 2);
+    const wxRect box((sz.x - textSize.x) / 2 - kHintPadding,
+                     (sz.y - textSize.y) / 2 - kHintPadding,
+                     textSize.x + kHintPadding * 2,
+                     textSize.y + kHintPadding * 2);
 
     // hint box background: solid black rectangle
     dc.SetBrush(*wxBLACK_BRUSH);

@@ -5,15 +5,15 @@
 
 namespace {
 
-    // scale one time field: preserve sign semantics (<= 0 always maps to 0), round to whole ms.
-    [[nodiscard]] int scaleMs(const int ms, const double factor) {
-        if (ms <= 0) {
-            return 0;
-        }
-
-        const double scaled = static_cast<double>(ms) / factor;
-        return std::max(0, static_cast<int>(std::lround(scaled)));
+// scale one time field: preserve sign semantics (<= 0 always maps to 0), round to whole ms.
+[[nodiscard]] int scaleMs(const int ms, const double factor) {
+    if (ms <= 0) {
+        return 0;
     }
+
+    const double scaled = static_cast<double>(ms) / factor;
+    return std::max(0, static_cast<int>(std::lround(scaled)));
+}
 
 } // namespace
 
@@ -22,7 +22,7 @@ void action::scaleActions(std::vector<Action> &actions, const double factor) {
         return;
     }
 
-    for (Action &a: actions) {
+    for (Action &a : actions) {
         a.delayMs = scaleMs(a.delayMs, factor);
 
         // only mouse clicks carry a "hold duration"; keyboard is separate down/up actions without holdMs.

@@ -22,7 +22,7 @@
 //   - future relative coordinates will be a new ActionType value, this file treats unknown types as no-op
 namespace playback {
 
-    [[nodiscard]] int run(const std::vector<Action> &actions, const RunSpec &run,
-                          const ITimer &timer, const std::stop_token &st);
+[[nodiscard]] int
+run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &timer, const std::stop_token &st);
 
 } // namespace playback

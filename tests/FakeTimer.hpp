@@ -20,7 +20,8 @@ class FakeTimer final : public ITimer {
 public:
     // stopAtCall: the Nth wait (1-based; holds and intervals both count) returns false.
     //             <= 0 means never stop.
-    explicit FakeTimer(const int stopAtCall = 0) noexcept : m_stopAtCall(stopAtCall) {}
+    explicit FakeTimer(const int stopAtCall = 0) noexcept
+        : m_stopAtCall(stopAtCall) {}
 
     [[nodiscard]] bool wait(const Duration d, const std::stop_token &st) const override {
         ++m_waitCalls;

@@ -10,7 +10,7 @@ LanguageManager &LanguageManager::instance() {
 }
 
 void LanguageManager::setLanguage(const Lang lang) {
-    for (const auto &info: kLangs) {
+    for (const auto &info : kLangs) {
         if (info.id == lang) {
             m_lang = lang;
             m_baseId = info.baseResId;
@@ -23,7 +23,7 @@ void LanguageManager::setLanguage(const Lang lang) {
 
 // ReSharper disable once CppParameterMayBeConst
 bool LanguageManager::setLanguageByCode(std::string_view code) {
-    for (const auto &info: kLangs) { // NOLINT(*-use-anyofallof)
+    for (const auto &info : kLangs) { // NOLINT(*-use-anyofallof)
         if (code == info.code) {
             m_lang = info.id;
             m_baseId = info.baseResId;
@@ -45,7 +45,7 @@ void LanguageManager::setLanguageFromSystem() {
 }
 
 std::string_view LanguageManager::currentCode() const noexcept {
-    for (const auto &info: kLangs) {
+    for (const auto &info : kLangs) {
         if (info.id == m_lang) return info.code;
     }
     return LANG_DEFAULT_CODE;

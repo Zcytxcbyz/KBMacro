@@ -3,32 +3,31 @@
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
 
-#include "common/Utils.hpp"
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
+#include "common/Utils.hpp"
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
-#include "ui/panels/ClickerPanel.hpp"
-#include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/ScreenCaptureOverlay.hpp"
+#include "ui/panels/ClickerPanel.hpp"
 
 namespace {
-    // Indexes of the click type combo box: the wheel range
-    constexpr int kTypeWheelFirst = 4;  // Wheel Up
-    constexpr int kTypeWheelLast  = 7;  // Wheel Right
+// Indexes of the click type combo box: the wheel range
+constexpr int kTypeWheelFirst = 4; // Wheel Up
+constexpr int kTypeWheelLast = 7; // Wheel Right
 
-    // Run mode combo box indexes
-    constexpr int kRunModeInfinite = 0;
-    constexpr int kRunModeTimed    = 1;
-    constexpr int kRunModeCounted  = 2;
+// Run mode combo box indexes
+constexpr int kRunModeInfinite = 0;
+constexpr int kRunModeTimed = 1;
+constexpr int kRunModeCounted = 2;
 
-    // Schema version of *.clicker.json
-    constexpr int kClickerParamsVersion = 1;
-}
+// Schema version of *.clicker.json
+constexpr int kClickerParamsVersion = 1;
+} // namespace
 
 ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                   wxVSCROLL | wxHSCROLL),
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL | wxHSCROLL),
       m_threadMgr(threadMgr) {
     buildUi();
     setRunning(false);
@@ -53,12 +52,10 @@ void ClickerPanel::buildUi() {
         m_y = new wxTextCtrl(staticBox, wxID_ANY, "0");
         m_btnCapture = new wxButton(staticBox, wxID_ANY, TR(IDS_CLICKER_BTN_CAPTURE));
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_X)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_X)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_x, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_Y)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_Y)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_y, 1, wxEXPAND);
 
         form->AddSpacer(0);
@@ -93,30 +90,23 @@ void ClickerPanel::buildUi() {
         m_choiceType->Append(TR(IDS_CLICKER_TYPE_SIDE2));
         m_choiceType->SetSelection(0);
 
-        m_spinWheelSteps = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                          wxDefaultPosition, wxDefaultSize,
-                                          wxSP_ARROW_KEYS, 1, 10, 1);
-        m_spinInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 10, 60000, 100);
-        m_spinHoldTime = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 5, 200, 50);
+        m_spinWheelSteps = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 10, 1);
+        m_spinInterval = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 10, 60000, 100);
+        m_spinHoldTime = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 5, 200, 50);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_TYPE)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_TYPE)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_choiceType, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_WHEEL_STEPS)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_WHEEL_STEPS)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinWheelSteps, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_INTERVAL)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_INTERVAL)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinInterval, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_HOLD)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_CLICKER_LABEL_HOLD)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinHoldTime, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -138,30 +128,23 @@ void ClickerPanel::buildUi() {
         m_choiceRunMode->Append(TR(IDS_COMMON_RUNMODE_COUNTED));
         m_choiceRunMode->SetSelection(0);
 
-        m_spinDuration = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 1, 86400, 10);
-        m_spinCount = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                     wxDefaultPosition, wxDefaultSize,
-                                     wxSP_ARROW_KEYS, 1, 999999, 100);
-        m_spinStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                  wxDefaultPosition, wxDefaultSize,
-                                  wxSP_ARROW_KEYS, 0, 5000, 0);
+        m_spinDuration = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 86400, 10);
+        m_spinCount = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 999999, 100);
+        m_spinStartDelay = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 5000, 0);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_choiceRunMode, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_DURATION)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_DURATION)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinDuration, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinCount, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)),
-          0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinStartDelay, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -229,9 +212,15 @@ ClickerParams ClickerPanel::collectParams() const {
 
     // ReSharper disable once CppDeclaratorNeverUsed
     switch (const int runSel = m_choiceRunMode->GetSelection()) {
-        case kRunModeTimed:   p.run.mode = RunMode::Timed;   break;
-        case kRunModeCounted: p.run.mode = RunMode::Counted; break;
-        default:              p.run.mode = RunMode::Infinite; break;
+        case kRunModeTimed:
+            p.run.mode = RunMode::Timed;
+            break;
+        case kRunModeCounted:
+            p.run.mode = RunMode::Counted;
+            break;
+        default:
+            p.run.mode = RunMode::Infinite;
+            break;
     }
     p.run.durationSec = m_spinDuration->GetValue();
     p.run.count = m_spinCount->GetValue();
@@ -252,9 +241,15 @@ void ClickerPanel::applyParams(const ClickerParams &p) {
     m_spinHoldTime->SetValue(p.holdMs);
 
     switch (p.run.mode) {
-        case RunMode::Timed:   m_choiceRunMode->SetSelection(kRunModeTimed);   break;
-        case RunMode::Counted: m_choiceRunMode->SetSelection(kRunModeCounted); break;
-        default:               m_choiceRunMode->SetSelection(kRunModeInfinite); break;
+        case RunMode::Timed:
+            m_choiceRunMode->SetSelection(kRunModeTimed);
+            break;
+        case RunMode::Counted:
+            m_choiceRunMode->SetSelection(kRunModeCounted);
+            break;
+        default:
+            m_choiceRunMode->SetSelection(kRunModeInfinite);
+            break;
     }
     m_spinDuration->SetValue(p.run.durationSec);
     m_spinCount->SetValue(p.run.count);
@@ -270,16 +265,15 @@ void ClickerPanel::applyParams(const ClickerParams &p) {
 void ClickerPanel::onCapturePos(wxCommandEvent &) {
     LOG_DEBUG("clicker: capture position started");
 
-    new ScreenCaptureOverlay(this,
-        [this](const bool captured, const wxPoint pos) {
-            if (!captured) {
-                LOG_DEBUG("clicker: capture position cancelled"); // NOLINT(*-lambda-function-name)
-                return;
-            }
-            LOG_DEBUG("clicker: captured position ({}, {})", pos.x, pos.y); // NOLINT(*-lambda-function-name)
-            m_x->SetValue(wxString::Format("%d", pos.x));
-            m_y->SetValue(wxString::Format("%d", pos.y));
-        });
+    new ScreenCaptureOverlay(this, [this](const bool captured, const wxPoint pos) {
+        if (!captured) {
+            LOG_DEBUG("clicker: capture position cancelled"); // NOLINT(*-lambda-function-name)
+            return;
+        }
+        LOG_DEBUG("clicker: captured position ({}, {})", pos.x, pos.y); // NOLINT(*-lambda-function-name)
+        m_x->SetValue(wxString::Format("%d", pos.x));
+        m_y->SetValue(wxString::Format("%d", pos.y));
+    });
 
     refreshEnableStates();
 }
@@ -303,12 +297,11 @@ void ClickerPanel::onCoordChar(wxKeyEvent &event) { // NOLINT(*-convert-member-f
     const int key = event.GetKeyCode();
 
     // Let control keys through
-    if (key == WXK_BACK || key == WXK_DELETE ||
-        key == WXK_LEFT || key == WXK_RIGHT ||
-        key == WXK_HOME || key == WXK_END || key == WXK_TAB) {
+    if (key == WXK_BACK || key == WXK_DELETE || key == WXK_LEFT || key == WXK_RIGHT || key == WXK_HOME ||
+        key == WXK_END || key == WXK_TAB) {
         event.Skip();
         return;
-        }
+    }
 
     // Let digits and the minus sign through
     if ((key >= '0' && key <= '9') || key == '-') {
@@ -333,7 +326,8 @@ void ClickerPanel::startWithCurrentParams() {
     const ClickerParams p = collectParams();
 
     LOG_INFO("clicker: start requested (interval={}ms, type={}, run={})",
-             p.intervalMs, static_cast<int>(p.clickType),
+             p.intervalMs,
+             static_cast<int>(p.clickType),
              runModeToString(p.run.mode));
 
     // ThreadManager ignores this request while already running (the same task must not run concurrently),
@@ -341,7 +335,8 @@ void ClickerPanel::startWithCurrentParams() {
     m_threadMgr.StartClicker(p, [this](const TaskResult res) {
         setRunning(false);
         LOG_INFO("clicker: finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
-                 static_cast<int>(res.reason), res.executed);
+                 static_cast<int>(res.reason),
+                 res.executed);
     });
     setRunning(true);
 }
@@ -365,25 +360,20 @@ void ClickerPanel::onImport(wxCommandEvent &) {
 
     nlohmann::json j;
     if (!jsonio::loadFrom(path, j)) {
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
     // Version check
-    if (const int fileVer = j.value("version", 1);
-        fileVer > kClickerParamsVersion) {
-        LOG_WARN("clicker: import version {} > supported {}",
-                 fileVer, kClickerParamsVersion);
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+    if (const int fileVer = j.value("version", 1); fileVer > kClickerParamsVersion) {
+        LOG_WARN("clicker: import version {} > supported {}", fileVer, kClickerParamsVersion);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
     if (!j.contains("params") || !j["params"].is_object()) {
         LOG_WARN("clicker: import missing 'params' object");
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
@@ -391,15 +381,12 @@ void ClickerPanel::onImport(wxCommandEvent &) {
         applyParams(j["params"].get<ClickerParams>());
     } catch (const std::exception &e) {
         LOG_WARN("clicker: import deserialize failed: {}", e.what());
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
-    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
-                 wxOK | wxICON_INFORMATION, this);
-    LOG_INFO("clicker: params imported from {}",
-             utils::ToUtf8(path.wstring()));
+    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("clicker: params imported from {}", utils::ToUtf8(path.wstring()));
 }
 
 void ClickerPanel::onExport(wxCommandEvent &) {
@@ -418,15 +405,12 @@ void ClickerPanel::onExport(wxCommandEvent &) {
     j["params"] = collectParams();
 
     if (!jsonio::saveTo(path, j)) {
-        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
-    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
-                 wxOK | wxICON_INFORMATION, this);
-    LOG_INFO("clicker: params exported to {}",
-             utils::ToUtf8(path.wstring()));
+    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("clicker: params exported to {}", utils::ToUtf8(path.wstring()));
 }
 
 bool ClickerPanel::isWheelTypeSelected() const {

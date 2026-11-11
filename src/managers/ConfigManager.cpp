@@ -1,7 +1,7 @@
 #include "managers/ConfigManager.hpp"
 
-#include <string>
 #include <algorithm>
+#include <string>
 
 #include "common/ConfigPaths.hpp"
 #include "common/Log.hpp"
@@ -42,8 +42,7 @@ void ConfigManager::load() {
     m_path = path;
     m_portable = portable;
 
-    LOG_INFO("config: resolved path: {} (portable={})",
-             utils::ToUtf8(m_path.wstring()), m_portable);
+    LOG_INFO("config: resolved path: {} (portable={})", utils::ToUtf8(m_path.wstring()), m_portable);
 
     if (!config::loadFrom(m_path, m_config)) {
         LOG_INFO("config: initializing new config file");
@@ -169,23 +168,20 @@ void ConfigManager::setAdaptationPreference(const AdaptationPreference pref) {
     if (m_config.flags.adaptationPreference == pref) return;
     m_config.flags.adaptationPreference = pref;
     save();
-    LOG_DEBUG("config: adaptationPreference set to {}",
-              adaptationPreferenceToString(pref));
+    LOG_DEBUG("config: adaptationPreference set to {}", adaptationPreferenceToString(pref));
 }
 
 void ConfigManager::setWindow(const Config::Window &w) {
     // ReSharper disable once CppUseStructuredBinding
     // ReSharper disable once CppTooWideScopeInitStatement
     const auto &old = m_config.window;
-    if (old.x == w.x && old.y == w.y &&
-        old.width == w.width && old.height == w.height &&
+    if (old.x == w.x && old.y == w.y && old.width == w.width && old.height == w.height &&
         old.maximized == w.maximized) {
         return;
-        }
+    }
     m_config.window = w;
     save();
-    LOG_DEBUG("config: window set to ({},{}) {}x{} max={}",
-              w.x, w.y, w.width, w.height, w.maximized);
+    LOG_DEBUG("config: window set to ({},{}) {}x{} max={}", w.x, w.y, w.width, w.height, w.maximized);
 }
 
 void ConfigManager::setTabIndex(const int index) {
@@ -212,8 +208,7 @@ bool ConfigManager::exportToPortable() {
 
     m_path = std::move(portablePath);
     m_portable = true;
-    LOG_INFO("config: switched to portable mode: {}",
-             utils::ToUtf8(m_path.wstring()));
+    LOG_INFO("config: switched to portable mode: {}", utils::ToUtf8(m_path.wstring()));
     return true;
 }
 
@@ -231,29 +226,26 @@ bool ConfigManager::deletePortable() {
     if (ec) {
         // delete failed: state unchanged, still portable mode
         LOG_ERROR("config: remove portable failed: {} ({}), state unchanged",
-                  utils::ToUtf8(m_path.wstring()), ec.message());
+                  utils::ToUtf8(m_path.wstring()),
+                  ec.message());
         return false;
     }
 
     if (removed) {
-        LOG_INFO("config: portable config removed: {}",
-                 utils::ToUtf8(m_path.wstring()));
+        LOG_INFO("config: portable config removed: {}", utils::ToUtf8(m_path.wstring()));
     } else {
         // the file was already absent (deleted by hand): not an error, keep switching
-        LOG_DEBUG("config: portable file already absent: {}",
-                  utils::ToUtf8(m_path.wstring()));
+        LOG_DEBUG("config: portable file already absent: {}", utils::ToUtf8(m_path.wstring()));
     }
 
     // switch back to APPDATA
-    const auto [path, portable] = config::resolveConfigPath(
-        utils::GetExecutablePath(), appDataDir());
+    const auto [path, portable] = config::resolveConfigPath(utils::GetExecutablePath(), appDataDir());
     m_path = path;
     m_portable = false;
 
     // write the in-memory config to APPDATA so the next start does not "revert to ancient state"
     save();
-    LOG_INFO("config: switched back to APPDATA: {}",
-             utils::ToUtf8(m_path.wstring()));
+    LOG_INFO("config: switched back to APPDATA: {}", utils::ToUtf8(m_path.wstring()));
     return true;
 }
 

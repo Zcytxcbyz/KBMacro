@@ -21,8 +21,8 @@
 // ============================================================
 namespace keyboard {
 
-    // Return the actual number of rounds executed (= actual key presses).
-    // Keys already released before the stop interruption do not linger; the count includes the interrupted round.
-    [[nodiscard]] int run(const KeyboardParams &p, const ITimer &timer, const std::stop_token &st);
+// Return the actual number of rounds executed (= actual key presses).
+// Keys already released before the stop interruption do not linger; the count includes the interrupted round.
+[[nodiscard]] int run(const KeyboardParams &p, const ITimer &timer, const std::stop_token &st);
 
 } // namespace keyboard

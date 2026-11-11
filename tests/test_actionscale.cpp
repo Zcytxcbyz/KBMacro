@@ -7,16 +7,16 @@
 
 namespace {
 
-    [[nodiscard]] Action makeClick(const int holdMs, const int delayMs) {
-        Action a;
-        a.type = ActionType::MouseClick;
-        a.x = 400;
-        a.y = 300;
-        a.button = MouseButton::Left;
-        a.holdMs = holdMs;
-        a.delayMs = delayMs;
-        return a;
-    }
+[[nodiscard]] Action makeClick(const int holdMs, const int delayMs) {
+    Action a;
+    a.type = ActionType::MouseClick;
+    a.x = 400;
+    a.y = 300;
+    a.button = MouseButton::Left;
+    a.holdMs = holdMs;
+    a.delayMs = delayMs;
+    return a;
+}
 
 } // namespace
 
@@ -93,7 +93,7 @@ TEST(ActionScale, CoordinatesAndKeysAreUntouched) {
     EXPECT_EQ(actions[1].hotkey.modifiers, hk::kModCtrl);
     EXPECT_EQ(actions[1].keyEvent, KeyEventType::Down);
     EXPECT_EQ(actions[1].delayMs, 15);
-    EXPECT_EQ(actions[1].holdMs, 0);   // keyboard actions have no hold duration, so it must not be written
+    EXPECT_EQ(actions[1].holdMs, 0); // keyboard actions have no hold duration, so it must not be written
 }
 
 TEST(ActionScale, NonPositiveFactorIsIgnored) {

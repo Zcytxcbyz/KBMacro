@@ -1,8 +1,8 @@
 #pragma once
 
 #include <array>
-#include <string>
 #include <nlohmann/json.hpp>
+#include <string>
 
 #include "common/HotkeyAction.hpp"
 #include "common/Types.hpp"
@@ -38,17 +38,17 @@ inline constexpr auto kHotkeyEnabledDefault = [] {
 //
 // vk uses raw numbers because Config.hpp does not include windows.h (VK_F1 == 0x70 … VK_F11 == 0x7A).
 inline constexpr std::array<Hotkey, kHotkeyCount> kHotkeyDefault{{
-    {.modifiers = 0, .vk = 0x70},
-    {.modifiers = 0, .vk = 0x71},
-    {.modifiers = 0, .vk = 0x72},
-    {.modifiers = 0, .vk = 0x73},
-    {.modifiers = 0, .vk = 0x74},
-    {.modifiers = 0, .vk = 0x75},
-    {.modifiers = 0, .vk = 0x76},
-    {.modifiers = 0, .vk = 0x77},
-    {.modifiers = 0, .vk = 0x78},
-    {.modifiers = 0, .vk = 0x79},
-    {.modifiers = 0, .vk = 0x7A},
+        {.modifiers = 0, .vk = 0x70},
+        {.modifiers = 0, .vk = 0x71},
+        {.modifiers = 0, .vk = 0x72},
+        {.modifiers = 0, .vk = 0x73},
+        {.modifiers = 0, .vk = 0x74},
+        {.modifiers = 0, .vk = 0x75},
+        {.modifiers = 0, .vk = 0x76},
+        {.modifiers = 0, .vk = 0x77},
+        {.modifiers = 0, .vk = 0x78},
+        {.modifiers = 0, .vk = 0x79},
+        {.modifiers = 0, .vk = 0x7A},
 }};
 
 // range and default of the hybrid timer's "tail spin duration" (ms).

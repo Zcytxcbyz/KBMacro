@@ -1,36 +1,35 @@
 #include <filesystem>
 
+#include <stop_token>
 #include <wx/spinctrl.h>
 #include <wx/statbox.h>
-#include <stop_token>
 
-#include "common/Utils.hpp"
 #include "common/Hotkey.hpp"
 #include "common/JsonIO.hpp"
 #include "common/Log.hpp"
+#include "common/Utils.hpp"
 
-#include "win32/Input.hpp"
-#include "managers/ThreadManager.hpp"
 #include "managers/LanguageManager.hpp"
-#include "ui/panels/KeyboardPanel.hpp"
-#include "ui/dialogs/HotkeyCaptureDialog.hpp"
+#include "managers/ThreadManager.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/dialogs/HotkeyCaptureDialog.hpp"
+#include "ui/panels/KeyboardPanel.hpp"
+#include "win32/Input.hpp"
 
 namespace {
-    // Run mode combo box indexes
-    constexpr int kRunModeInfinite = 0;
-    constexpr int kRunModeTimed    = 1;
-    constexpr int kRunModeCounted  = 2;
+// Run mode combo box indexes
+constexpr int kRunModeInfinite = 0;
+constexpr int kRunModeTimed = 1;
+constexpr int kRunModeCounted = 2;
 
-    // Schema version of *.keyboard.json
-    constexpr int kKeyboardParamsVersion = 1;
-}
+// Schema version of *.keyboard.json
+constexpr int kKeyboardParamsVersion = 1;
+} // namespace
 
-KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr,
-                             std::shared_ptr<ITimer> &timerRef)
-    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                   wxVSCROLL | wxHSCROLL),
-      m_threadMgr(threadMgr), m_timerRef(timerRef) {
+KeyboardPanel::KeyboardPanel(wxWindow *parent, ThreadManager &threadMgr, std::shared_ptr<ITimer> &timerRef)
+    : wxScrolledWindow(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxVSCROLL | wxHSCROLL),
+      m_threadMgr(threadMgr),
+      m_timerRef(timerRef) {
     buildUi();
     setRunning(false);
 
@@ -50,14 +49,11 @@ void KeyboardPanel::buildUi() {
         auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
-        m_keyDisplay = new wxTextCtrl(staticBox, wxID_ANY,
-                                      TR(IDS_KEYBOARD_KEY_UNSET),
-                                      wxDefaultPosition, wxDefaultSize,
-                                      wxTE_READONLY);
+        m_keyDisplay = new wxTextCtrl(
+                staticBox, wxID_ANY, TR(IDS_KEYBOARD_KEY_UNSET), wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
         m_btnSetKey = new wxButton(staticBox, wxID_ANY, TR(IDS_KEYBOARD_BTN_SET_KEY));
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_KEY)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_KEY)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_keyDisplay, 1, wxEXPAND);
 
         form->AddSpacer(0);
@@ -76,19 +72,15 @@ void KeyboardPanel::buildUi() {
         auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
         form->AddGrowableCol(1, 1);
 
-        m_spinInterval = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 10, 60000, 100);
-        m_spinHoldTime = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 5, 200, 50);
+        m_spinInterval = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 10, 60000, 100);
+        m_spinHoldTime = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 5, 200, 50);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_INTERVAL)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_INTERVAL)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinInterval, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_HOLD)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_KEYBOARD_LABEL_HOLD)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinHoldTime, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -110,30 +102,23 @@ void KeyboardPanel::buildUi() {
         m_choiceRunMode->Append(TR(IDS_COMMON_RUNMODE_COUNTED));
         m_choiceRunMode->SetSelection(0);
 
-        m_spinDuration = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                        wxDefaultPosition, wxDefaultSize,
-                                        wxSP_ARROW_KEYS, 1, 86400, 10);
-        m_spinCount = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                     wxDefaultPosition, wxDefaultSize,
-                                     wxSP_ARROW_KEYS, 1, 999999, 100);
-        m_spinStartDelay = new wxSpinCtrl(staticBox, wxID_ANY, wxEmptyString,
-                                  wxDefaultPosition, wxDefaultSize,
-                                  wxSP_ARROW_KEYS, 0, 5000, 0);
+        m_spinDuration = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 86400, 10);
+        m_spinCount = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 999999, 100);
+        m_spinStartDelay = new wxSpinCtrl(
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 5000, 0);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_RUNMODE)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_choiceRunMode, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_DURATION)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_DURATION)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinDuration, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)),
-                  0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_COUNT)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinCount, 1, wxEXPAND);
 
-        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)),
-          0, wxALIGN_CENTER_VERTICAL);
+        form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_COMMON_LABEL_START_DELAY)), 0, wxALIGN_CENTER_VERTICAL);
         form->Add(m_spinStartDelay, 1, wxEXPAND);
 
         box->Add(form, 0, wxEXPAND | wxALL, 8);
@@ -189,9 +174,15 @@ KeyboardParams KeyboardPanel::collectParams() const {
 
     // ReSharper disable once CppDeclaratorNeverUsed
     switch (const int runSel = m_choiceRunMode->GetSelection()) {
-        case kRunModeTimed:   p.run.mode = RunMode::Timed;   break;
-        case kRunModeCounted: p.run.mode = RunMode::Counted; break;
-        default:              p.run.mode = RunMode::Infinite; break;
+        case kRunModeTimed:
+            p.run.mode = RunMode::Timed;
+            break;
+        case kRunModeCounted:
+            p.run.mode = RunMode::Counted;
+            break;
+        default:
+            p.run.mode = RunMode::Infinite;
+            break;
     }
     p.run.durationSec = m_spinDuration->GetValue();
     p.run.count = m_spinCount->GetValue();
@@ -206,9 +197,15 @@ void KeyboardPanel::applyParams(const KeyboardParams &p) {
     m_spinHoldTime->SetValue(p.holdMs);
 
     switch (p.run.mode) {
-        case RunMode::Timed:   m_choiceRunMode->SetSelection(kRunModeTimed);   break;
-        case RunMode::Counted: m_choiceRunMode->SetSelection(kRunModeCounted); break;
-        default:               m_choiceRunMode->SetSelection(kRunModeInfinite); break;
+        case RunMode::Timed:
+            m_choiceRunMode->SetSelection(kRunModeTimed);
+            break;
+        case RunMode::Counted:
+            m_choiceRunMode->SetSelection(kRunModeCounted);
+            break;
+        default:
+            m_choiceRunMode->SetSelection(kRunModeInfinite);
+            break;
     }
     m_spinDuration->SetValue(p.run.durationSec);
     m_spinCount->SetValue(p.run.count);
@@ -242,8 +239,7 @@ void KeyboardPanel::onSetKey(wxCommandEvent &) {
     m_hotkey = dlg.getHotkey();
     refreshKeyDisplay();
 
-    LOG_DEBUG("keyboard: hotkey set to {}",
-              utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
+    LOG_DEBUG("keyboard: hotkey set to {}", utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
 }
 
 void KeyboardPanel::onSendOnce(wxCommandEvent &) {
@@ -254,8 +250,7 @@ void KeyboardPanel::onSendOnce(wxCommandEvent &) {
 void KeyboardPanel::sendOnce() {
     const KeyboardParams p = collectParams();
 
-    LOG_INFO("keyboard: send once requested (key='{}')",
-             utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
+    LOG_INFO("keyboard: send once requested (key='{}')", utils::ToUtf8(utils::hotkeyToString(p.hotkey)));
 
     if (p.hotkey.vk == 0 && p.hotkey.modifiers == 0) {
         LOG_WARN("keyboard: send once ignored, no key configured");
@@ -298,8 +293,7 @@ void KeyboardPanel::startWithCurrentParams() {
     // ThreadManager ignores this request while already running, so ignore the return value and flip the buttons
     m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
         setRunning(false);
-        LOG_INFO("keyboard: finished, reason={}, executed={}",
-                 static_cast<int>(res.reason), res.executed);
+        LOG_INFO("keyboard: finished, reason={}, executed={}", static_cast<int>(res.reason), res.executed);
     });
     setRunning(true);
 }
@@ -323,24 +317,19 @@ void KeyboardPanel::onImport(wxCommandEvent &) {
 
     nlohmann::json j;
     if (!jsonio::loadFrom(path, j)) {
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
-    if (const int fileVer = j.value("version", 1);
-        fileVer > kKeyboardParamsVersion) {
-        LOG_WARN("keyboard: import version {} > supported {}",
-                 fileVer, kKeyboardParamsVersion);
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+    if (const int fileVer = j.value("version", 1); fileVer > kKeyboardParamsVersion) {
+        LOG_WARN("keyboard: import version {} > supported {}", fileVer, kKeyboardParamsVersion);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
     if (!j.contains("params") || !j["params"].is_object()) {
         LOG_WARN("keyboard: import missing 'params' object");
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
@@ -348,15 +337,12 @@ void KeyboardPanel::onImport(wxCommandEvent &) {
         applyParams(j["params"].get<KeyboardParams>());
     } catch (const std::exception &e) {
         LOG_WARN("keyboard: import deserialize failed: {}", e.what());
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
-    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE),
-                 wxOK | wxICON_INFORMATION, this);
-    LOG_INFO("keyboard: params imported from {}",
-             utils::ToUtf8(path.wstring()));
+    uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("keyboard: params imported from {}", utils::ToUtf8(path.wstring()));
 }
 
 void KeyboardPanel::onExport(wxCommandEvent &) {
@@ -375,15 +361,12 @@ void KeyboardPanel::onExport(wxCommandEvent &) {
     j["params"] = collectParams();
 
     if (!jsonio::saveTo(path, j)) {
-        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE),
-                     wxOK | wxICON_ERROR, this);
+        uibtn::messageBox(TR(IDS_MSG_EXPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
     }
 
-    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE),
-                 wxOK | wxICON_INFORMATION, this);
-    LOG_INFO("keyboard: params exported to {}",
-             utils::ToUtf8(path.wstring()));
+    uibtn::messageBox(TR(IDS_MSG_EXPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
+    LOG_INFO("keyboard: params exported to {}", utils::ToUtf8(path.wstring()));
 }
 
 void KeyboardPanel::onRunModeChanged(wxCommandEvent &) {

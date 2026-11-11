@@ -1,14 +1,14 @@
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 // ReSharper disable once CppUnusedIncludeDirective
-#include <wx/statbox.h>
 #include <utility>
+#include <wx/statbox.h>
 
-#include "ui/DialogButtons.hpp"
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
-#include "common/Utils.hpp"   // ToUtf8
+#include "common/Utils.hpp" // ToUtf8
 #include "managers/LanguageManager.hpp"
+#include "ui/DialogButtons.hpp"
 
 HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
                                          const wxString &title,
@@ -22,9 +22,8 @@ HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
     auto *root = new wxBoxSizer(wxVERTICAL);
 
     // ---- capture display ----
-    m_display = new wxTextCtrl(this, wxID_ANY, "",
-                               wxDefaultPosition, FromDIP(wxSize(360, 32)),
-                               wxTE_READONLY | wxTE_CENTRE);
+    m_display = new wxTextCtrl(
+            this, wxID_ANY, "", wxDefaultPosition, FromDIP(wxSize(360, 32)), wxTE_READONLY | wxTE_CENTRE);
     root->Add(m_display, 0, wxEXPAND | wxALL, 12);
 
     // ---- button row: clear ----
@@ -38,7 +37,7 @@ HotkeyCaptureDialog::HotkeyCaptureDialog(wxWindow *parent,
     auto *btnSizer = CreateStdDialogButtonSizer(wxOK | wxCANCEL);
     root->Add(btnSizer, 0, wxEXPAND | wxALL, 12);
 
-    uibtn::localize(this);   // swap standard button labels for localized ones (wx ships no language files)
+    uibtn::localize(this); // swap standard button labels for localized ones (wx ships no language files)
 
     SetSizerAndFit(root);
     wxTopLevelWindowBase::SetMinSize(wxSize(FromDIP(400), -1));
@@ -69,9 +68,9 @@ void HotkeyCaptureDialog::onCharHook(const wxKeyEvent &event) {
     // merge modifiers currently held (accumulate only, never clear)
     const int wxMods = event.GetModifiers();
     if (wxMods & wxMOD_CONTROL) m_hotkey.modifiers |= hk::kModCtrl;
-    if (wxMods & wxMOD_SHIFT)   m_hotkey.modifiers |= hk::kModShift;
-    if (wxMods & wxMOD_ALT)     m_hotkey.modifiers |= hk::kModAlt;
-    if (wxMods & wxMOD_WIN)     m_hotkey.modifiers |= hk::kModWin;
+    if (wxMods & wxMOD_SHIFT) m_hotkey.modifiers |= hk::kModShift;
+    if (wxMods & wxMOD_ALT) m_hotkey.modifiers |= hk::kModAlt;
+    if (wxMods & wxMOD_WIN) m_hotkey.modifiers |= hk::kModWin;
 
     // main key (non-modifier): update vk
     if (!utils::isModifierKey(rawVk)) {
@@ -94,18 +93,14 @@ void HotkeyCaptureDialog::onClear(wxCommandEvent &) {
 
 void HotkeyCaptureDialog::onOk(wxCommandEvent &event) {
     if (!utils::isValidHotkey(m_hotkey, m_requireMainKey)) {
-        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_INVALID),
-                     GetTitle(),
-                     wxOK | wxICON_WARNING, this);
+        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_INVALID), GetTitle(), wxOK | wxICON_WARNING, this);
         return;
     }
 
     // conflict check: an empty hotkey (cleared) is skipped
     const bool isEmpty = (m_hotkey.vk == 0 && m_hotkey.modifiers == 0);
     if (!isEmpty && m_checkConflict && m_checkConflict(m_hotkey)) {
-        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_CONFLICT),
-                     GetTitle(),
-                     wxOK | wxICON_WARNING, this);
+        uibtn::messageBox(TR(IDS_HOTKEY_DIALOG_MSG_CONFLICT), GetTitle(), wxOK | wxICON_WARNING, this);
         return;
     }
 

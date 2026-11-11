@@ -85,5 +85,5 @@ private:
 
     // ---- status bar ----
     KBMacroStatusBar *m_statusBar{};
-    wxTimer m_statusTimer{this};   // poll task status every 300ms, driving the status bar's three states
+    wxTimer m_statusTimer{this}; // poll task status every 300ms, driving the status bar's three states
 };

@@ -13,7 +13,7 @@
 enum class TimerMode {
     Sleep,
     Spin,
-    Hybrid,   // chunked sleep for long waits, busy wait at the tail; spin duration in Config::timerHybridSpinMs
+    Hybrid, // chunked sleep for long waits, busy wait at the tail; spin duration in Config::timerHybridSpinMs
 };
 
 struct TimerModeEntry {
@@ -22,20 +22,20 @@ struct TimerModeEntry {
 };
 
 inline constexpr TimerModeEntry kTimerModeEntries[] = {
-    {.mode = TimerMode::Sleep, .name = "sleep"},
-    {.mode = TimerMode::Spin, .name = "spin"},
-    {.mode = TimerMode::Hybrid, .name = "hybrid"},
+        {.mode = TimerMode::Sleep, .name = "sleep"},
+        {.mode = TimerMode::Spin, .name = "spin"},
+        {.mode = TimerMode::Hybrid, .name = "hybrid"},
 };
 
 [[nodiscard]] constexpr TimerMode timerModeFromString(const std::string_view s) noexcept {
-    for (const auto &[mode, name]: kTimerModeEntries) {
+    for (const auto &[mode, name] : kTimerModeEntries) {
         if (name == s) return mode;
     }
     return TimerMode::Sleep;
 }
 
 [[nodiscard]] constexpr std::string_view timerModeToString(const TimerMode m) noexcept {
-    for (const auto &[mode, name]: kTimerModeEntries) {
+    for (const auto &[mode, name] : kTimerModeEntries) {
         if (mode == m) return name;
     }
     return "sleep";
@@ -47,11 +47,11 @@ inline constexpr TimerModeEntry kTimerModeEntries[] = {
 
 // modifier bitmasks
 namespace hk {
-    constexpr unsigned kModCtrl  = 1u << 0;
-    constexpr unsigned kModShift = 1u << 1;
-    constexpr unsigned kModAlt   = 1u << 2;
-    constexpr unsigned kModWin   = 1u << 3;
-}
+constexpr unsigned kModCtrl = 1u << 0;
+constexpr unsigned kModShift = 1u << 1;
+constexpr unsigned kModAlt = 1u << 2;
+constexpr unsigned kModWin = 1u << 3;
+} // namespace hk
 
 // one key combination: modifier bitmask + main-key virtual key code
 // vk == 0 means "no main key set" (possibly still waiting for the user to press one)
@@ -76,20 +76,20 @@ struct RunModeEntry {
 };
 
 inline constexpr RunModeEntry kRunModeEntries[] = {
-    {.mode = RunMode::Infinite, .name = "Infinite"},
-    {.mode = RunMode::Timed,    .name = "Timed"},
-    {.mode = RunMode::Counted,  .name = "Counted"},
+        {.mode = RunMode::Infinite, .name = "Infinite"},
+        {.mode = RunMode::Timed, .name = "Timed"},
+        {.mode = RunMode::Counted, .name = "Counted"},
 };
 
 [[nodiscard]] constexpr RunMode runModeFromString(const std::string_view s) noexcept {
-    for (const auto &[mode, name]: kRunModeEntries) {
+    for (const auto &[mode, name] : kRunModeEntries) {
         if (name == s) return mode;
     }
     return RunMode::Infinite;
 }
 
 [[nodiscard]] constexpr std::string_view runModeToString(const RunMode m) noexcept {
-    for (const auto &[mode, name]: kRunModeEntries) {
+    for (const auto &[mode, name] : kRunModeEntries) {
         if (mode == m) return name;
     }
     return "Infinite";
@@ -98,9 +98,9 @@ inline constexpr RunModeEntry kRunModeEntries[] = {
 // run mode parameters: infinite / timed / fixed count
 struct RunSpec {
     RunMode mode = RunMode::Infinite;
-    int durationSec = 10;   // only valid when mode == Timed
-    int count = 100;        // only valid when mode == Counted
-    int startDelayMs = 0;   // wait this long after thread start before the first action (independent of mode)
+    int durationSec = 10; // only valid when mode == Timed
+    int count = 100; // only valid when mode == Counted
+    int startDelayMs = 0; // wait this long after thread start before the first action (independent of mode)
 };
 
 // serialization: trimmed by mode
@@ -189,22 +189,20 @@ struct AdaptationPreferenceEntry {
 };
 
 inline constexpr AdaptationPreferenceEntry kAdaptationPreferenceEntries[] = {
-    {.value = AdaptationPreference::Ask,          .name = "Ask"},
-    {.value = AdaptationPreference::AlwaysAdapt,  .name = "AlwaysAdapt"},
-    {.value = AdaptationPreference::KeepOriginal, .name = "KeepOriginal"},
+        {.value = AdaptationPreference::Ask, .name = "Ask"},
+        {.value = AdaptationPreference::AlwaysAdapt, .name = "AlwaysAdapt"},
+        {.value = AdaptationPreference::KeepOriginal, .name = "KeepOriginal"},
 };
 
-[[nodiscard]] constexpr AdaptationPreference
-adaptationPreferenceFromString(const std::string_view s) noexcept {
-    for (const auto &[v, n]: kAdaptationPreferenceEntries) {
+[[nodiscard]] constexpr AdaptationPreference adaptationPreferenceFromString(const std::string_view s) noexcept {
+    for (const auto &[v, n] : kAdaptationPreferenceEntries) {
         if (n == s) return v;
     }
     return AdaptationPreference::Ask;
 }
 
-[[nodiscard]] constexpr std::string_view
-adaptationPreferenceToString(const AdaptationPreference p) noexcept {
-    for (const auto &[v, n]: kAdaptationPreferenceEntries) {
+[[nodiscard]] constexpr std::string_view adaptationPreferenceToString(const AdaptationPreference p) noexcept {
+    for (const auto &[v, n] : kAdaptationPreferenceEntries) {
         if (v == p) return n;
     }
     return "Ask";

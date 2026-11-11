@@ -1,7 +1,7 @@
 #include "common/Timer.hpp"
 
-#include <immintrin.h>   // _mm_pause()
-#include <thread>        // std::this_thread::sleep_for
+#include <immintrin.h> // _mm_pause()
+#include <thread> // std::this_thread::sleep_for
 
 // ============================================================
 // neither implementation logs: wait is a hot path and is not logged by convention.
@@ -72,7 +72,7 @@ bool HybridTimer::wait(const Duration d, const std::stop_token &st) const {
 
         const auto remaining = deadline - now();
         if (remaining <= Duration::zero()) return true;
-        if (remaining <= m_spinTail) break;   // enter the tail, hand over to the spin loop
+        if (remaining <= m_spinTail) break; // enter the tail, hand over to the spin loop
 
         const auto sleepFor = std::chrono::ceil<Duration>(remaining - m_spinTail);
         std::this_thread::sleep_for(sleepFor < SleepTimer::kSlice ? sleepFor : SleepTimer::kSlice);

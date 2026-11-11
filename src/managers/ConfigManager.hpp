@@ -39,9 +39,7 @@ public:
     [[nodiscard]] const Config &config() const noexcept { return m_config; }
 
     // currently effective config file path
-    [[nodiscard]] const std::filesystem::path &currentPath() const noexcept {
-        return m_path;
-    }
+    [[nodiscard]] const std::filesystem::path &currentPath() const noexcept { return m_path; }
 
     // whether portable mode (current config comes from {exe}.json next to the EXE)
     [[nodiscard]] bool isPortable() const noexcept { return m_portable; }

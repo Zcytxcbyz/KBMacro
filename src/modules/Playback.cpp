@@ -9,136 +9,135 @@
 
 namespace {
 
-    // One entry of the key matching table: the full Hotkey (sent back as-is to release it) + press count.
-    struct HeldKey {
-        Hotkey hotkey;
-        int count = 0;
-    };
+// One entry of the key matching table: the full Hotkey (sent back as-is to release it) + press count.
+struct HeldKey {
+    Hotkey hotkey;
+    int count = 0;
+};
 
-    // Key of the matching table: vk in the low 16 bits, modifiers in the high bits.
-    // with vk == 0 (modifier-only press) it also never collides with another combination.
-    [[nodiscard]] unsigned heldKeyOf(const Hotkey &hk) noexcept {
-        return (hk.vk & 0xFFFFu) | (hk.modifiers << 16);
+// Key of the matching table: vk in the low 16 bits, modifiers in the high bits.
+// with vk == 0 (modifier-only press) it also never collides with another combination.
+[[nodiscard]] unsigned heldKeyOf(const Hotkey &hk) noexcept {
+    return (hk.vk & 0xFFFFu) | (hk.modifiers << 16);
+}
+
+// Release every key still held down.
+// normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
+// cutoff landed exactly between down and up -- without this fix the key would stay stuck.
+void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held) {
+    int released = 0;
+    for (auto &val : held | std::views::values) {
+        auto &[hotkey, count] = val;
+        if (count <= 0) continue;
+
+        input::keyUp(hotkey);
+        count = 0;
+        ++released;
     }
 
-    // Release every key still held down.
-    // normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
-    // cutoff landed exactly between down and up -- without this fix the key would stay stuck.
-    void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held) {
-        int released = 0;
-        for (auto &val: held | std::views::values) {
-            auto &[hotkey, count] = val;
-            if (count <= 0) continue;
+    if (released > 0) LOG_WARN("playback: released {} stuck key(s)", released);
+}
 
-            input::keyUp(hotkey);
-            count = 0;
-            ++released;
-        }
+// Mouse button matching table: MouseDown adds a record, MouseUp clears it.
+// key is the button itself, value is the press count (repeated down on one button does not release early).
+void pressHeldButton(std::unordered_map<MouseButton, int> &held, const MouseButton button) {
+    ++held[button];
+}
 
-        if (released > 0) LOG_WARN("playback: released {} stuck key(s)", released);
+// Release every mouse button still held down (once per round end and once on thread exit).
+void releaseHeldButtons(std::unordered_map<MouseButton, int> &held) {
+    int released = 0;
+    for (auto &[button, count] : held) {
+        if (count <= 0) continue;
+
+        input::buttonUp(button);
+        count = 0;
+        ++released;
     }
 
-    // Mouse button matching table: MouseDown adds a record, MouseUp clears it.
-    // key is the button itself, value is the press count (repeated down on one button does not release early).
-    void pressHeldButton(std::unordered_map<MouseButton, int> &held, const MouseButton button) {
-        ++held[button];
+    if (released > 0) LOG_WARN("playback: released {} stuck mouse button(s)", released);
+}
+
+// Move the cursor to the position given by the action:
+//   relative == true  → offset from the current position (moveBy, no coordinate adaptation)
+//   relative == false → absolute virtual-desktop coordinates (moveTo)
+void positionCursor(const Action &action) {
+    if (action.relative) {
+        input::moveBy(action.x, action.y);
+    } else {
+        input::moveTo(action.x, action.y);
     }
+}
 
-    // Release every mouse button still held down (once per round end and once on thread exit).
-    void releaseHeldButtons(std::unordered_map<MouseButton, int> &held) {
-        int released = 0;
-        for (auto &[button, count]: held) {
-            if (count <= 0) continue;
+// Apply one action. Returns false = interrupted by stop (only click's hold wait can do that).
+bool applyAction(const Action &action,
+                 const ITimer &timer,
+                 const std::stop_token &st,
+                 std::unordered_map<unsigned, HeldKey> &held,
+                 std::unordered_map<MouseButton, int> &heldButtons) {
+    switch (action.type) {
+        case ActionType::MouseMove:
+            positionCursor(action);
+            return true;
 
-            input::buttonUp(button);
-            count = 0;
-            ++released;
-        }
+        case ActionType::MouseClick:
+            // recorded output always carries a preceding MouseMove, but a hand-written or edited script
+            // may hold only one click, so position here too (the coordinates live in the Action anyway).
+            positionCursor(action);
+            return input::click(action.button, action.holdMs, timer, st);
 
-        if (released > 0) LOG_WARN("playback: released {} stuck mouse button(s)", released);
-    }
+        case ActionType::MouseWheel:
+            input::wheel(action.wheelDirection, action.wheelSteps);
+            return true;
 
-    // Move the cursor to the position given by the action:
-    //   relative == true  → offset from the current position (moveBy, no coordinate adaptation)
-    //   relative == false → absolute virtual-desktop coordinates (moveTo)
-    void positionCursor(const Action &action) {
-        if (action.relative) {
-            input::moveBy(action.x, action.y);
-        } else {
-            input::moveTo(action.x, action.y);
-        }
-    }
+        case ActionType::MouseDown:
+            // the drag start must be positioned too (same reason as MouseClick)
+            positionCursor(action);
+            input::buttonDown(action.button);
+            pressHeldButton(heldButtons, action.button);
+            return true;
 
-    // Apply one action. Returns false = interrupted by stop (only click's hold wait can do that).
-    bool applyAction(const Action &action, const ITimer &timer, const std::stop_token &st,
-                     std::unordered_map<unsigned, HeldKey> &held,
-                     std::unordered_map<MouseButton, int> &heldButtons) {
-        switch (action.type) {
-            case ActionType::MouseMove:
-                positionCursor(action);
-                return true;
-
-            case ActionType::MouseClick:
-                // recorded output always carries a preceding MouseMove, but a hand-written or edited script
-                // may hold only one click, so position here too (the coordinates live in the Action anyway).
-                positionCursor(action);
-                return input::click(action.button, action.holdMs, timer, st);
-
-            case ActionType::MouseWheel:
-                input::wheel(action.wheelDirection, action.wheelSteps);
-                return true;
-
-            case ActionType::MouseDown:
-                // the drag start must be positioned too (same reason as MouseClick)
-                positionCursor(action);
-                input::buttonDown(action.button);
-                pressHeldButton(heldButtons, action.button);
-                return true;
-
-            case ActionType::MouseUp:
-                // move to the release point first, otherwise the end point drifts back to the press position
-                positionCursor(action);
-                input::buttonUp(action.button);
-                if (const auto it = heldButtons.find(action.button);
-                    it != heldButtons.end() && it->second > 0) {
-                    --it->second;
-                    }
-                return true;
-
-            case ActionType::Keyboard: {
-                if (action.keyEvent == KeyEventType::Down) {
-                    input::keyDown(action.hotkey);
-                    auto &item = held[heldKeyOf(action.hotkey)];
-                    item.hotkey = action.hotkey;
-                    ++item.count;
-                } else {
-                    input::keyUp(action.hotkey);
-                    if (const auto it = held.find(heldKeyOf(action.hotkey));
-                        it != held.end() && it->second.count > 0) {
-                        --it->second.count;
-                    }
-                }
-                return true;
+        case ActionType::MouseUp:
+            // move to the release point first, otherwise the end point drifts back to the press position
+            positionCursor(action);
+            input::buttonUp(action.button);
+            if (const auto it = heldButtons.find(action.button); it != heldButtons.end() && it->second > 0) {
+                --it->second;
             }
+            return true;
 
-            case ActionType::Delay:
-                // pure wait: the duration is delayMs, and delayMs was already performed as the
-                // "pre-action wait" in the loop, so there is nothing to do here.
-                // it exists as its own type because it is a visible row in the action list --
-                // inserting a pause does not require editing the delay values of neighbouring actions.
-                return true;
+        case ActionType::Keyboard: {
+            if (action.keyEvent == KeyEventType::Down) {
+                input::keyDown(action.hotkey);
+                auto &item = held[heldKeyOf(action.hotkey)];
+                item.hotkey = action.hotkey;
+                ++item.count;
+            } else {
+                input::keyUp(action.hotkey);
+                if (const auto it = held.find(heldKeyOf(action.hotkey)); it != held.end() && it->second.count > 0) {
+                    --it->second.count;
+                }
+            }
+            return true;
         }
 
-        // all types are covered, this is only a fallback
-        return true;
+        case ActionType::Delay:
+            // pure wait: the duration is delayMs, and delayMs was already performed as the
+            // "pre-action wait" in the loop, so there is nothing to do here.
+            // it exists as its own type because it is a visible row in the action list --
+            // inserting a pause does not require editing the delay values of neighbouring actions.
+            return true;
     }
+
+    // all types are covered, this is only a fallback
+    return true;
+}
 
 } // namespace
 
 namespace playback {
 
-int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &timer,
-        const std::stop_token &st) {
+int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &timer, const std::stop_token &st) {
     if (actions.empty()) {
         LOG_WARN("playback: empty action list, nothing to play");
         return 0;
@@ -168,8 +167,7 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
             }
 
             // delayMs = wait this long after the previous action finishes, so this is pure pre-wait.
-            if (action.delayMs > 0 &&
-                !timer.wait(rc.clampWait(ITimer::Duration{action.delayMs}, ITimer::now()), st)) {
+            if (action.delayMs > 0 && !timer.wait(rc.clampWait(ITimer::Duration{action.delayMs}, ITimer::now()), st)) {
                 interrupted = true;
                 break;
             }

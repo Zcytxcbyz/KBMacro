@@ -78,7 +78,7 @@ TEST(ActionRoundTrip, Keyboard) {
     Action a;
     a.type = ActionType::Keyboard;
     a.hotkey.modifiers = hk::kModCtrl | hk::kModShift;
-    a.hotkey.vk = 0x70;  // F1
+    a.hotkey.vk = 0x70; // F1
     a.keyEvent = KeyEventType::Up;
     a.delayMs = 99;
 
@@ -97,7 +97,7 @@ TEST(ActionRoundTrip, Keyboard) {
 TEST(HotkeyRoundTrip, WithModifiersAndKey) {
     Hotkey hk;
     hk.modifiers = hk::kModCtrl | hk::kModAlt;
-    hk.vk = 0x41;  // A
+    hk.vk = 0x41; // A
 
     const auto j = nlohmann::json(hk);
     const Hotkey b = j.get<Hotkey>();
@@ -212,7 +212,7 @@ TEST(ClickerParamsRoundTrip, AllFields) {
 TEST(KeyboardParamsRoundTrip, AllFields) {
     KeyboardParams p;
     p.hotkey.modifiers = hk::kModCtrl;
-    p.hotkey.vk = 0x0D;  // Enter
+    p.hotkey.vk = 0x0D; // Enter
     p.intervalMs = 250;
     p.holdMs = 60;
     p.run.mode = RunMode::Counted;
@@ -259,16 +259,16 @@ TEST(ConfigRoundTrip, HybridSpinMsIsClamped) {
     j["timerHybridSpinMs"] = -3;
     EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsMin);
 
-    j.erase("timerHybridSpinMs");   // an old config has no such field
+    j.erase("timerHybridSpinMs"); // an old config has no such field
     EXPECT_EQ(j.get<Config>().timerHybridSpinMs, kTimerHybridSpinMsDefault);
 }
 
 TEST(ConfigRoundTrip, HotkeysAndEnabled) {
     Config c;
     c.hotkeys[0].modifiers = hk::kModCtrl;
-    c.hotkeys[0].vk = 0x70;  // F1
+    c.hotkeys[0].vk = 0x70; // F1
     c.hotkeys[1].modifiers = hk::kModAlt;
-    c.hotkeys[1].vk = 0x71;  // F2
+    c.hotkeys[1].vk = 0x71; // F2
     c.hotkeyEnabled[0] = true;
     c.hotkeyEnabled[1] = false;
 
@@ -308,8 +308,8 @@ TEST(ConfigRoundTrip, WindowAndFlags) {
 TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
     // simulate an "old config": only language, no window / flags / hotkeys
     const nlohmann::json j = {
-        {"version", 1},
-        {"language", "zh-CN"},
+            {"version", 1},
+            {"language", "zh-CN"},
     };
 
     const Config b = j.get<Config>();
@@ -325,7 +325,7 @@ TEST(ConfigRoundTrip, MissingFieldsUseDefaults) {
     EXPECT_EQ(b.flags.spinWarningConfirmed, false);
     EXPECT_EQ(b.flags.adaptationPreference, AdaptationPreference::Ask);
     // hotkeyEnabled defaults to all true
-    for (const bool e: b.hotkeyEnabled) {
+    for (const bool e : b.hotkeyEnabled) {
         EXPECT_TRUE(e);
     }
 }
@@ -404,9 +404,8 @@ TEST(ActionJson, DelayRoundTrips) {
 
 TEST(ActionJson, OldScriptWithoutRelativeStillParses) {
     // compatibility: old scripts without a relative field are treated as absolute
-    const nlohmann::json j = {{"type", "MouseClick"}, {"button", "Left"},
-                              {"x", 100}, {"y", 200}, {"holdMs", 50},
-                              {"delayMs", 0}};
+    const nlohmann::json j = {
+            {"type", "MouseClick"}, {"button", "Left"}, {"x", 100}, {"y", 200}, {"holdMs", 50}, {"delayMs", 0}};
     const auto a = j.get<Action>();
     EXPECT_EQ(a.type, ActionType::MouseClick);
     EXPECT_FALSE(a.relative);
@@ -428,17 +427,17 @@ TEST(ConfigRoundTrip, PlaybackSpeedIsSnapped) {
     // a hand-edited config may hold any value: snap to the nearest step on load
     nlohmann::json j = Config{};
     j["playbackSpeed"] = 1.37;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 1.5);   // closest to 1.5
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 1.5); // closest to 1.5
 
     j["playbackSpeed"] = 10.0;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 4.0);   // the largest step
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 4.0); // the largest step
 
     j["playbackSpeed"] = 0.1;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 0.25);  // the smallest step
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 0.25); // the smallest step
 
     j["playbackSpeed"] = 0.0;
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // back to default
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed); // back to default
 
     j.erase("playbackSpeed");
-    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // same for a missing field
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed); // same for a missing field
 }

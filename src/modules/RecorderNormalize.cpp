@@ -8,20 +8,20 @@
 
 namespace {
 
-    // movement beyond this many pixels counts as a drag, otherwise it collapses into one click
-    constexpr int kDragThreshold = 2;
+// movement beyond this many pixels counts as a drag, otherwise it collapses into one click
+constexpr int kDragThreshold = 2;
 
-    // granularity of one wheel notch
-    constexpr int kWheelDelta = 120;
+// granularity of one wheel notch
+constexpr int kWheelDelta = 120;
 
-    // whether this event is "a modifier key of some hotkey"
-    [[nodiscard]] bool isModifierEventOf(const recorder::RawEvent &e, const unsigned mask) noexcept {
-        if (mask == 0) return false;
-        if (e.kind != recorder::RawKind::KeyDown && e.kind != recorder::RawKind::KeyUp) return false;
+// whether this event is "a modifier key of some hotkey"
+[[nodiscard]] bool isModifierEventOf(const recorder::RawEvent &e, const unsigned mask) noexcept {
+    if (mask == 0) return false;
+    if (e.kind != recorder::RawKind::KeyDown && e.kind != recorder::RawKind::KeyUp) return false;
 
-        const unsigned bit = utils::modifierBitForVk(e.vk);
-        return bit != 0 && (bit & mask) != 0;
-    }
+    const unsigned bit = utils::modifierBitForVk(e.vk);
+    return bit != 0 && (bit & mask) != 0;
+}
 
 } // namespace
 
@@ -37,8 +37,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
     std::size_t begin = 0;
     std::size_t end = events.size();
 
-    while (begin < end && isModifierEventOf(events[begin], opts.startMods)) ++begin;
-    while (end > begin && isModifierEventOf(events[end - 1], opts.stopMods)) --end;
+    while (begin < end && isModifierEventOf(events[begin], opts.startMods))
+        ++begin;
+    while (end > begin && isModifierEventOf(events[end - 1], opts.stopMods))
+        --end;
 
     // ---- 2. per-event normalization ----
     bool haveLast = false;
@@ -51,9 +53,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         out.push_back(std::move(action)); // NOLINT(*-move-const-arg)
     };
 
-    const auto limitReached = [&] {
-        return opts.maxActions > 0 && static_cast<int>(out.size()) >= opts.maxActions;
-    };
+    const auto limitReached = [&] { return opts.maxActions > 0 && static_cast<int>(out.size()) >= opts.maxActions; };
 
     // keyboard: keys still held down (auto-repeat merge + drop Up without matching Down)
     std::unordered_set<unsigned> keysDown;
@@ -80,8 +80,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         if (e.kind == RawKind::KeyDown || e.kind == RawKind::KeyUp) {
             // start/stop hotkey main keys never enter the output (the hook already filters them, this is the
             // second pass, and it also makes this function self-contained and unit-testable)
-            if ((opts.startKeyVk != 0 && e.vk == opts.startKeyVk) ||
-                (opts.stopKeyVk != 0 && e.vk == opts.stopKeyVk)) {
+            if ((opts.startKeyVk != 0 && e.vk == opts.startKeyVk) || (opts.stopKeyVk != 0 && e.vk == opts.stopKeyVk)) {
                 continue;
             }
 
@@ -96,8 +95,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
 
             push(Action{.type = ActionType::Keyboard,
                         .hotkey = Hotkey{.modifiers = 0, .vk = e.vk},
-                        .keyEvent = (e.kind == RawKind::KeyDown) ? KeyEventType::Down
-                                                                 : KeyEventType::Up},
+                        .keyEvent = (e.kind == RawKind::KeyDown) ? KeyEventType::Down : KeyEventType::Up},
                  e.time);
             continue;
         }
@@ -105,16 +103,12 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         // ---- mouse move ----
         if (e.kind == RawKind::Move) {
             if (havePendingDown && !dragging) {
-                if (std::abs(e.x - pendingX) <= kDragThreshold &&
-                    std::abs(e.y - pendingY) <= kDragThreshold) {
-                    continue;   // jitter, not a drag
+                if (std::abs(e.x - pendingX) <= kDragThreshold && std::abs(e.y - pendingY) <= kDragThreshold) {
+                    continue; // jitter, not a drag
                 }
 
                 // threshold crossed: emit the press (start point) first, then this move
-                push(Action{.type = ActionType::MouseDown,
-                            .x = pendingX,
-                            .y = pendingY,
-                            .button = pendingButton},
+                push(Action{.type = ActionType::MouseDown, .x = pendingX, .y = pendingY, .button = pendingButton},
                      pendingTime);
                 emittedButtons.insert(pendingButton);
                 dragging = true;
@@ -128,11 +122,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         if (e.kind == RawKind::ButtonDown) {
             if (havePendingDown) {
                 // a button is already down: emit this one directly, it does not join click merging (multi-press)
-                push(Action{.type = ActionType::MouseDown,
-                            .x = e.x,
-                            .y = e.y,
-                            .button = e.button},
-                     e.time);
+                push(Action{.type = ActionType::MouseDown, .x = e.x, .y = e.y, .button = e.button}, e.time);
                 emittedButtons.insert(e.button);
                 continue;
             }
@@ -161,17 +151,11 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
                                     .button = pendingButton},
                              pendingTime);
                     }
-                    push(Action{.type = ActionType::MouseUp,
-                                .x = e.x,
-                                .y = e.y,
-                                .button = e.button},
-                         e.time);
+                    push(Action{.type = ActionType::MouseUp, .x = e.x, .y = e.y, .button = e.button}, e.time);
                 } else {
                     // pressed and released in place: collapse into one click, hold duration is the real span
-                    auto click = Action{.type = ActionType::MouseClick,
-                                        .x = pendingX,
-                                        .y = pendingY,
-                                        .button = pendingButton};
+                    auto click = Action{
+                            .type = ActionType::MouseClick, .x = pendingX, .y = pendingY, .button = pendingButton};
                     click.holdMs = static_cast<int>(e.time - pendingTime);
                     push(click, e.time);
                 }
@@ -183,8 +167,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
 
             // not the pending button: emit Up only if this button really produced a MouseDown
             if (emittedButtons.erase(e.button) > 0) {
-                push(Action{.type = ActionType::MouseUp, .x = e.x, .y = e.y, .button = e.button},
-                     e.time);
+                push(Action{.type = ActionType::MouseUp, .x = e.x, .y = e.y, .button = e.button}, e.time);
             }
             continue;
         }
@@ -203,14 +186,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
                 wheelPending -= notches * kWheelDelta;
 
                 const bool positive = notches > 0;
-                const WheelDirection dir =
-                    wheelHorizontal
-                        ? (positive ? WheelDirection::Right : WheelDirection::Left)
-                        : (positive ? WheelDirection::Up : WheelDirection::Down);
+                const WheelDirection dir = wheelHorizontal ? (positive ? WheelDirection::Right : WheelDirection::Left)
+                                                           : (positive ? WheelDirection::Up : WheelDirection::Down);
 
-                push(Action{.type = ActionType::MouseWheel,
-                            .wheelDirection = dir,
-                            .wheelSteps = std::abs(notches)},
+                push(Action{.type = ActionType::MouseWheel, .wheelDirection = dir, .wheelSteps = std::abs(notches)},
                      e.time);
 
                 if (limitReached()) return out;

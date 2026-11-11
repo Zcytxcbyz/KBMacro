@@ -33,27 +33,27 @@ struct ClickTypeEntry {
 };
 
 inline constexpr ClickTypeEntry kClickTypeEntries[] = {
-    {.value = ClickType::Left,       .name = "Left"},
-    {.value = ClickType::Right,      .name = "Right"},
-    {.value = ClickType::Middle,     .name = "Middle"},
-    {.value = ClickType::Double,     .name = "Double"},
-    {.value = ClickType::WheelUp,    .name = "WheelUp"},
-    {.value = ClickType::WheelDown,  .name = "WheelDown"},
-    {.value = ClickType::WheelLeft,  .name = "WheelLeft"},
-    {.value = ClickType::WheelRight, .name = "WheelRight"},
-    {.value = ClickType::Side1,      .name = "Side1"},
-    {.value = ClickType::Side2,      .name = "Side2"},
+        {.value = ClickType::Left, .name = "Left"},
+        {.value = ClickType::Right, .name = "Right"},
+        {.value = ClickType::Middle, .name = "Middle"},
+        {.value = ClickType::Double, .name = "Double"},
+        {.value = ClickType::WheelUp, .name = "WheelUp"},
+        {.value = ClickType::WheelDown, .name = "WheelDown"},
+        {.value = ClickType::WheelLeft, .name = "WheelLeft"},
+        {.value = ClickType::WheelRight, .name = "WheelRight"},
+        {.value = ClickType::Side1, .name = "Side1"},
+        {.value = ClickType::Side2, .name = "Side2"},
 };
 
 [[nodiscard]] constexpr std::string_view clickTypeToString(const ClickType t) noexcept {
-    for (const auto &[v, n]: kClickTypeEntries) {
+    for (const auto &[v, n] : kClickTypeEntries) {
         if (v == t) return n;
     }
     return "Left";
 }
 
 [[nodiscard]] constexpr ClickType clickTypeFromString(const std::string_view s) noexcept {
-    for (const auto &[v, n]: kClickTypeEntries) {
+    for (const auto &[v, n] : kClickTypeEntries) {
         if (n == s) return v;
     }
     return ClickType::Left;
@@ -61,8 +61,8 @@ inline constexpr ClickTypeEntry kClickTypeEntries[] = {
 
 // whether this is a wheel click type
 [[nodiscard]] constexpr bool isWheelClickType(const ClickType t) noexcept {
-    return t == ClickType::WheelUp || t == ClickType::WheelDown
-           || t == ClickType::WheelLeft || t == ClickType::WheelRight;
+    return t == ClickType::WheelUp || t == ClickType::WheelDown || t == ClickType::WheelLeft ||
+           t == ClickType::WheelRight;
 }
 
 // ============================================================
@@ -71,17 +71,17 @@ inline constexpr ClickTypeEntry kClickTypeEntries[] = {
 
 struct ClickerParams {
     // position
-    bool ignorePosition = false;   // when checked x/y are ignored and the current cursor position is used
+    bool ignorePosition = false; // when checked x/y are ignored and the current cursor position is used
     int x = 0;
     int y = 0;
 
     // click
     ClickType clickType = ClickType::Left;
-    int wheelSteps = 1;            // only valid for wheel click types
+    int wheelSteps = 1; // only valid for wheel click types
 
     // timing
     int intervalMs = 100;
-    int holdMs = 50;               // only valid for non-wheel click types
+    int holdMs = 50; // only valid for non-wheel click types
 
     // run mode
     RunSpec run;

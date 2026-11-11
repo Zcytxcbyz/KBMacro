@@ -16,111 +16,115 @@
 #include "win32/Input.hpp"
 
 #include "ui/KBMacroStatusBar.hpp"
+#include "ui/panels/AboutPanel.hpp"
 #include "ui/panels/ClickerPanel.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/panels/RecorderPanel.hpp"
 #include "ui/panels/SettingsPanel.hpp"
-#include "ui/panels/AboutPanel.hpp"
 
 namespace {
 
-    // read the initial window position from Config.
-    //   - x/y < 0  -> not set, use wxDefaultPosition
-    //   - outside the virtual desktop -> use wxDefaultPosition (e.g. a secondary monitor was unplugged)
-    wxPoint initialPosition() {
-        const auto &w = ConfigManager::instance().config().window;
-        if (w.x < 0 || w.y < 0) return wxDefaultPosition;
+// read the initial window position from Config.
+//   - x/y < 0  -> not set, use wxDefaultPosition
+//   - outside the virtual desktop -> use wxDefaultPosition (e.g. a secondary monitor was unplugged)
+wxPoint initialPosition() {
+    const auto &w = ConfigManager::instance().config().window;
+    if (w.x < 0 || w.y < 0) return wxDefaultPosition;
 
-        const int vx = ::GetSystemMetrics(SM_XVIRTUALSCREEN);
-        const int vy = ::GetSystemMetrics(SM_YVIRTUALSCREEN);
-        const int vw = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
-        const int vh = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
+    const int vx = ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const int vy = ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const int vw = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int vh = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-        // only require the window to be at least partly on the virtual desktop
-        const bool visible = (w.x + w.width > vx) && (w.x < vx + vw) &&
-                             (w.y + w.height > vy) && (w.y < vy + vh);
+    // only require the window to be at least partly on the virtual desktop
+    const bool visible = (w.x + w.width > vx) && (w.x < vx + vw) && (w.y + w.height > vy) && (w.y < vy + vh);
 
-        return visible ? wxPoint(w.x, w.y) : wxDefaultPosition;
+    return visible ? wxPoint(w.x, w.y) : wxDefaultPosition;
+}
+
+// read the initial window style from Config (always-on-top or not)
+long initialStyle() {
+    return ConfigManager::instance().config().alwaysOnTop ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
+                                                          : wxDEFAULT_FRAME_STYLE;
+}
+
+// create the timer instance from the config.
+// replaced wholesale on mode change, never tweaked in place: ITimer is const and may be
+// held by a running thread, so replacing is safer than mutating state.
+std::shared_ptr<ITimer> createTimer() {
+    const auto &cfg = ConfigManager::instance().config();
+    switch (cfg.timerMode) {
+        case TimerMode::Spin:
+            return std::make_shared<SpinTimer>();
+        case TimerMode::Hybrid:
+            return std::make_shared<HybridTimer>(ITimer::Duration{cfg.timerHybridSpinMs});
+        case TimerMode::Sleep:
+        default:
+            return std::make_shared<SleepTimer>();
     }
+}
 
-    // read the initial window style from Config (always-on-top or not)
-    long initialStyle() {
-        return ConfigManager::instance().config().alwaysOnTop
-                   ? wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP
-                   : wxDEFAULT_FRAME_STYLE;
-    }
+// initial geometry: use the configured size, clamped to 90% of the available area (taskbar excluded)
+// of the display the window will land on. Content overflow falls back to each page's scrollbar.
+void applyInitialGeometry(wxFrame *frame) {
+    const auto &w = ConfigManager::instance().config().window;
 
-    // create the timer instance from the config.
-    // replaced wholesale on mode change, never tweaked in place: ITimer is const and may be
-    // held by a running thread, so replacing is safer than mutating state.
-    std::shared_ptr<ITimer> createTimer() {
-        const auto &cfg = ConfigManager::instance().config();
-        switch (cfg.timerMode) {
-            case TimerMode::Spin:
-                return std::make_shared<SpinTimer>();
-            case TimerMode::Hybrid:
-                return std::make_shared<HybridTimer>(ITimer::Duration{cfg.timerHybridSpinMs});
-            case TimerMode::Sleep:
-            default:
-                return std::make_shared<SleepTimer>();
+    // use the display the window will be placed on; the primary one when no position is configured
+    const wxPoint pos = initialPosition();
+    unsigned displayIdx = 0;
+    if (pos != wxDefaultPosition) {
+        if (const int idx = wxDisplay::GetFromPoint(pos); idx != wxNOT_FOUND) {
+            displayIdx = static_cast<unsigned>(idx);
         }
     }
 
-    // initial geometry: use the configured size, clamped to 90% of the available area (taskbar excluded)
-    // of the display the window will land on. Content overflow falls back to each page's scrollbar.
-    void applyInitialGeometry(wxFrame *frame) {
-        const auto &w = ConfigManager::instance().config().window;
+    const wxRect area = wxDisplay(displayIdx).GetClientArea();
+    const int maxW = area.width * 9 / 10;
+    const int maxH = area.height * 9 / 10;
 
-        // use the display the window will be placed on; the primary one when no position is configured
-        const wxPoint pos = initialPosition();
-        unsigned displayIdx = 0;
-        if (pos != wxDefaultPosition) {
-            if (const int idx = wxDisplay::GetFromPoint(pos); idx != wxNOT_FOUND) {
-                displayIdx = static_cast<unsigned>(idx);
-            }
-        }
+    // initial size comes only from config: all five pages scroll, no need to grow to content
+    const wxSize target(std::min(w.width, maxW), std::min(w.height, maxH));
 
-        const wxRect area = wxDisplay(displayIdx).GetClientArea();
-        const int maxW    = area.width * 9 / 10;
-        const int maxH    = area.height * 9 / 10;
+    frame->SetSize(target);
 
-        // initial size comes only from config: all five pages scroll, no need to grow to content
-        const wxSize target(std::min(w.width, maxW), std::min(w.height, maxH));
-
-        frame->SetSize(target);
-
-        if (pos == wxDefaultPosition) {
-            frame->Centre();
-        } else {
-            frame->Move(pos);
-        }
-
-        LOG_DEBUG("mainframe: geometry config {}x{}, display {}x{}, window {}x{}",
-                  w.width, w.height, area.width, area.height, target.x, target.y);
+    if (pos == wxDefaultPosition) {
+        frame->Centre();
+    } else {
+        frame->Move(pos);
     }
+
+    LOG_DEBUG("mainframe: geometry config {}x{}, display {}x{}, window {}x{}",
+              w.width,
+              w.height,
+              area.width,
+              area.height,
+              target.x,
+              target.y);
+}
 
 } // namespace
 
 MainFrame::MainFrame()
-    : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE),
-              wxDefaultPosition, wxDefaultSize, initialStyle()) {
+    : wxFrame(nullptr, wxID_ANY, TR(IDS_APP_TITLE), wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
 
     // icon: numeric resource id + MAKEINTRESOURCEW.
     // do not use wxICON(IDI_APP_ICON): wxICON "stringizes" the argument into "IDI_APP_ICON",
     // while resource.h has already expanded IDI_APP_ICON to the number 101 in resource.rc,
     // so a lookup by name fails.
-    if (const auto appIcon = static_cast<HICON>(::LoadImageW(
-            ::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON, 0, 0,
-            LR_DEFAULTSIZE | LR_DEFAULTCOLOR))) {
+    if (const auto appIcon = static_cast<HICON>(::LoadImageW(::GetModuleHandleW(nullptr),
+                                                             MAKEINTRESOURCEW(IDI_APP_ICON),
+                                                             IMAGE_ICON,
+                                                             0,
+                                                             0,
+                                                             LR_DEFAULTSIZE | LR_DEFAULTCOLOR))) {
         wxIcon icon;
-        icon.CreateFromHICON(appIcon);   // CreateFromHICON copies the icon internally, no double free
+        icon.CreateFromHICON(appIcon); // CreateFromHICON copies the icon internally, no double free
         SetIcon(icon);
         LOG_DEBUG("mainframe: icon applied from resource id {}", IDI_APP_ICON);
-            } else {
-                LOG_WARN("mainframe: icon resource id {} failed, GetLastError={}", IDI_APP_ICON,
-                         ::GetLastError());
-            }
+    } else {
+        LOG_WARN("mainframe: icon resource id {} failed, GetLastError={}", IDI_APP_ICON, ::GetLastError());
+    }
 
     // init the input injection layer: logs one "virtual screen + DPI" line (dry-run mode adds a WARN)
     input::init();
@@ -131,11 +135,8 @@ MainFrame::MainFrame()
               timerModeToString(ConfigManager::instance().config().timerMode),
               ConfigManager::instance().config().timerHybridSpinMs);
     // ---- 1. create HotkeyManager first (depends only on HWND) ----
-    m_hotkeyMgr = std::make_unique<HotkeyManager>(
-        GetHWND(),
-        [this](const HotkeyAction action) {
-            dispatchHotkeyAction(action);
-        });
+    m_hotkeyMgr = std::make_unique<HotkeyManager>(GetHWND(),
+                                                  [this](const HotkeyAction action) { dispatchHotkeyAction(action); });
     Bind(wxEVT_HOTKEY, &MainFrame::onHotkey, this);
 
     // ---- 1.5 create ThreadManager: panels need its reference at construction, so it must come first ----
@@ -218,7 +219,8 @@ void MainFrame::rebuildTimer() {
 
     const auto &cfg = ConfigManager::instance().config();
     LOG_DEBUG("mainframe: timer rebuilt: mode={}, spinTail={}ms",
-              timerModeToString(cfg.timerMode), cfg.timerHybridSpinMs);
+              timerModeToString(cfg.timerMode),
+              cfg.timerHybridSpinMs);
 }
 
 // ============================================================
@@ -229,8 +231,7 @@ void MainFrame::rebuildTimer() {
 void MainFrame::onHotkey(wxKeyEvent &event) {
     // ReSharper disable once CppDeclaratorNeverUsed
     const int id = event.GetId();
-    LOG_DEBUG("mainframe: wxEVT_HOTKEY id={} (index={})",
-              id, id - HotkeyManager::kHotkeyIdBase);
+    LOG_DEBUG("mainframe: wxEVT_HOTKEY id={} (index={})", id, id - HotkeyManager::kHotkeyIdBase);
     m_hotkeyMgr->dispatch(event.GetId());
 }
 
@@ -364,14 +365,14 @@ void MainFrame::refreshStatus() {
         TaskKind kind;
         int resId;
     } kTasks[] = {
-        {TaskKind::Clicker,  IDS_TASK_CLICKER},
-        {TaskKind::Keyboard, IDS_TASK_KEYBOARD},
-        {TaskKind::Record,   IDS_TASK_RECORD},
-        {TaskKind::Playback, IDS_TASK_PLAYBACK},
+            {TaskKind::Clicker, IDS_TASK_CLICKER},
+            {TaskKind::Keyboard, IDS_TASK_KEYBOARD},
+            {TaskKind::Record, IDS_TASK_RECORD},
+            {TaskKind::Playback, IDS_TASK_PLAYBACK},
     };
 
     wxString names;
-    for (const auto &task: kTasks) {
+    for (const auto &task : kTasks) {
         if (!m_threadMgr || !m_threadMgr->IsRunning(task.kind)) {
             continue;
         }

@@ -21,23 +21,22 @@
 
 namespace {
 
-    // ignorePosition = true: skip moveTo each round, the test only checks click and wait.
-    // intervalMs = 100, holdMs = 5 → button rounds wait 95ms, unlike the 5ms hold,
-    // so countWaits can tell the two kinds of waits apart.
-    ClickerParams makeParams(const RunMode mode, const int count,
-                             const ClickType type = ClickType::Left) {
-        ClickerParams p;
-        p.ignorePosition = true;
-        p.clickType = type;
-        p.intervalMs = 100;
-        p.holdMs = 5;
-        p.wheelSteps = 1;
-        p.run = RunSpec{.mode = mode, .count = count};
-        return p;
-    }
+// ignorePosition = true: skip moveTo each round, the test only checks click and wait.
+// intervalMs = 100, holdMs = 5 → button rounds wait 95ms, unlike the 5ms hold,
+// so countWaits can tell the two kinds of waits apart.
+ClickerParams makeParams(const RunMode mode, const int count, const ClickType type = ClickType::Left) {
+    ClickerParams p;
+    p.ignorePosition = true;
+    p.clickType = type;
+    p.intervalMs = 100;
+    p.holdMs = 5;
+    p.wheelSteps = 1;
+    p.run = RunSpec{.mode = mode, .count = count};
+    return p;
+}
 
-    constexpr ITimer::Duration kHold{5};    // one hold wait
-    constexpr ITimer::Duration kGap{95};    // button round gap (100 - 5)
+constexpr ITimer::Duration kHold{5}; // one hold wait
+constexpr ITimer::Duration kGap{95}; // button round gap (100 - 5)
 
 } // namespace
 
@@ -50,8 +49,7 @@ TEST(ToClickStep, ButtonsMapToButtons) {
     EXPECT_EQ(clicker::toClickStep(ClickType::Side1).button, MouseButton::Side1);
     EXPECT_EQ(clicker::toClickStep(ClickType::Side2).button, MouseButton::Side2);
 
-    for (const auto type : {ClickType::Left, ClickType::Right, ClickType::Middle, ClickType::Side1,
-                            ClickType::Side2}) {
+    for (const auto type : {ClickType::Left, ClickType::Right, ClickType::Middle, ClickType::Side1, ClickType::Side2}) {
         EXPECT_FALSE(clicker::toClickStep(type).wheel) << "type=" << clickTypeToString(type);
         EXPECT_EQ(clicker::toClickStep(type).times, 1) << "type=" << clickTypeToString(type);
     }
@@ -68,8 +66,7 @@ TEST(ToClickStep, WheelsMapToWheel) {
     EXPECT_EQ(clicker::toClickStep(ClickType::WheelLeft).direction, WheelDirection::Left);
     EXPECT_EQ(clicker::toClickStep(ClickType::WheelRight).direction, WheelDirection::Right);
 
-    for (const auto type : {ClickType::WheelUp, ClickType::WheelDown, ClickType::WheelLeft,
-                            ClickType::WheelRight}) {
+    for (const auto type : {ClickType::WheelUp, ClickType::WheelDown, ClickType::WheelLeft, ClickType::WheelRight}) {
         EXPECT_EQ(clicker::toClickStep(type).times, 1) << "type=" << clickTypeToString(type);
     }
 }
@@ -136,7 +133,7 @@ TEST(Run, WheelUsesFullInterval) {
 }
 
 TEST(Run, StopOnFirstWaitCountsFirstRound) {
-    FakeTimer timer(1);   // interrupted on the first wait (the hold of round 1)
+    FakeTimer timer(1); // interrupted on the first wait (the hold of round 1)
     const ClickerParams p = makeParams(RunMode::Infinite, 0);
 
     // the press was already sent, so it counts as one round
@@ -165,7 +162,7 @@ TEST(Run, StartDelayHappensBeforeFirstAction) {
 
     // the first wait is the start delay; later holds/gaps are unaffected
     const auto &w = timer.waited();
-    ASSERT_EQ(w.size(), 4u);   // 1 delay + 2 holds + 1 round gap
+    ASSERT_EQ(w.size(), 4u); // 1 delay + 2 holds + 1 round gap
     EXPECT_EQ(w[0], ITimer::Duration{300});
     EXPECT_EQ(timer.countWaits(ITimer::Duration{300}), 1u);
     EXPECT_EQ(timer.countWaits(kHold), 2u);
@@ -176,7 +173,7 @@ TEST(Run, StartDelayInterruptedByStop) {
     ClickerParams p = makeParams(RunMode::Infinite, 0);
     p.run.startDelayMs = 500;
 
-    FakeTimer timer(1);   // wait 1 is the start delay, interrupted right away
+    FakeTimer timer(1); // wait 1 is the start delay, interrupted right away
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 0);
     EXPECT_EQ(timer.waitCalls(), 1);
     ASSERT_EQ(timer.waited().size(), 1u);

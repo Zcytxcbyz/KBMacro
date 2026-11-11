@@ -1,12 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <stop_token>
-#include <cstdint>
 
-#include "common/Action.hpp"   // MouseButton / WheelDirection
-#include "common/ITimer.hpp"   // hold wait for the composite layer
-#include "common/Types.hpp"    // Hotkey
+#include "common/Action.hpp" // MouseButton / WheelDirection
+#include "common/ITimer.hpp" // hold wait for the composite layer
+#include "common/Types.hpp" // Hotkey
 
 // ============================================================
 // Simulated input injection -- the only exit for Win32 SendInput
@@ -57,9 +57,9 @@ void moveTo(int x, int y);
 void moveBy(int dx, int dy);
 void buttonDown(MouseButton button);
 void buttonUp(MouseButton button);
-void wheel(WheelDirection direction, int steps);   // steps 1–10, one event carries steps × WHEEL_DELTA
-void keyDown(const Hotkey &hk);                    // modifiers first, main key after
-void keyUp(const Hotkey &hk);                      // main key first, modifiers after
+void wheel(WheelDirection direction, int steps); // steps 1–10, one event carries steps × WHEEL_DELTA
+void keyDown(const Hotkey &hk); // modifiers first, main key after
+void keyUp(const Hotkey &hk); // main key first, modifiers after
 
 // ---- composite layer: full semantics, waits holdMs inside ----
 // returns false = interrupted by stop during the hold (keys/buttons are already up, the caller can just break)

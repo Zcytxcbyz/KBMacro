@@ -51,7 +51,7 @@ public:
 private:
     RunMode m_mode = RunMode::Infinite;
     TimePoint m_start{};
-    Duration m_duration{};      // Timed: total duration
-    int m_totalCount = 0;       // Counted: target iteration count
-    int m_executedCount = 0;    // Counted: completed iterations
+    Duration m_duration{}; // Timed: total duration
+    int m_totalCount = 0; // Counted: target iteration count
+    int m_executedCount = 0; // Counted: completed iterations
 };

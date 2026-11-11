@@ -15,10 +15,10 @@
 // after scaling delayMs is clamped to >= 0.
 namespace action {
 
-    // lower bound of the hold duration (ms). Below it down and up may show no observable gap.
-    inline constexpr int kMinHoldMs = 5;
+// lower bound of the hold duration (ms). Below it down and up may show no observable gap.
+inline constexpr int kMinHoldMs = 5;
 
-    // scale in place. does nothing when factor <= 0 or == 1.
-    void scaleActions(std::vector<Action> &actions, double factor);
+// scale in place. does nothing when factor <= 0 or == 1.
+void scaleActions(std::vector<Action> &actions, double factor);
 
 } // namespace action

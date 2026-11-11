@@ -14,7 +14,8 @@
 //   - the test is "time since last allow >= interval", not a fixed tick (no accumulation, no compensation)
 class RateLimiter final {
 public:
-    explicit RateLimiter(const ITimer::Duration interval) noexcept : m_interval(interval) {}
+    explicit RateLimiter(const ITimer::Duration interval) noexcept
+        : m_interval(interval) {}
 
     // check against the current steady_clock (not a system call)
     [[nodiscard]] bool allow() noexcept { return allow(ITimer::now()); }

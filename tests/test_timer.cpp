@@ -20,38 +20,37 @@
 
 namespace {
 
-    using Clock = ITimer::Clock;
-    using Duration = ITimer::Duration;
+using Clock = ITimer::Clock;
+using Duration = ITimer::Duration;
 
-    // measure the elapsed time of a piece of code (milliseconds)
-    template <typename Fn>
-    long long measureMs(Fn &&fn) {
-        const auto t0 = Clock::now();
-        fn();
-        return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
-    }
+// measure the elapsed time of a piece of code (milliseconds)
+template<typename Fn> long long measureMs(Fn &&fn) {
+    const auto t0 = Clock::now();
+    fn();
+    return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
+}
 
-    // put the timer into a wait, request stop after 30ms, return the measured stop→wait latency.
-    // returning -1 means wait was not interrupted by stop (waited fully); the test fails on that.
-    // ReSharper disable once CppParameterMayBeConstPtrOrRef
-    long long stopLatencyMs(ITimer &timer, const Duration d) {
-        std::stop_source src;
-        bool interrupted = false;
+// put the timer into a wait, request stop after 30ms, return the measured stop→wait latency.
+// returning -1 means wait was not interrupted by stop (waited fully); the test fails on that.
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
+long long stopLatencyMs(ITimer &timer, const Duration d) {
+    std::stop_source src;
+    bool interrupted = false;
 
-        std::jthread worker([&] {
-            interrupted = !timer.wait(d, src.get_token());   // wait returned false = interrupted
-        });
+    std::jthread worker([&] {
+        interrupted = !timer.wait(d, src.get_token()); // wait returned false = interrupted
+    });
 
-        // let the worker actually enter the wait first, then request stop
-        std::this_thread::sleep_for(Duration(30));
+    // let the worker actually enter the wait first, then request stop
+    std::this_thread::sleep_for(Duration(30));
 
-        const auto t0 = Clock::now();
-        src.request_stop();
-        worker.join();          // join returns ≈ wait returns
+    const auto t0 = Clock::now();
+    src.request_stop();
+    worker.join(); // join returns ≈ wait returns
 
-        if (!interrupted) return -1;
-        return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
-    }
+    if (!interrupted) return -1;
+    return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
+}
 
 } // namespace
 
@@ -69,7 +68,7 @@ TEST(TimerNow, IsMonotonic) {
 // Semantics shared by both
 // ============================================================
 
-template <typename T>
+template<typename T>
 // ReSharper disable once CppUseInternalLinkage
 class TimerTest : public ::testing::Test {};
 
@@ -91,9 +90,7 @@ TYPED_TEST(TimerTest, AlreadyStoppedReturnsFalseImmediately) {
     std::stop_source src;
     src.request_stop();
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_FALSE(timer.wait(Duration(500), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_FALSE(timer.wait(Duration(500), src.get_token())); });
     EXPECT_LT(elapsed, 20) << "stop was requested but the wait kept going";
 }
 
@@ -102,9 +99,7 @@ TYPED_TEST(TimerTest, WaitsFullDuration) {
     TypeParam timer;
     std::stop_source src;
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_TRUE(timer.wait(Duration(50), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_TRUE(timer.wait(Duration(50), src.get_token())); });
 
     EXPECT_GE(elapsed, 50) << "returned before the deadline";
     EXPECT_LT(elapsed, 250) << "overslept too much";
@@ -155,7 +150,6 @@ TEST(SleepTimerTest, StopDuringWaitReturnsFalseQuickly) {
 
     // slice 10ms + system tick granularity + scheduling jitter
     EXPECT_LT(latency, SleepTimer::kSlice.count() + 50);
-
 }
 
 // ============================================================
@@ -166,9 +160,7 @@ TEST(SpinTimerTest, ShortWaitIsAccurate) {
     SpinTimer timer;
     std::stop_source src;
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_TRUE(timer.wait(Duration(5), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_TRUE(timer.wait(Duration(5), src.get_token())); });
 
     EXPECT_GE(elapsed, 5) << "returned before the deadline";
     EXPECT_LT(elapsed, 20) << "a busy wait must not oversleep";
@@ -201,9 +193,7 @@ TEST(HybridTimerTest, AlreadyStoppedReturnsFalseImmediately) {
     std::stop_source src;
     src.request_stop();
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_FALSE(timer.wait(Duration(500), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_FALSE(timer.wait(Duration(500), src.get_token())); });
     EXPECT_LT(elapsed, 20) << "stop was requested but the wait kept going";
 }
 
@@ -212,9 +202,7 @@ TEST(HybridTimerTest, ShortWaitWithinTailIsPureSpin) {
     const HybridTimer timer(Duration(10));
     std::stop_source src;
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_TRUE(timer.wait(Duration(5), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_TRUE(timer.wait(Duration(5), src.get_token())); });
 
     EXPECT_GE(elapsed, 5) << "returned before the deadline";
     EXPECT_LT(elapsed, 20) << "this part should be a busy wait";
@@ -225,9 +213,7 @@ TEST(HybridTimerTest, LongWaitEndsCloseToDeadline) {
     const HybridTimer timer(Duration(10));
     std::stop_source src;
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_TRUE(timer.wait(Duration(60), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_TRUE(timer.wait(Duration(60), src.get_token())); });
 
     EXPECT_GE(elapsed, 60) << "returned before the deadline";
     EXPECT_LT(elapsed, 60 + 10 + 50) << "the spin tail did not absorb the sleep overshoot";
@@ -248,9 +234,7 @@ TEST(HybridTimerTest, ZeroTailBehavesLikeSleepTimer) {
     const HybridTimer timer(Duration(0));
     std::stop_source src;
 
-    const auto elapsed = measureMs([&] {
-        EXPECT_TRUE(timer.wait(Duration(50), src.get_token()));
-    });
+    const auto elapsed = measureMs([&] { EXPECT_TRUE(timer.wait(Duration(50), src.get_token())); });
 
     EXPECT_GE(elapsed, 50) << "returned before the deadline";
     EXPECT_LT(elapsed, 250) << "overslept too much";

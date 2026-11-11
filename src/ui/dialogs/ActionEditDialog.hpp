@@ -1,7 +1,7 @@
 #pragma once
 
-#include <wx/wx.h>
 #include <wx/propgrid/propgrid.h>
+#include <wx/wx.h>
 
 #include "common/Action.hpp"
 

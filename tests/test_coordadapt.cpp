@@ -14,22 +14,18 @@
 
 namespace {
 
-    ScreenSpec spec(const int width, const int height, const int dpi = 96) {
-        return ScreenSpec{.width = width, .height = height, .dpi = dpi};
-    }
+ScreenSpec spec(const int width, const int height, const int dpi = 96) {
+    return ScreenSpec{.width = width, .height = height, .dpi = dpi};
+}
 
-    Action move(const int x, const int y) {
-        return Action{.type = ActionType::MouseMove, .x = x, .y = y};
-    }
+Action move(const int x, const int y) {
+    return Action{.type = ActionType::MouseMove, .x = x, .y = y};
+}
 
-    Action click(const int x, const int y) {
-        return Action{.type = ActionType::MouseClick,
-                      .x = x,
-                      .y = y,
-                      .button = MouseButton::Left,
-                      .holdMs = 50,
-                      .delayMs = 25};
-    }
+Action click(const int x, const int y) {
+    return Action{
+            .type = ActionType::MouseClick, .x = x, .y = y, .button = MouseButton::Left, .holdMs = 50, .delayMs = 25};
+}
 
 } // namespace
 
@@ -49,8 +45,8 @@ TEST(CoordAdapt, HalvesWithRounding) {
 
     coord::adaptActions(actions, spec(3840, 2160), spec(1920, 1080));
 
-    EXPECT_EQ(actions[0].x, 51);   // 50.5 rounded
-    EXPECT_EQ(actions[0].y, 26);   // 25.5 rounded
+    EXPECT_EQ(actions[0].x, 51); // 50.5 rounded
+    EXPECT_EQ(actions[0].y, 26); // 25.5 rounded
 }
 
 TEST(CoordAdapt, RoundsHalfAwayFromZero) {
@@ -59,9 +55,9 @@ TEST(CoordAdapt, RoundsHalfAwayFromZero) {
 
     coord::adaptActions(actions, spec(200, 200), spec(100, 100));
 
-    EXPECT_EQ(actions[0].x, 1);   // 0.5 → 1
-    EXPECT_EQ(actions[0].y, 2);   // 1.5 → 2
-    EXPECT_EQ(actions[1].x, 3);   // 2.5 → 3
+    EXPECT_EQ(actions[0].x, 1); // 0.5 → 1
+    EXPECT_EQ(actions[0].y, 2); // 1.5 → 2
+    EXPECT_EQ(actions[1].x, 3); // 2.5 → 3
     EXPECT_EQ(actions[1].y, 0);
 }
 
@@ -119,11 +115,12 @@ TEST(CoordAdapt, NegativeCoordinatesScale) {
 
 TEST(CoordAdapt, AdaptsDragEndpoints) {
     std::vector<Action> actions{
-        Action{.type = ActionType::MouseDown, .x = 100, .y = 50, .button = MouseButton::Left},
-        Action{.type = ActionType::MouseUp, .x = 300, .y = 150, .button = MouseButton::Left},
+            Action{.type = ActionType::MouseDown, .x = 100, .y = 50, .button = MouseButton::Left},
+            Action{.type = ActionType::MouseUp, .x = 300, .y = 150, .button = MouseButton::Left},
     };
 
-    coord::adaptActions(actions, ScreenSpec{.width = 1000, .height = 1000, .dpi = 96},
+    coord::adaptActions(actions,
+                        ScreenSpec{.width = 1000, .height = 1000, .dpi = 96},
                         ScreenSpec{.width = 2000, .height = 2000, .dpi = 96});
 
     EXPECT_EQ(actions[0].x, 200);
@@ -134,14 +131,14 @@ TEST(CoordAdapt, AdaptsDragEndpoints) {
 
 TEST(CoordAdapt, SkipsRelativeActions) {
     std::vector<Action> actions{
-        Action{.type = ActionType::MouseMove, .x = 640, .y = 360},
-        Action{.type = ActionType::MouseMove, .x = 640, .y = 360, .relative = true},
-        Action{.type = ActionType::MouseClick,
-               .x = -20,
-               .y = 10,
-               .relative = true,
-               .button = MouseButton::Left,
-               .holdMs = 50},
+            Action{.type = ActionType::MouseMove, .x = 640, .y = 360},
+            Action{.type = ActionType::MouseMove, .x = 640, .y = 360, .relative = true},
+            Action{.type = ActionType::MouseClick,
+                   .x = -20,
+                   .y = 10,
+                   .relative = true,
+                   .button = MouseButton::Left,
+                   .holdMs = 50},
     };
 
     coord::adaptActions(actions, spec(1280, 720), spec(2560, 1440));

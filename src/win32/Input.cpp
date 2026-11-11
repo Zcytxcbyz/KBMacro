@@ -28,152 +28,150 @@
 // ============================================================
 
 namespace {
-    // Same value as the public constant in win32/Input.hpp; this is just an alias
-    // so makeMouse / makeKeyboard below do not need the qualified name every time.
-    constexpr ULONG_PTR kInjectedSignature = input::kInjectedSignature;
+// Same value as the public constant in win32/Input.hpp; this is just an alias
+// so makeMouse / makeKeyboard below do not need the qualified name every time.
+constexpr ULONG_PTR kInjectedSignature = input::kInjectedSignature;
 
-    // Dry-run mode: with ENABLE_DRY_RUN defined it only logs and never calls SendInput --
-    // the call is not even compiled in, so it has zero effect on the system.
-    // apart from "send or not" the behavior matches the real mode exactly: it still waits holdMs, logs,
-    // and returns true, the log format just gains a dry flag.
+// Dry-run mode: with ENABLE_DRY_RUN defined it only logs and never calls SendInput --
+// the call is not even compiled in, so it has zero effect on the system.
+// apart from "send or not" the behavior matches the real mode exactly: it still waits holdMs, logs,
+// and returns true, the log format just gains a dry flag.
 #ifdef KBMACRO_DRY_RUN
-    constexpr bool kDryRun = true;
+constexpr bool kDryRun = true;
 #else
-    constexpr bool kDryRun = false;
+constexpr bool kDryRun = false;
 #endif
 
-    // Modifier press order: Ctrl → Shift → Alt → Win; reversed on release.
-    struct ModifierKey {
-        unsigned mask;
-        WORD vk;
-    };
+// Modifier press order: Ctrl → Shift → Alt → Win; reversed on release.
+struct ModifierKey {
+    unsigned mask;
+    WORD vk;
+};
 
-    constexpr ModifierKey kModifierKeys[] = {
-        {.mask = hk::kModCtrl,  .vk = VK_CONTROL},
+constexpr ModifierKey kModifierKeys[] = {
+        {.mask = hk::kModCtrl, .vk = VK_CONTROL},
         {.mask = hk::kModShift, .vk = VK_SHIFT},
-        {.mask = hk::kModAlt,   .vk = VK_MENU},
-        {.mask = hk::kModWin,   .vk = VK_LWIN},
-    };
+        {.mask = hk::kModAlt, .vk = VK_MENU},
+        {.mask = hk::kModWin, .vk = VK_LWIN},
+};
 
-    // Build a mouse event. The struct must be fully zeroed (value-initialized).
-    [[nodiscard]] INPUT makeMouse(const DWORD flags, const LONG dx = 0, const LONG dy = 0,
-                                  const DWORD data = 0) {
-        INPUT in{};
-        in.type           = INPUT_MOUSE;
-        in.mi.dx          = dx;
-        in.mi.dy          = dy;
-        in.mi.mouseData   = data;
-        in.mi.dwFlags     = flags;
-        in.mi.dwExtraInfo = kInjectedSignature;
-        return in;
+// Build a mouse event. The struct must be fully zeroed (value-initialized).
+[[nodiscard]] INPUT makeMouse(const DWORD flags, const LONG dx = 0, const LONG dy = 0, const DWORD data = 0) {
+    INPUT in{};
+    in.type = INPUT_MOUSE;
+    in.mi.dx = dx;
+    in.mi.dy = dy;
+    in.mi.mouseData = data;
+    in.mi.dwFlags = flags;
+    in.mi.dwExtraInfo = kInjectedSignature;
+    return in;
+}
+
+[[nodiscard]] INPUT makeKeyboard(const WORD vk, const DWORD flags) {
+    INPUT in{};
+    in.type = INPUT_KEYBOARD;
+    in.ki.wVk = vk;
+    in.ki.dwFlags = flags;
+    in.ki.dwExtraInfo = kInjectedSignature;
+    return in;
+}
+
+// The down/up flags for each mouse button, plus the side-button index.
+struct ButtonFlags {
+    DWORD down;
+    DWORD up;
+    DWORD data;
+};
+
+[[nodiscard]] constexpr ButtonFlags buttonFlags(const MouseButton button) noexcept {
+    switch (button) {
+        case MouseButton::Left:
+            return {.down = MOUSEEVENTF_LEFTDOWN, .up = MOUSEEVENTF_LEFTUP, .data = 0};
+        case MouseButton::Right:
+            return {.down = MOUSEEVENTF_RIGHTDOWN, .up = MOUSEEVENTF_RIGHTUP, .data = 0};
+        case MouseButton::Middle:
+            return {.down = MOUSEEVENTF_MIDDLEDOWN, .up = MOUSEEVENTF_MIDDLEUP, .data = 0};
+        case MouseButton::Side1:
+            return {.down = MOUSEEVENTF_XDOWN, .up = MOUSEEVENTF_XUP, .data = XBUTTON1};
+        case MouseButton::Side2:
+            return {.down = MOUSEEVENTF_XDOWN, .up = MOUSEEVENTF_XUP, .data = XBUTTON2};
+    }
+    return {.down = MOUSEEVENTF_LEFTDOWN, .up = MOUSEEVENTF_LEFTUP, .data = 0};
+}
+
+// Keyboard event sequence: on press modifiers lead, then the main key; on release main key leads, then modifiers.
+// when no main key is set (vk == 0) only the modifiers are sent; if neither exists an empty list is returned.
+[[nodiscard]] std::vector<INPUT> keyEvents(const Hotkey &hk, const bool down) {
+    const DWORD flags = down ? 0u : KEYEVENTF_KEYUP;
+
+    std::vector<INPUT> modifiers;
+    for (const auto &[mask, vk] : kModifierKeys) {
+        if ((hk.modifiers & mask) != 0) {
+            modifiers.push_back(makeKeyboard(vk, flags));
+        }
     }
 
-    [[nodiscard]] INPUT makeKeyboard(const WORD vk, const DWORD flags) {
-        INPUT in{};
-        in.type           = INPUT_KEYBOARD;
-        in.ki.wVk         = vk;
-        in.ki.dwFlags     = flags;
-        in.ki.dwExtraInfo = kInjectedSignature;
-        return in;
+    std::vector<INPUT> main;
+    if (hk.vk != 0) {
+        main.push_back(makeKeyboard(static_cast<WORD>(hk.vk), flags));
     }
 
-    // The down/up flags for each mouse button, plus the side-button index.
-    struct ButtonFlags {
-        DWORD down;
-        DWORD up;
-        DWORD data;
-    };
+    if (down) {
+        modifiers.insert(modifiers.end(), main.begin(), main.end());
+        return modifiers;
+    }
+    main.insert(main.end(), modifiers.begin(), modifiers.end());
+    return main;
+}
 
-    [[nodiscard]] constexpr ButtonFlags buttonFlags(const MouseButton button) noexcept {
-        switch (button) {
-            case MouseButton::Left:
-                return {.down = MOUSEEVENTF_LEFTDOWN, .up = MOUSEEVENTF_LEFTUP, .data = 0};
-            case MouseButton::Right:
-                return {.down = MOUSEEVENTF_RIGHTDOWN, .up = MOUSEEVENTF_RIGHTUP, .data = 0};
-            case MouseButton::Middle:
-                return {.down = MOUSEEVENTF_MIDDLEDOWN, .up = MOUSEEVENTF_MIDDLEUP, .data = 0};
-            case MouseButton::Side1:
-                return {.down = MOUSEEVENTF_XDOWN, .up = MOUSEEVENTF_XUP, .data = XBUTTON1};
-            case MouseButton::Side2:
-                return {.down = MOUSEEVENTF_XDOWN, .up = MOUSEEVENTF_XUP, .data = XBUTTON2};
-        }
-        return {.down = MOUSEEVENTF_LEFTDOWN, .up = MOUSEEVENTF_LEFTUP, .data = 0};
+// Describe a key combination for the log.
+[[nodiscard]] std::string keyLabel(const Hotkey &hk) {
+    return "vk=" + std::to_string(hk.vk) + " mods=" + std::to_string(hk.modifiers);
+}
+
+// Send a batch of events: one SendInput = one DEBUG line.
+// failure (return value below expected) → one WARN line → replay cleanup (release-type events) → throw.
+//   what    : action description for the log and the exception
+//   cleanup : events replayed after a failure; nullptr = nothing to clean up (move, wheel)
+void sendEvents(std::vector<INPUT> events, std::string what, std::vector<INPUT> *cleanup = nullptr) {
+    if (events.empty()) {
+        LOG_DEBUG("input: {} skipped, no events", what);
+        return;
     }
 
-    // Keyboard event sequence: on press modifiers lead, then the main key; on release main key leads, then modifiers.
-    // when no main key is set (vk == 0) only the modifiers are sent; if neither exists an empty list is returned.
-    [[nodiscard]] std::vector<INPUT> keyEvents(const Hotkey &hk, const bool down) {
-        const DWORD flags = down ? 0u : KEYEVENTF_KEYUP;
+    const auto expected = static_cast<UINT>(events.size());
 
-        std::vector<INPUT> modifiers;
-        for (const auto &[mask, vk]: kModifierKeys) {
-            if ((hk.modifiers & mask) != 0) {
-                modifiers.push_back(makeKeyboard(vk, flags));
-            }
-        }
-
-        std::vector<INPUT> main;
-        if (hk.vk != 0) {
-            main.push_back(makeKeyboard(static_cast<WORD>(hk.vk), flags));
-        }
-
-        if (down) {
-            modifiers.insert(modifiers.end(), main.begin(), main.end());
-            return modifiers;
-        }
-        main.insert(main.end(), modifiers.begin(), modifiers.end());
-        return main;
+    // dry run: no SendInput call, assume everything was inserted
+    UINT sent = expected;
+    if constexpr (!kDryRun) {
+        sent = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));
     }
 
-    // Describe a key combination for the log.
-    [[nodiscard]] std::string keyLabel(const Hotkey &hk) {
-        return "vk=" + std::to_string(hk.vk) + " mods=" + std::to_string(hk.modifiers);
+    if (sent == expected) {
+        LOG_DEBUG("input: {} (sent={}/{}, dry={})", what, sent, expected, static_cast<int>(kDryRun));
+        return;
     }
 
-    // Send a batch of events: one SendInput = one DEBUG line.
-    // failure (return value below expected) → one WARN line → replay cleanup (release-type events) → throw.
-    //   what    : action description for the log and the exception
-    //   cleanup : events replayed after a failure; nullptr = nothing to clean up (move, wheel)
-    void sendEvents(std::vector<INPUT> events, std::string what,
-                    std::vector<INPUT> *cleanup = nullptr) {
-        if (events.empty()) {
-            LOG_DEBUG("input: {} skipped, no events", what);
-            return;
+    // insertion fails for basically two reasons: the foreground window has higher integrity (UIPI blocks
+    // the injection), or BlockInput is active. both are persistent, retrying is pointless.
+    const DWORD error = ::GetLastError();
+    LOG_WARN("input: {} failed: sent={}/{}, GetLastError={}", what, sent, expected, error);
+
+    if (cleanup != nullptr && !cleanup->empty()) {
+        const auto cleanupCount = static_cast<UINT>(cleanup->size());
+        const UINT cleaned = ::SendInput(cleanupCount, cleanup->data(), static_cast<int>(sizeof(INPUT)));
+        if (cleaned != cleanupCount) {
+            LOG_ERROR("input: {} cleanup failed: sent={}/{}, GetLastError={}",
+                      what,
+                      cleaned,
+                      cleanupCount,
+                      ::GetLastError());
         }
-
-        const auto expected = static_cast<UINT>(events.size());
-
-        // dry run: no SendInput call, assume everything was inserted
-        UINT sent = expected;
-        if constexpr (!kDryRun) {
-            sent = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));
-        }
-
-        if (sent == expected) {
-            LOG_DEBUG("input: {} (sent={}/{}, dry={})", what, sent, expected,
-                      static_cast<int>(kDryRun));
-            return;
-        }
-
-        // insertion fails for basically two reasons: the foreground window has higher integrity (UIPI blocks
-        // the injection), or BlockInput is active. both are persistent, retrying is pointless.
-        const DWORD error = ::GetLastError();
-        LOG_WARN("input: {} failed: sent={}/{}, GetLastError={}", what, sent, expected, error);
-
-        if (cleanup != nullptr && !cleanup->empty()) {
-            const auto cleanupCount = static_cast<UINT>(cleanup->size());
-            const UINT cleaned =
-                ::SendInput(cleanupCount, cleanup->data(), static_cast<int>(sizeof(INPUT)));
-            if (cleaned != cleanupCount) {
-                LOG_ERROR("input: {} cleanup failed: sent={}/{}, GetLastError={}", what, cleaned,
-                          cleanupCount, ::GetLastError());
-            }
-        }
-
-        throw input::SendInputError(what + " failed: sent=" + std::to_string(sent) + "/" +
-                                    std::to_string(expected) +
-                                    ", GetLastError=" + std::to_string(error));
     }
+
+    throw input::SendInputError(what + " failed: sent=" + std::to_string(sent) + "/" + std::to_string(expected) +
+                                ", GetLastError=" + std::to_string(error));
+}
 } // namespace
 
 namespace input {
@@ -216,8 +214,7 @@ void moveTo(const int x, const int y) {
         what += " norm=(" + std::to_string(normX) + ", " + std::to_string(normY) + ")";
     }
 
-    sendEvents({makeMouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK,
-                          normX, normY)},
+    sendEvents({makeMouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK, normX, normY)},
                std::move(what));
 }
 
@@ -232,25 +229,25 @@ void buttonDown(const MouseButton button) {
     const auto [down, up, data] = buttonFlags(button);
     // on a failed press replay one release: harmless whether nothing went down or only part of it did.
     std::vector<INPUT> cleanup{makeMouse(up, 0, 0, data)};
-    sendEvents({makeMouse(down, 0, 0, data)},
-               std::string(mouseButtonToString(button)) + " down", &cleanup);
+    sendEvents({makeMouse(down, 0, 0, data)}, std::string(mouseButtonToString(button)) + " down", &cleanup);
 }
 
 void buttonUp(const MouseButton button) {
     const ButtonFlags flags = buttonFlags(button);
     std::vector<INPUT> retry{makeMouse(flags.up, 0, 0, flags.data)};
-    sendEvents({makeMouse(flags.up, 0, 0, flags.data)},
-               std::string(mouseButtonToString(button)) + " up", &retry);
+    sendEvents({makeMouse(flags.up, 0, 0, flags.data)}, std::string(mouseButtonToString(button)) + " up", &retry);
 }
 
 void wheel(const WheelDirection direction, const int steps) {
     const bool vertical = (direction == WheelDirection::Up || direction == WheelDirection::Down);
     const bool negative = (direction == WheelDirection::Down || direction == WheelDirection::Left);
-    const LONG delta    = steps * WHEEL_DELTA;
+    const LONG delta = steps * WHEEL_DELTA;
 
     // vertical uses MOUSEEVENTF_WHEEL (positive = up), horizontal uses MOUSEEVENTF_HWHEEL (positive = right).
     // multiple steps accumulate into one event's mouseData, one SendInput per log line.
-    sendEvents({makeMouse(vertical ? MOUSEEVENTF_WHEEL : MOUSEEVENTF_HWHEEL, 0, 0,
+    sendEvents({makeMouse(vertical ? MOUSEEVENTF_WHEEL : MOUSEEVENTF_HWHEEL,
+                          0,
+                          0,
                           static_cast<DWORD>(negative ? -delta : delta))},
                std::string(wheelDirectionToString(direction)) + " x" + std::to_string(steps));
 }
@@ -263,12 +260,11 @@ void keyDown(const Hotkey &hk) {
 
 void keyUp(const Hotkey &hk) {
     std::vector<INPUT> events = keyEvents(hk, false);
-    std::vector<INPUT> retry  = events;   // on a failed release replay one more release
+    std::vector<INPUT> retry = events; // on a failed release replay one more release
     sendEvents(std::move(events), "key up " + keyLabel(hk), &retry);
 }
 
-bool click(const MouseButton button, const int holdMs, const ITimer &timer,
-           const std::stop_token &st) {
+bool click(const MouseButton button, const int holdMs, const ITimer &timer, const std::stop_token &st) {
     if (st.stop_requested()) return false;
 
     buttonDown(button);

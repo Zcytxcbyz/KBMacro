@@ -1,7 +1,7 @@
 #pragma once
 
-#include <wx/wx.h>
 #include <wx/scrolwin.h>
+#include <wx/wx.h>
 
 #include "common/ClickerParams.hpp"
 

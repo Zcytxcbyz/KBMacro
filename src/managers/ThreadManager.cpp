@@ -30,33 +30,39 @@
 
 namespace {
 
-    // a scoped enum cannot be handed to fmt directly (compile error), these two helpers convert it for logging.
-    // logging only: no file output, no table-driven lookup. nobody uses them when ENABLE_LOGGING is off.
-    [[maybe_unused]] [[nodiscard]] constexpr std::string_view taskKindName(const TaskKind kind) noexcept {
-        switch (kind) {
-            case TaskKind::Clicker:  return "clicker";
-            case TaskKind::Keyboard: return "keyboard";
-            case TaskKind::Record:   return "record";
-            case TaskKind::Playback: return "playback";
-        }
-        return "unknown";
+// a scoped enum cannot be handed to fmt directly (compile error), these two helpers convert it for logging.
+// logging only: no file output, no table-driven lookup. nobody uses them when ENABLE_LOGGING is off.
+[[maybe_unused]] [[nodiscard]] constexpr std::string_view taskKindName(const TaskKind kind) noexcept {
+    switch (kind) {
+        case TaskKind::Clicker:
+            return "clicker";
+        case TaskKind::Keyboard:
+            return "keyboard";
+        case TaskKind::Record:
+            return "record";
+        case TaskKind::Playback:
+            return "playback";
     }
+    return "unknown";
+}
 
-    [[maybe_unused]] [[nodiscard]] constexpr std::string_view finishReasonName(const FinishReason reason) noexcept {
-        switch (reason) {
-            case FinishReason::Completed: return "completed";
-            case FinishReason::Stopped:   return "stopped";
-            case FinishReason::Failed:    return "failed";
-        }
-        return "unknown";
+[[maybe_unused]] [[nodiscard]] constexpr std::string_view finishReasonName(const FinishReason reason) noexcept {
+    switch (reason) {
+        case FinishReason::Completed:
+            return "completed";
+        case FinishReason::Stopped:
+            return "stopped";
+        case FinishReason::Failed:
+            return "failed";
     }
+    return "unknown";
+}
 
 } // namespace
 
 ThreadManager::ThreadManager(std::shared_ptr<ITimer> &timerRef, wxEvtHandler &ui)
     : m_timerRef(timerRef),
-      m_ui(ui) {
-}
+      m_ui(ui) {}
 
 ThreadManager::~ThreadManager() {
     StopAll();
@@ -71,13 +77,12 @@ void ThreadManager::StartClicker(const ClickerParams &p, FinishCallback onFinish
 
     // timer and params are snapshotted into the closure here, on the UI thread:
     // m_timerRef is read only this once, switching timer mode later does not affect already started tasks
-    launch(TaskKind::Clicker, std::move(onFinished),
-           [timer = m_timerRef, p](const std::stop_token& st) {
-               // the loop skeleton lives in modules/Clicker; here only params and timer are handed over.
-               // on stop, clicker::run finishes up on its own (releases stuck keys) before returning.
-               const int executed = clicker::run(p, *timer, st);
-               return TaskResult{.executed = executed};
-           });
+    launch(TaskKind::Clicker, std::move(onFinished), [timer = m_timerRef, p](const std::stop_token &st) {
+        // the loop skeleton lives in modules/Clicker; here only params and timer are handed over.
+        // on stop, clicker::run finishes up on its own (releases stuck keys) before returning.
+        const int executed = clicker::run(p, *timer, st);
+        return TaskResult{.executed = executed};
+    });
 }
 
 void ThreadManager::StopClicker() {
@@ -92,12 +97,11 @@ void ThreadManager::StopClicker() {
 void ThreadManager::StartKeyboard(const KeyboardParams &p, FinishCallback onFinished) {
     wxASSERT_MSG(wxIsMainThread(), "ThreadManager::StartKeyboard must be called from the UI thread");
 
-    launch(TaskKind::Keyboard, std::move(onFinished),
-           [timer = m_timerRef, p](const std::stop_token& st) {
-               // each round: press → wait holdMs → release; on stop, pressKey already compensates the release
-               const int executed = keyboard::run(p, *timer, st);
-               return TaskResult{.executed = executed};
-           });
+    launch(TaskKind::Keyboard, std::move(onFinished), [timer = m_timerRef, p](const std::stop_token &st) {
+        // each round: press → wait holdMs → release; on stop, pressKey already compensates the release
+        const int executed = keyboard::run(p, *timer, st);
+        return TaskResult{.executed = executed};
+    });
 }
 
 void ThreadManager::StopKeyboard() {
@@ -120,18 +124,16 @@ void ThreadManager::StartRecord(const recorder::RecordOptions &opts, FinishCallb
     }
 
     // opts is captured by value: it is a local of the caller (panel), and the thread outlives the call stack
-    launch(TaskKind::Record, std::move(onFinished),
-           [timer = m_timerRef, opts](const std::stop_token &st) {
-               // recording has no "natural end": either the user presses stop or the action limit is reached.
-               //   executed is always 0 for recording (there is no "round" concept), the actions are in recorded:
-               //   non-null pointer + empty vector = recorded, but nothing was captured (the panel hints on this)
-               //   if the hook cannot be installed, recorder::run throws; launch records Failed, the panel reports it
-               std::vector<Action> actions = recorder::run(opts, *timer, st);
-               const auto count = static_cast<int>(actions.size());
-               LOG_DEBUG("threadmanager: record finished, {} action(s)", count); // NOLINT(*-lambda-function-name)
-               return TaskResult{
-                   .recorded = std::make_shared<std::vector<Action>>(std::move(actions))};
-           });
+    launch(TaskKind::Record, std::move(onFinished), [timer = m_timerRef, opts](const std::stop_token &st) {
+        // recording has no "natural end": either the user presses stop or the action limit is reached.
+        //   executed is always 0 for recording (there is no "round" concept), the actions are in recorded:
+        //   non-null pointer + empty vector = recorded, but nothing was captured (the panel hints on this)
+        //   if the hook cannot be installed, recorder::run throws; launch records Failed, the panel reports it
+        std::vector<Action> actions = recorder::run(opts, *timer, st);
+        const auto count = static_cast<int>(actions.size());
+        LOG_DEBUG("threadmanager: record finished, {} action(s)", count); // NOLINT(*-lambda-function-name)
+        return TaskResult{.recorded = std::make_shared<std::vector<Action>>(std::move(actions))};
+    });
 }
 
 void ThreadManager::StopRecord() {
@@ -143,8 +145,7 @@ void ThreadManager::StopRecord() {
 // Playback
 // ------------------------------------------------------------
 
-void ThreadManager::StartPlayback(std::vector<Action> actions, const RunSpec &run,
-                                  FinishCallback onFinished) {
+void ThreadManager::StartPlayback(std::vector<Action> actions, const RunSpec &run, FinishCallback onFinished) {
     wxASSERT_MSG(wxIsMainThread(), "ThreadManager::StartPlayback must be called from the UI thread");
 
     // reverse exclusion: reject playback while recording is running
@@ -154,7 +155,8 @@ void ThreadManager::StartPlayback(std::vector<Action> actions, const RunSpec &ru
     }
 
     // actions is taken by value and then moved into the closure: the caller's (panel's) m_actions is untouched
-    launch(TaskKind::Playback, std::move(onFinished),
+    launch(TaskKind::Playback,
+           std::move(onFinished),
            // ReSharper disable once CppLambdaCaptureNeverUsed
            [timer = m_timerRef, actions = std::move(actions), run](const std::stop_token &st) {
                const int executed = playback::run(actions, run, *timer, st);
@@ -199,8 +201,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // state is never Running here, so join returns immediately.
     // hitting this means the previous notification is still queued on the UI thread (generation not yet advanced)
     if (thread.joinable()) {
-        LOG_DEBUG("threadmanager: task {} reaped before start, gen={}",
-                  taskKindName(kind), generation);
+        LOG_DEBUG("threadmanager: task {} reaped before start, gen={}", taskKindName(kind), generation);
         thread.request_stop();
         thread.join();
     }
@@ -219,43 +220,46 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // CallAfter copies its inner lambda into the event, so capture only pointer / shared_ptr / small POD
     auto notify = [this, kind, gen, cb](TaskResult res) {
         LOG_INFO("threadmanager: task {} finishing: gen={}, reason={}", // NOLINT(*-lambda-function-name)
-                 taskKindName(kind), gen, finishReasonName(res.reason));
+                 taskKindName(kind),
+                 gen,
+                 finishReasonName(res.reason));
 
         m_ui.CallAfter([this, kind, gen, cb, res = std::move(res)]() mutable {
             Slot &s = m_slots[index(kind)];
 
             // stale notification: belongs to the previous run, drop it
             if (gen != s.generation) {
-                LOG_DEBUG("threadmanager: stale result ignored: gen={} (current={})", gen, s.generation); // NOLINT(*-lambda-function-name)
+                LOG_DEBUG("threadmanager: stale result ignored: gen={} (current={})",
+                          gen,
+                          s.generation); // NOLINT(*-lambda-function-name)
                 return;
             }
 
-            s.state = TaskState::Stopped;      // set the state first
-            if (*cb) (*cb)(std::move(res));    // then callback: IsRunning queried by the panel is accurate here
+            s.state = TaskState::Stopped; // set the state first
+            if (*cb) (*cb)(std::move(res)); // then callback: IsRunning queried by the panel is accurate here
         });
     };
 
     // body exceptions must not escape the thread (std::terminate), nor leave the state stuck at Running forever
-    thread = std::jthread{
-        [kind, body = std::move(body), notify = std::move(notify)](const std::stop_token& st) {
-            TaskResult res;
+    thread = std::jthread{[kind, body = std::move(body), notify = std::move(notify)](const std::stop_token &st) {
+        TaskResult res;
 
-            try {
-                res = body(st);
-                res.reason = st.stop_requested() ? FinishReason::Stopped
-                                                 : FinishReason::Completed;
-            } catch (const std::exception &e) {
-                LOG_ERROR("threadmanager: task {} threw: {}", taskKindName(kind), e.what()); // NOLINT(*-lambda-function-name)
-                res = TaskResult{.reason = FinishReason::Failed};
-            } catch (...) {
-                LOG_ERROR("threadmanager: task {} threw: unknown exception", taskKindName(kind)); // NOLINT(*-lambda-function-name)
-                res = TaskResult{.reason = FinishReason::Failed};
-            }
-
-            // exactly once: one path for normal return, one for the exception
-            notify(std::move(res));
+        try {
+            res = body(st);
+            res.reason = st.stop_requested() ? FinishReason::Stopped : FinishReason::Completed;
+        } catch (const std::exception &e) {
+            LOG_ERROR(
+                    "threadmanager: task {} threw: {}", taskKindName(kind), e.what()); // NOLINT(*-lambda-function-name)
+            res = TaskResult{.reason = FinishReason::Failed};
+        } catch (...) {
+            LOG_ERROR("threadmanager: task {} threw: unknown exception",
+                      taskKindName(kind)); // NOLINT(*-lambda-function-name)
+            res = TaskResult{.reason = FinishReason::Failed};
         }
-    };
+
+        // exactly once: one path for normal return, one for the exception
+        notify(std::move(res));
+    }};
 }
 
 void ThreadManager::stopTask(const TaskKind kind) {
@@ -281,12 +285,12 @@ void ThreadManager::StopAll() {
     LOG_INFO("threadmanager: stop all");
 
     // signal all first: wait in parallel, closing the window drops from 4×20ms to ~20ms
-    for (auto &slot: m_slots) {
+    for (auto &slot : m_slots) {
         if (slot.thread.joinable()) slot.thread.request_stop();
     }
 
     // then reap one by one
-    for (auto &slot: m_slots) {
+    for (auto &slot : m_slots) {
         if (!slot.thread.joinable()) continue;
         slot.thread.join();
         slot.state = TaskState::Stopped;

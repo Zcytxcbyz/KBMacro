@@ -10,22 +10,22 @@
 
 namespace {
 
-    // hk::kMod* bitmask → Win32 MOD_* bitmask
-    // MOD_NOREPEAT is always added: holding the key triggers only once
-    UINT toWin32Modifiers(const unsigned mods) {
-        UINT m = MOD_NOREPEAT;
-        if (mods & hk::kModCtrl)  m |= MOD_CONTROL;
-        if (mods & hk::kModShift) m |= MOD_SHIFT;
-        if (mods & hk::kModAlt)   m |= MOD_ALT;
-        if (mods & hk::kModWin)   m |= MOD_WIN;
-        return m;
-    }
+// hk::kMod* bitmask → Win32 MOD_* bitmask
+// MOD_NOREPEAT is always added: holding the key triggers only once
+UINT toWin32Modifiers(const unsigned mods) {
+    UINT m = MOD_NOREPEAT;
+    if (mods & hk::kModCtrl) m |= MOD_CONTROL;
+    if (mods & hk::kModShift) m |= MOD_SHIFT;
+    if (mods & hk::kModAlt) m |= MOD_ALT;
+    if (mods & hk::kModWin) m |= MOD_WIN;
+    return m;
+}
 
-    // empty hotkey: no key assigned. The state the user gets via "clear".
-    // empty hotkeys are not registered and never conflict.
-    bool isEmptyHotkey(const Hotkey &hk) noexcept {
-        return hk.vk == 0 && hk.modifiers == 0;
-    }
+// empty hotkey: no key assigned. The state the user gets via "clear".
+// empty hotkeys are not registered and never conflict.
+bool isEmptyHotkey(const Hotkey &hk) noexcept {
+    return hk.vk == 0 && hk.modifiers == 0;
+}
 
 } // namespace
 
@@ -35,8 +35,7 @@ namespace {
 
 HotkeyManager::HotkeyManager(HWND hwnd, TriggerCallback onTriggered)
     : m_hwnd(hwnd),
-      m_onTriggered(std::move(onTriggered)) {
-}
+      m_onTriggered(std::move(onTriggered)) {}
 
 HotkeyManager::~HotkeyManager() {
     unregisterAll();
@@ -60,8 +59,7 @@ void HotkeyManager::registerAll() {
     }
 
     const auto registered = std::ranges::count(m_registered, true);
-    LOG_INFO("hotkey: registered {}/{} (empty or disabled slots skipped)",
-             registered, kHotkeyCount);
+    LOG_INFO("hotkey: registered {}/{} (empty or disabled slots skipped)", registered, kHotkeyCount);
 }
 
 void HotkeyManager::unregisterAll() {
@@ -86,12 +84,12 @@ void HotkeyManager::registerOne(const int index, const Hotkey &hk) {
 
     if (::RegisterHotKey(m_hwnd, id, mods, vk)) {
         m_registered[index] = true;
-        LOG_DEBUG("hotkey[{}] registered: {}",
-                  index, utils::ToUtf8(utils::hotkeyToString(hk)));
+        LOG_DEBUG("hotkey[{}] registered: {}", index, utils::ToUtf8(utils::hotkeyToString(hk)));
     } else {
         m_registered[index] = false;
         LOG_WARN("hotkey[{}] register failed: {} (err={})",
-                 index, utils::ToUtf8(utils::hotkeyToString(hk)),
+                 index,
+                 utils::ToUtf8(utils::hotkeyToString(hk)),
                  ::GetLastError());
     }
 }
@@ -103,8 +101,7 @@ void HotkeyManager::unregisterOne(const int index) {
     if (::UnregisterHotKey(m_hwnd, id)) {
         LOG_DEBUG("hotkey[{}] unregistered", index);
     } else {
-        LOG_WARN("hotkey[{}] unregister failed (err={})",
-                 index, ::GetLastError());
+        LOG_WARN("hotkey[{}] unregister failed (err={})", index, ::GetLastError());
     }
     m_registered[index] = false;
 }
@@ -132,9 +129,7 @@ bool HotkeyManager::setHotkey(const int index, const Hotkey &hk) {
     ConfigManager::instance().setHotkey(index, hk);
 
     // rebinding while disabled: only persist, stay disabled, do not register
-    const bool enabled = ConfigManager::instance()
-                             .config()
-                             .hotkeyEnabled[static_cast<std::size_t>(index)];
+    const bool enabled = ConfigManager::instance().config().hotkeyEnabled[static_cast<std::size_t>(index)];
     if (!enabled) {
         m_registered[index] = false;
         LOG_DEBUG("hotkey[{}] updated but stays disabled", index);
@@ -163,9 +158,7 @@ bool HotkeyManager::setEnabled(const int index, const bool enabled) {
         return true;
     }
 
-    const auto &hk = ConfigManager::instance()
-                         .config()
-                         .hotkeys[static_cast<std::size_t>(index)];
+    const auto &hk = ConfigManager::instance().config().hotkeys[static_cast<std::size_t>(index)];
     registerOne(index, hk);
     return m_registered[index] || isEmptyHotkey(hk);
 }
@@ -201,7 +194,7 @@ int HotkeyManager::failedCount() const noexcept {
     int n = 0;
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added: disabled slots do not count as failures
+        if (!cfg.hotkeyEnabled[idx]) continue; // ← added: disabled slots do not count as failures
         // only count items "set by the user but failed to register"; empty hotkeys do not count
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             ++n;
@@ -217,7 +210,7 @@ std::vector<int> HotkeyManager::failedIndices() const {
 
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added
+        if (!cfg.hotkeyEnabled[idx]) continue; // ← added
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             result.push_back(i);
         }
@@ -234,11 +227,10 @@ bool HotkeyManager::isConflicting(const Hotkey &hk, // NOLINT(*-convert-member-f
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (i == excludeIndex) continue;
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue;   // ← added: disabled slots never conflict
-        if (cfg.hotkeys[idx].vk == hk.vk &&
-            cfg.hotkeys[idx].modifiers == hk.modifiers) {
+        if (!cfg.hotkeyEnabled[idx]) continue; // ← added: disabled slots never conflict
+        if (cfg.hotkeys[idx].vk == hk.vk && cfg.hotkeys[idx].modifiers == hk.modifiers) {
             return true;
-            }
+        }
     }
     return false;
 }

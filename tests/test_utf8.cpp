@@ -88,7 +88,7 @@ TEST(ToWide, Chinese) {
 
 TEST(ToWide, NonBmpBecomesSurrogatePair) {
     const std::wstring wide = utils::ToWide(std::string("\xF0\x9F\x98\x80", 4));
-    EXPECT_EQ(wide.size(), 2u);   // one character takes two wchar_t
+    EXPECT_EQ(wide.size(), 2u); // one character takes two wchar_t
     EXPECT_EQ(utils::ToUtf8(wide), std::string("\xF0\x9F\x98\x80", 4));
 }
 
@@ -103,18 +103,17 @@ TEST(ToWide, InvalidBytesBecomeReplacement) {
 
 TEST(Utf8RoundTrip, MixedSamples) {
     constexpr std::wstring_view kSamples[] = {
-        L"",
-        L"a",
-        L"KBMacro 便携键鼠自动化小工具",
-        L"标点：，。！？、；：（）《》",
-        L"a中b文c",
-        L"\xD83D\xDE00",              // 😀
-        L"混合 \xD83D\xDE00 与中文",
+            L"",
+            L"a",
+            L"KBMacro 便携键鼠自动化小工具",
+            L"标点：，。！？、；：（）《》",
+            L"a中b文c",
+            L"\xD83D\xDE00", // 😀
+            L"混合 \xD83D\xDE00 与中文",
     };
 
-    for (const std::wstring_view &sample: kSamples) {
+    for (const std::wstring_view &sample : kSamples) {
         const std::wstring back = utils::ToWide(utils::ToUtf8(sample));
-        EXPECT_EQ(utils::ToUtf8(back), utils::ToUtf8(sample))
-            << "sample=" << utils::ToUtf8(sample);
+        EXPECT_EQ(utils::ToUtf8(back), utils::ToUtf8(sample)) << "sample=" << utils::ToUtf8(sample);
     }
 }

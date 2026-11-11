@@ -25,34 +25,34 @@
 
 namespace {
 
-    constexpr ITimer::Duration kHold{5};     // one hold wait
-    constexpr ITimer::Duration kDelay{95};   // gap between actions
-    constexpr ITimer::Duration kStartDelay{300};
+constexpr ITimer::Duration kHold{5}; // one hold wait
+constexpr ITimer::Duration kDelay{95}; // gap between actions
+constexpr ITimer::Duration kStartDelay{300};
 
-    RunSpec countedRun(const int count) {
-        return RunSpec{.mode = RunMode::Counted, .count = count};
-    }
+RunSpec countedRun(const int count) {
+    return RunSpec{.mode = RunMode::Counted, .count = count};
+}
 
-    Action moveAction(const int delayMs) {
-        return Action{.type = ActionType::MouseMove, .x = 10, .y = 20, .delayMs = delayMs};
-    }
+Action moveAction(const int delayMs) {
+    return Action{.type = ActionType::MouseMove, .x = 10, .y = 20, .delayMs = delayMs};
+}
 
-    // a click with a 5ms hold: input::click adds one extra 5ms wait
-    Action clickAction(const int delayMs) {
-        return Action{.type = ActionType::MouseClick,
-                      .x = 0,
-                      .y = 0,
-                      .button = MouseButton::Left,
-                      .holdMs = 5,
-                      .delayMs = delayMs};
-    }
+// a click with a 5ms hold: input::click adds one extra 5ms wait
+Action clickAction(const int delayMs) {
+    return Action{.type = ActionType::MouseClick,
+                  .x = 0,
+                  .y = 0,
+                  .button = MouseButton::Left,
+                  .holdMs = 5,
+                  .delayMs = delayMs};
+}
 
-    Action keyAction(const KeyEventType keyEvent, const int delayMs) {
-        return Action{.type = ActionType::Keyboard,
-                      .hotkey = Hotkey{.modifiers = 0, .vk = 65},   // 'A'
-                      .keyEvent = keyEvent,
-                      .delayMs = delayMs};
-    }
+Action keyAction(const KeyEventType keyEvent, const int delayMs) {
+    return Action{.type = ActionType::Keyboard,
+                  .hotkey = Hotkey{.modifiers = 0, .vk = 65}, // 'A'
+                  .keyEvent = keyEvent,
+                  .delayMs = delayMs};
+}
 
 } // namespace
 
@@ -100,15 +100,14 @@ TEST(PlaybackRun, ClickHoldWaitIsDistinctFromDelay) {
     FakeTimer timer;
 
     EXPECT_EQ(playback::run(actions, countedRun(2), timer, std::stop_token{}), 2);
-    EXPECT_EQ(timer.countWaits(kHold), 2u);    // one hold wait per round
-    EXPECT_EQ(timer.countWaits(kDelay), 2u);   // one pre-action gap per round
+    EXPECT_EQ(timer.countWaits(kHold), 2u); // one hold wait per round
+    EXPECT_EQ(timer.countWaits(kDelay), 2u); // one pre-action gap per round
     EXPECT_EQ(timer.waitCalls(), 4);
 }
 
 TEST(PlaybackRun, KeyboardPairDoesNotLeak) {
     // Down has delay 0, Up has delay 95 → only one wait
-    const std::vector<Action> actions{keyAction(KeyEventType::Down, 0),
-                                      keyAction(KeyEventType::Up, 95)};
+    const std::vector<Action> actions{keyAction(KeyEventType::Down, 0), keyAction(KeyEventType::Up, 95)};
     FakeTimer timer;
 
     EXPECT_EQ(playback::run(actions, countedRun(1), timer, std::stop_token{}), 2);
@@ -120,10 +119,9 @@ TEST(PlaybackRun, KeyboardPairDoesNotLeak) {
 
 TEST(PlaybackRun, StopDuringDelay) {
     const std::vector<Action> actions{moveAction(95)};
-    FakeTimer timer(1);   // wait 1 already returns false
+    FakeTimer timer(1); // wait 1 already returns false
 
-    EXPECT_EQ(playback::run(actions, RunSpec{.mode = RunMode::Infinite}, timer,
-                            std::stop_token{}), 0);
+    EXPECT_EQ(playback::run(actions, RunSpec{.mode = RunMode::Infinite}, timer, std::stop_token{}), 0);
     EXPECT_EQ(timer.waitCalls(), 1);
 }
 
@@ -132,8 +130,7 @@ TEST(PlaybackRun, ClickInterruptedInsideHold) {
     const std::vector<Action> actions{clickAction(95)};
     FakeTimer timer(2);
 
-    EXPECT_EQ(playback::run(actions, RunSpec{.mode = RunMode::Infinite}, timer,
-                            std::stop_token{}), 0);
+    EXPECT_EQ(playback::run(actions, RunSpec{.mode = RunMode::Infinite}, timer, std::stop_token{}), 0);
     EXPECT_EQ(timer.waitCalls(), 2);
 }
 
@@ -165,10 +162,12 @@ TEST(PlaybackRun, StartDelayInterruptedReturnsZero) {
 
 TEST(Playback, MouseDownUpCountsTwoActions) {
     const std::vector<Action> actions{
-        Action{.type = ActionType::MouseDown,
-               .x = 100, .y = 200, .button = MouseButton::Left, .delayMs = 0},
-        Action{.type = ActionType::MouseUp,
-               .x = 300, .y = 400, .button = MouseButton::Left, .delayMs = kDelay.count()},
+            Action{.type = ActionType::MouseDown, .x = 100, .y = 200, .button = MouseButton::Left, .delayMs = 0},
+            Action{.type = ActionType::MouseUp,
+                   .x = 300,
+                   .y = 400,
+                   .button = MouseButton::Left,
+                   .delayMs = kDelay.count()},
     };
 
     FakeTimer timer;
@@ -178,8 +177,7 @@ TEST(Playback, MouseDownUpCountsTwoActions) {
 
 TEST(Playback, MouseDownWithoutUpDoesNotHang) {
     const std::vector<Action> actions{
-        Action{.type = ActionType::MouseDown,
-               .x = 50, .y = 60, .button = MouseButton::Right, .delayMs = 0},
+            Action{.type = ActionType::MouseDown, .x = 50, .y = 60, .button = MouseButton::Right, .delayMs = 0},
     };
 
     FakeTimer timer;
@@ -188,9 +186,8 @@ TEST(Playback, MouseDownWithoutUpDoesNotHang) {
 
 TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
     const std::vector<Action> actions{
-        Action{.type = ActionType::MouseDown,
-               .x = 50, .y = 60, .button = MouseButton::Left, .delayMs = 0},
-        Action{.type = ActionType::MouseMove, .x = 80, .y = 90, .delayMs = kDelay.count()},
+            Action{.type = ActionType::MouseDown, .x = 50, .y = 60, .button = MouseButton::Left, .delayMs = 0},
+            Action{.type = ActionType::MouseMove, .x = 80, .y = 90, .delayMs = kDelay.count()},
     };
 
     FakeTimer timer;
@@ -201,7 +198,7 @@ TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
 
 TEST(PlaybackRun, DelayActsAsPureWait) {
     const std::vector<Action> script{
-        Action{.type = ActionType::Delay, .delayMs = 200},
+            Action{.type = ActionType::Delay, .delayMs = 200},
     };
 
     FakeTimer timer;
@@ -214,13 +211,13 @@ TEST(PlaybackRun, DelayActsAsPureWait) {
 
 TEST(PlaybackRun, RelativeClickKeepsHoldWait) {
     const std::vector<Action> script{
-        Action{.type = ActionType::MouseClick,
-               .x = 30,
-               .y = -12,
-               .relative = true,
-               .button = MouseButton::Left,
-               .holdMs = 40,
-               .delayMs = 0},
+            Action{.type = ActionType::MouseClick,
+                   .x = 30,
+                   .y = -12,
+                   .relative = true,
+                   .button = MouseButton::Left,
+                   .holdMs = 40,
+                   .delayMs = 0},
     };
 
     FakeTimer timer;

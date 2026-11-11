@@ -18,20 +18,18 @@
 
 namespace jsonio {
 
-    // write json to a file.
-    //   - the parent directory is created when missing
-    //   - 2-space indent, trailing newline
-    //   returns true  = success
-    //   returns false = failure (details in LOG_ERROR)
-    [[nodiscard]] bool saveTo(const std::filesystem::path &path,
-                              const nlohmann::json &j);
+// write json to a file.
+//   - the parent directory is created when missing
+//   - 2-space indent, trailing newline
+//   returns true  = success
+//   returns false = failure (details in LOG_ERROR)
+[[nodiscard]] bool saveTo(const std::filesystem::path &path, const nlohmann::json &j);
 
-    // read json from a file.
-    //   returns true  = success
-    //   returns false = failure (missing file / open failure / parse failure), out keeps its defaults
-    //
-    // failure reasons are logged as LOG_INFO (missing file) / LOG_WARN (open and parse failures)
-    [[nodiscard]] bool loadFrom(const std::filesystem::path &path,
-                                nlohmann::json &out);
+// read json from a file.
+//   returns true  = success
+//   returns false = failure (missing file / open failure / parse failure), out keeps its defaults
+//
+// failure reasons are logged as LOG_INFO (missing file) / LOG_WARN (open and parse failures)
+[[nodiscard]] bool loadFrom(const std::filesystem::path &path, nlohmann::json &out);
 
 } // namespace jsonio

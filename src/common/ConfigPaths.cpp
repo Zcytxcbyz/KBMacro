@@ -13,8 +13,7 @@
 
 namespace config {
 
-ResolvedPath resolveConfigPath(const std::filesystem::path &exePath,
-                               const std::filesystem::path &appDataDir) {
+ResolvedPath resolveConfigPath(const std::filesystem::path &exePath, const std::filesystem::path &appDataDir) {
     // portable mode: {exe}.json next to the EXE (e.g. KBMacro.exe.json)
     // naming rule matches the existing SettingsPanel implementation
     std::filesystem::path portable = exePath;
@@ -58,8 +57,7 @@ bool loadFrom(const std::filesystem::path &path, Config &out) {
     // version check: file version above the supported one → refuse to load
     // lower or equal → read as the current version (missing fields use defaults)
     if (const int fileVersion = j.value("version", 1); fileVersion > kConfigVersion) {
-        LOG_WARN("config: file version {} > supported {}, ignoring",
-                 fileVersion, kConfigVersion);
+        LOG_WARN("config: file version {} > supported {}, ignoring", fileVersion, kConfigVersion);
         return false;
     }
 
@@ -86,8 +84,7 @@ bool saveTo(const std::filesystem::path &path, const Config &cfg) {
         std::error_code ec;
         std::filesystem::create_directories(parent, ec);
         if (ec) {
-            LOG_ERROR("config: cannot create directory: {} ({})",
-                      utils::ToUtf8(parent.wstring()), ec.message());
+            LOG_ERROR("config: cannot create directory: {} ({})", utils::ToUtf8(parent.wstring()), ec.message());
             return false;
         }
     }

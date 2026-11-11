@@ -26,28 +26,27 @@
 // Convention: no ThreadManager, no UI here; logging is only first/last lines + one progress line per second.
 namespace recorder {
 
-    // Recording options. Filled in entirely by the UI thread, read-only on the recording thread.
-    struct RecordOptions {
-        int startDelayMs = 0;      // wait this long before installing hooks, to skip the start hotkey's own press
-        int moveIntervalMs = 16;     // mouse move sampling interval; 0 = no sampling (record all)
-        bool ignoreInjected = false; // also skip events injected by other programs (own events never recorded)
-        int maxActions = 100000;     // action limit; 0 = unlimited
+// Recording options. Filled in entirely by the UI thread, read-only on the recording thread.
+struct RecordOptions {
+    int startDelayMs = 0; // wait this long before installing hooks, to skip the start hotkey's own press
+    int moveIntervalMs = 16; // mouse move sampling interval; 0 = no sampling (record all)
+    bool ignoreInjected = false; // also skip events injected by other programs (own events never recorded)
+    int maxActions = 100000; // action limit; 0 = unlimited
 
-        // Main keys to drop while recording: every enabled global hotkey.
-        // these keys are already consumed by the hotkey system during recording and never reach the foreground
-        // app; recording them would only trigger ourselves during playback (an F1 in the output starts the clicker).
-        std::vector<unsigned> ignoredKeys;
+    // Main keys to drop while recording: every enabled global hotkey.
+    // these keys are already consumed by the hotkey system during recording and never reach the foreground
+    // app; recording them would only trigger ourselves during playback (an F1 in the output starts the clicker).
+    std::vector<unsigned> ignoredKeys;
 
-        // start/stop hotkey main key and modifiers: used only by normalization to strip the modifier runs
-        // at the head and tail of the output (0 = not configured). main keys are filtered via ignoredKeys above.
-        unsigned startKeyVk = 0;
-        unsigned startMods = 0;
-        unsigned stopKeyVk = 0;
-        unsigned stopMods = 0;
-    };
+    // start/stop hotkey main key and modifiers: used only by normalization to strip the modifier runs
+    // at the head and tail of the output (0 = not configured). main keys are filtered via ignoredKeys above.
+    unsigned startKeyVk = 0;
+    unsigned startMods = 0;
+    unsigned stopKeyVk = 0;
+    unsigned stopMods = 0;
+};
 
-    // Record until stopped or the limit is reached, return the normalized action list (may be empty).
-    [[nodiscard]] std::vector<Action> run(const RecordOptions &opts, const ITimer &timer,
-                                          const std::stop_token &st);
+// Record until stopped or the limit is reached, return the normalized action list (may be empty).
+[[nodiscard]] std::vector<Action> run(const RecordOptions &opts, const ITimer &timer, const std::stop_token &st);
 
 } // namespace recorder

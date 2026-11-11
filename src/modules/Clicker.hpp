@@ -2,8 +2,8 @@
 
 #include <stop_token>
 
-#include "common/Action.hpp"          // MouseButton / WheelDirection
-#include "common/ClickerParams.hpp"   // ClickType / ClickerParams
+#include "common/Action.hpp" // MouseButton / WheelDirection
+#include "common/ClickerParams.hpp" // ClickType / ClickerParams
 #include "common/ITimer.hpp"
 
 // ============================================================
@@ -23,23 +23,23 @@
 
 namespace clicker {
 
-    // Expand ClickType into "what to send, how many times". Pure function, testable on its own.
-    //   - double-click = two full clicks (each waits holdMs), times = 2
-    //   - wheel types always use times = 1 (one event carries steps × WHEEL_DELTA)
-    struct ClickStep {
-        bool wheel = false;                              // true: use direction + wheelSteps
-        int times = 1;                                   // how many times to send
-        MouseButton button = MouseButton::Left;          // valid when wheel == false
-        WheelDirection direction = WheelDirection::Up;   // valid when wheel == true
-    };
+// Expand ClickType into "what to send, how many times". Pure function, testable on its own.
+//   - double-click = two full clicks (each waits holdMs), times = 2
+//   - wheel types always use times = 1 (one event carries steps × WHEEL_DELTA)
+struct ClickStep {
+    bool wheel = false; // true: use direction + wheelSteps
+    int times = 1; // how many times to send
+    MouseButton button = MouseButton::Left; // valid when wheel == false
+    WheelDirection direction = WheelDirection::Up; // valid when wheel == true
+};
 
-    [[nodiscard]] ClickStep toClickStep(ClickType type) noexcept;
+[[nodiscard]] ClickStep toClickStep(ClickType type) noexcept;
 
-    // Clicker main loop, returns the actual number of rounds executed.
-    //   - returns immediately when interrupted by stop, the value is the completed rounds
-    //   - per round: first moveTo (unless ignorePosition) → then send input by ClickType
-    //   - wait between rounds = max(0, intervalMs - holdMs) (interval is the cycle, hold time deducted);
-    //     wheel types have no hold, wait = intervalMs
-    [[nodiscard]] int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st);
+// Clicker main loop, returns the actual number of rounds executed.
+//   - returns immediately when interrupted by stop, the value is the completed rounds
+//   - per round: first moveTo (unless ignorePosition) → then send input by ClickType
+//   - wait between rounds = max(0, intervalMs - holdMs) (interval is the cycle, hold time deducted);
+//     wheel types have no hold, wait = intervalMs
+[[nodiscard]] int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st);
 
 } // namespace clicker

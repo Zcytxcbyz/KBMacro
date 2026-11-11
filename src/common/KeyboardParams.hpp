@@ -6,9 +6,9 @@
 
 // keyboard simulator parameters
 struct KeyboardParams {
-    Hotkey hotkey;          // key combination to send
-    int intervalMs = 100;   // repeat interval
-    int holdMs = 50;        // key hold duration
+    Hotkey hotkey; // key combination to send
+    int intervalMs = 100; // repeat interval
+    int holdMs = 50; // key hold duration
     RunSpec run;
 };
 

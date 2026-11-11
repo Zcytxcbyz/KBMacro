@@ -3,8 +3,8 @@
 #include <string>
 #include <string_view>
 // ReSharper disable once CppUnusedIncludeDirective
-#include "resource.h"
 #include "lang.h"
+#include "resource.h"
 
 class LanguageManager {
 public:

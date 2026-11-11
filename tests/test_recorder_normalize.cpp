@@ -19,38 +19,34 @@
 
 namespace {
 
-    using recorder::NormalizeOptions;
-    using recorder::RawEvent;
-    using recorder::RawKind;
+using recorder::NormalizeOptions;
+using recorder::RawEvent;
+using recorder::RawKind;
 
-    // this test file does not include <windows.h>, so the VK values are written directly
-    constexpr unsigned kVkShift = 0x10;     // VK_SHIFT
-    constexpr unsigned kVkControl = 0x11;   // VK_CONTROL
+// this test file does not include <windows.h>, so the VK values are written directly
+constexpr unsigned kVkShift = 0x10; // VK_SHIFT
+constexpr unsigned kVkControl = 0x11; // VK_CONTROL
 
-    NormalizeOptions plainOpts() {
-        NormalizeOptions opts;
-        return opts;
-    }
+NormalizeOptions plainOpts() {
+    NormalizeOptions opts;
+    return opts;
+}
 
-    RawEvent keyEvent(const RawKind kind, const unsigned vk, const std::uint32_t t) {
-        return RawEvent{.kind = kind, .vk = vk, .time = t};
-    }
+RawEvent keyEvent(const RawKind kind, const unsigned vk, const std::uint32_t t) {
+    return RawEvent{.kind = kind, .vk = vk, .time = t};
+}
 
-    RawEvent moveEvent(const int x, const int y, const std::uint32_t t) {
-        return RawEvent{.kind = RawKind::Move, .x = x, .y = y, .time = t};
-    }
+RawEvent moveEvent(const int x, const int y, const std::uint32_t t) {
+    return RawEvent{.kind = RawKind::Move, .x = x, .y = y, .time = t};
+}
 
-    RawEvent buttonEvent(const RawKind kind, const MouseButton button, const int x, const int y,
-                         const std::uint32_t t) {
-        return RawEvent{.kind = kind, .x = x, .y = y, .button = button, .time = t};
-    }
+RawEvent buttonEvent(const RawKind kind, const MouseButton button, const int x, const int y, const std::uint32_t t) {
+    return RawEvent{.kind = kind, .x = x, .y = y, .button = button, .time = t};
+}
 
-    RawEvent wheelEvent(const int delta, const std::uint32_t t, const bool horizontal = false) {
-        return RawEvent{.kind = RawKind::Wheel,
-                        .wheelDelta = delta,
-                        .time = t,
-                        .horizontal = horizontal};
-    }
+RawEvent wheelEvent(const int delta, const std::uint32_t t, const bool horizontal = false) {
+    return RawEvent{.kind = RawKind::Wheel, .wheelDelta = delta, .time = t, .horizontal = horizontal};
+}
 
 } // namespace
 
@@ -64,8 +60,8 @@ TEST(Normalize, EmptyInputYieldsNothing) {
 
 TEST(Normalize, KeyPairBecomesDownThenUp) {
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),    // A
-        keyEvent(RawKind::KeyUp, 65, 30),
+            keyEvent(RawKind::KeyDown, 65, 0), // A
+            keyEvent(RawKind::KeyUp, 65, 30),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -82,8 +78,8 @@ TEST(Normalize, KeyPairBecomesDownThenUp) {
 
 TEST(Normalize, KeyboardActionsCarryNoModifiers) {
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),
-        keyEvent(RawKind::KeyUp, 65, 10),
+            keyEvent(RawKind::KeyDown, 65, 0),
+            keyEvent(RawKind::KeyUp, 65, 10),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -96,10 +92,10 @@ TEST(Normalize, KeyboardActionsCarryNoModifiers) {
 
 TEST(Normalize, AutoRepeatIsMerged) {
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),
-        keyEvent(RawKind::KeyDown, 65, 10),
-        keyEvent(RawKind::KeyDown, 65, 20),
-        keyEvent(RawKind::KeyUp, 65, 40),
+            keyEvent(RawKind::KeyDown, 65, 0),
+            keyEvent(RawKind::KeyDown, 65, 10),
+            keyEvent(RawKind::KeyDown, 65, 20),
+            keyEvent(RawKind::KeyUp, 65, 40),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -109,15 +105,15 @@ TEST(Normalize, AutoRepeatIsMerged) {
 
 TEST(Normalize, StartAndStopMainKeysAreDropped) {
     NormalizeOptions opts = plainOpts();
-    opts.startKeyVk = 0x70;   // F1
-    opts.stopKeyVk = 0x71;    // F2
+    opts.startKeyVk = 0x70; // F1
+    opts.stopKeyVk = 0x71; // F2
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 0x70, 0),
-        keyEvent(RawKind::KeyDown, 65, 5),
-        keyEvent(RawKind::KeyUp, 65, 10),
-        keyEvent(RawKind::KeyUp, 0x70, 15),
-        keyEvent(RawKind::KeyDown, 0x71, 20),
+            keyEvent(RawKind::KeyDown, 0x70, 0),
+            keyEvent(RawKind::KeyDown, 65, 5),
+            keyEvent(RawKind::KeyUp, 65, 10),
+            keyEvent(RawKind::KeyUp, 0x70, 15),
+            keyEvent(RawKind::KeyDown, 0x71, 20),
     };
 
     const auto actions = recorder::normalize(events, opts);
@@ -131,14 +127,14 @@ TEST(Normalize, HeadModifierReleaseIsTrimmed) {
     opts.startMods = hk::kModCtrl;
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyUp, kVkControl, 0),
-        keyEvent(RawKind::KeyDown, 65, 5),
-        keyEvent(RawKind::KeyUp, 65, 10),
+            keyEvent(RawKind::KeyUp, kVkControl, 0),
+            keyEvent(RawKind::KeyDown, 65, 5),
+            keyEvent(RawKind::KeyUp, 65, 10),
     };
 
     const auto actions = recorder::normalize(events, opts);
     ASSERT_EQ(actions.size(), 2u);
-    EXPECT_EQ(actions[0].delayMs, 0);   // reset to zero after trimming
+    EXPECT_EQ(actions[0].delayMs, 0); // reset to zero after trimming
 }
 
 TEST(Normalize, TailModifierReleaseIsTrimmed) {
@@ -146,9 +142,9 @@ TEST(Normalize, TailModifierReleaseIsTrimmed) {
     opts.stopMods = hk::kModShift;
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),
-        keyEvent(RawKind::KeyUp, 65, 10),
-        keyEvent(RawKind::KeyUp, kVkShift, 20),
+            keyEvent(RawKind::KeyDown, 65, 0),
+            keyEvent(RawKind::KeyUp, 65, 10),
+            keyEvent(RawKind::KeyUp, kVkShift, 20),
     };
 
     const auto actions = recorder::normalize(events, opts);
@@ -160,11 +156,11 @@ TEST(Normalize, TrimStopsAtFirstRealAction) {
     opts.startMods = hk::kModCtrl;
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyUp, kVkControl, 0),    // head modifier, trimmed
-        keyEvent(RawKind::KeyDown, 65, 5),
-        keyEvent(RawKind::KeyUp, 65, 10),
-        keyEvent(RawKind::KeyDown, kVkControl, 15), // a real Ctrl press by the user, kept
-        keyEvent(RawKind::KeyUp, kVkControl, 20),
+            keyEvent(RawKind::KeyUp, kVkControl, 0), // head modifier, trimmed
+            keyEvent(RawKind::KeyDown, 65, 5),
+            keyEvent(RawKind::KeyUp, 65, 10),
+            keyEvent(RawKind::KeyDown, kVkControl, 15), // a real Ctrl press by the user, kept
+            keyEvent(RawKind::KeyUp, kVkControl, 20),
     };
 
     const auto actions = recorder::normalize(events, opts);
@@ -176,8 +172,8 @@ TEST(Normalize, TrimStopsAtFirstRealAction) {
 
 TEST(Normalize, ClickWithinThresholdBecomesMouseClick) {
     const std::vector<RawEvent> events{
-        buttonEvent(RawKind::ButtonDown, MouseButton::Left, 100, 100, 0),
-        buttonEvent(RawKind::ButtonUp, MouseButton::Left, 101, 101, 50),
+            buttonEvent(RawKind::ButtonDown, MouseButton::Left, 100, 100, 0),
+            buttonEvent(RawKind::ButtonUp, MouseButton::Left, 101, 101, 50),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -191,10 +187,10 @@ TEST(Normalize, ClickWithinThresholdBecomesMouseClick) {
 
 TEST(Normalize, SmallJitterIsStillClick) {
     const std::vector<RawEvent> events{
-        buttonEvent(RawKind::ButtonDown, MouseButton::Right, 100, 100, 0),
-        moveEvent(101, 101, 10),
-        moveEvent(102, 102, 20),
-        buttonEvent(RawKind::ButtonUp, MouseButton::Right, 102, 102, 50),
+            buttonEvent(RawKind::ButtonDown, MouseButton::Right, 100, 100, 0),
+            moveEvent(101, 101, 10),
+            moveEvent(102, 102, 20),
+            buttonEvent(RawKind::ButtonUp, MouseButton::Right, 102, 102, 50),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -204,10 +200,10 @@ TEST(Normalize, SmallJitterIsStillClick) {
 
 TEST(Normalize, DragBeyondThresholdEmitsDownMoveUp) {
     const std::vector<RawEvent> events{
-        buttonEvent(RawKind::ButtonDown, MouseButton::Left, 100, 100, 0),
-        moveEvent(200, 150, 10),
-        moveEvent(210, 160, 20),
-        buttonEvent(RawKind::ButtonUp, MouseButton::Left, 210, 160, 30),
+            buttonEvent(RawKind::ButtonDown, MouseButton::Left, 100, 100, 0),
+            moveEvent(200, 150, 10),
+            moveEvent(210, 160, 20),
+            buttonEvent(RawKind::ButtonUp, MouseButton::Left, 210, 160, 30),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -224,9 +220,9 @@ TEST(Normalize, DragBeyondThresholdEmitsDownMoveUp) {
 
 TEST(Normalize, DragEndpointsKeepCoordinates) {
     const std::vector<RawEvent> events{
-        buttonEvent(RawKind::ButtonDown, MouseButton::Left, 10, 20, 0),
-        moveEvent(100, 100, 5),
-        buttonEvent(RawKind::ButtonUp, MouseButton::Left, 300, 400, 9),
+            buttonEvent(RawKind::ButtonDown, MouseButton::Left, 10, 20, 0),
+            moveEvent(100, 100, 5),
+            buttonEvent(RawKind::ButtonUp, MouseButton::Left, 300, 400, 9),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -243,7 +239,7 @@ TEST(Normalize, DragEndpointsKeepCoordinates) {
 
 TEST(Normalize, WheelAccumulatesToNotches) {
     const std::vector<RawEvent> events{
-        wheelEvent(240, 0),
+            wheelEvent(240, 0),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -255,9 +251,9 @@ TEST(Normalize, WheelAccumulatesToNotches) {
 
 TEST(Normalize, WheelRemainderIsKept) {
     const std::vector<RawEvent> events{
-        wheelEvent(60, 0),
-        wheelEvent(60, 10),
-        wheelEvent(-120, 20),
+            wheelEvent(60, 0),
+            wheelEvent(60, 10),
+            wheelEvent(-120, 20),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -265,19 +261,20 @@ TEST(Normalize, WheelRemainderIsKept) {
 
     EXPECT_EQ(actions[0].wheelDirection, WheelDirection::Up);
     EXPECT_EQ(actions[0].wheelSteps, 1);
-    EXPECT_EQ(actions[0].delayMs, 0);    // the first action, delay is always 0
+    EXPECT_EQ(actions[0].delayMs, 0); // the first action, delay is always 0
 
     EXPECT_EQ(actions[1].wheelDirection, WheelDirection::Down);
     EXPECT_EQ(actions[1].wheelSteps, 1);
-    EXPECT_EQ(actions[1].delayMs, 10);   // attributed to the event that completed the notch
+    EXPECT_EQ(actions[1].delayMs, 10); // attributed to the event that completed the notch
 }
+
 // ---- timing and cap ----
 
 TEST(Normalize, DelayIsRelativeToPreviousAction) {
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),
-        keyEvent(RawKind::KeyUp, 65, 40),
-        keyEvent(RawKind::KeyDown, 66, 100),
+            keyEvent(RawKind::KeyDown, 65, 0),
+            keyEvent(RawKind::KeyUp, 65, 40),
+            keyEvent(RawKind::KeyDown, 66, 100),
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
@@ -292,9 +289,9 @@ TEST(Normalize, MaxActionsStopsEarly) {
     opts.maxActions = 2;
 
     const std::vector<RawEvent> events{
-        keyEvent(RawKind::KeyDown, 65, 0),
-        keyEvent(RawKind::KeyDown, 66, 10),
-        keyEvent(RawKind::KeyDown, 67, 20),
+            keyEvent(RawKind::KeyDown, 65, 0),
+            keyEvent(RawKind::KeyDown, 66, 10),
+            keyEvent(RawKind::KeyDown, 67, 20),
     };
 
     const auto actions = recorder::normalize(events, opts);
