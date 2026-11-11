@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""
-生成 src/common/KeyNames.gen.hpp
+"""Generate src/common/KeyNames.gen.hpp.
 
-依赖：
+Requirements:
     pip install pywin32
 
-运行：
+Usage:
     python tools/generate_keynames.py
 
-设计说明：
-    - VK → 显示名 通过 Windows 的 GetKeyNameTextW API 获取
-    - 生成结果在生成机器的语言与键盘布局下固定，发布后所有用户看到一致
-      这是有意为之：键名稳定可控，不随用户系统飘
-    - 生成的头文件提交到仓库，构建不依赖 Python
-    - 只在"Windows 加了新 VK"或"想换生成环境"时重新运行
+Notes:
+    - VK -> display name is queried from the Windows GetKeyNameTextW API.
+    - The generated header is committed to the repository, so building the
+      project never needs Python.
+    - Regenerate only when the set of Windows keys or the naming rules change.
+    - Names can differ between Windows versions, which is exactly why the
+      output is pinned in version control.
 """
 
 import ctypes
@@ -22,7 +22,7 @@ from pathlib import Path
 
 import win32con
 
-# ---- Win32 API 绑定 ----
+# ---- Win32 API bindings ----
 user32 = ctypes.WinDLL("user32", use_last_error=True)
 user32.MapVirtualKeyW.restype = wintypes.UINT
 user32.MapVirtualKeyW.argtypes = [wintypes.UINT, wintypes.UINT]
@@ -31,7 +31,8 @@ user32.GetKeyNameTextW.argtypes = [ctypes.c_long, wintypes.LPWSTR, ctypes.c_int]
 
 MAPVK_VK_TO_VSC = 0
 
-# 扩展键：scancode 需要 | 0x100（否则 PageUp / 方向键等会返回错名）
+# Extended-scancode keys need bit 0x100 set, otherwise GetKeyNameTextW reports
+# the numeric-pad variant (PageUp, arrows, Insert, ... would all be wrong).
 EXTENDED_VKS = {
     win32con.VK_PRIOR, win32con.VK_NEXT,
     win32con.VK_HOME, win32con.VK_END,
@@ -43,23 +44,24 @@ EXTENDED_VKS = {
     win32con.VK_NUMLOCK,
 }
 
-# 排除项：鼠标、修饰键（走位掩码）、IME、保留 / 无意义键
+# Excluded on purpose: mouse buttons, the modifier keys (they are stored as
+# bits in hk::kMod*), IME related keys, and keys Windows reports but nobody can
+# press on a normal keyboard.
 EXCLUDE_NAMES = [
-    # 鼠标
+    # Mouse buttons
     "VK_LBUTTON", "VK_RBUTTON", "VK_MBUTTON",
     "VK_XBUTTON1", "VK_XBUTTON2", "VK_CANCEL",
-    # 修饰键（抽象）
+    # Modifier keys (main and left/right variants)
     "VK_SHIFT", "VK_CONTROL", "VK_MENU", "VK_LWIN", "VK_RWIN",
-    # 左右修饰键（走 hk::kMod* 位掩码）
     "VK_LSHIFT", "VK_RSHIFT",
     "VK_LCONTROL", "VK_RCONTROL",
     "VK_LMENU", "VK_RMENU",
-    # IME / 输入法
+    # IME / input method
     "VK_KANA", "VK_HANGEUL", "VK_HANGUL", "VK_JUNJA", "VK_FINAL",
     "VK_HANJA", "VK_KANJI",
     "VK_CONVERT", "VK_NONCONVERT", "VK_ACCEPT", "VK_MODECHANGE",
     "VK_IME_ON", "VK_IME_OFF", "VK_PROCESSKEY",
-    # 保留 / 无意义
+    # Legacy / reserved
     "VK_CLEAR", "VK_SELECT", "VK_PRINT", "VK_EXECUTE", "VK_HELP",
     "VK_ATTN", "VK_CRSEL", "VK_EXSEL", "VK_EREOF", "VK_PLAY",
     "VK_ZOOM", "VK_PA1", "VK_OEM_CLEAR", "VK_PACKET",
@@ -72,6 +74,7 @@ EXCLUDE = {getattr(win32con, n) for n in EXCLUDE_NAMES
 
 
 def vk_to_name(vk: int) -> str | None:
+    """Return the display name of a virtual-key code, or None to skip it."""
     if vk in EXCLUDE:
         return None
 
@@ -90,7 +93,7 @@ def vk_to_name(vk: int) -> str | None:
 
 
 def generate_entries() -> list[tuple[int, str]]:
-    """遍历 VK 编码空间（0x08–0xFF），取有名字的键，按名去重。"""
+    """Walk the VK value space (0x08-0xFF) and keep unique display names."""
     seen: dict[str, int] = {}
     entries: list[tuple[int, str]] = []
 
@@ -112,12 +115,13 @@ def escape_cpp_string(s: str) -> str:
 
 def render_header(entries: list[tuple[int, str]]) -> str:
     lines = [
-        "// 自动生成，请勿手改。",
-        "// 重新生成：python tools/generate_keynames.py",
-        "// 依赖：pip install pywin32",
+        "// Generated file -- do not edit by hand.",
+        "// Regenerate with: python tools/generate_keynames.py",
+        "// Requirements: pip install pywin32",
         "//",
-        "// 键名在生成机器的 Windows 语言与键盘布局下固定，",
-        "// 发布后所有用户看到的显示名一致，不随系统变化。",
+        "// Names are queried from the Windows GetKeyNameTextW API and therefore",
+        "// match what the user sees on their own layout. The output is committed",
+        "// so that builds stay reproducible across Windows versions.",
         "",
         "#pragma once",
         "",
@@ -139,7 +143,7 @@ def render_header(entries: list[tuple[int, str]]) -> str:
     return "\n".join(lines)
 
 
-def main():
+def main() -> int:
     entries = generate_entries()
     header = render_header(entries)
 
@@ -149,7 +153,8 @@ def main():
 
     print(f"wrote {out_path}")
     print(f"  entries: {len(entries)}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

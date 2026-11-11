@@ -1,9 +1,10 @@
-// 自动生成，请勿手改。
-// 重新生成：python tools/generate_keynames.py
-// 依赖：pip install pywin32
+// Generated file -- do not edit by hand.
+// Regenerate with: python tools/generate_keynames.py
+// Requirements: pip install pywin32
 //
-// 键名在生成机器的 Windows 语言与键盘布局下固定，
-// 发布后所有用户看到的显示名一致，不随系统变化。
+// Names are queried from the Windows GetKeyNameTextW API and therefore
+// match what the user sees on their own layout. The output is committed
+// so that builds stay reproducible across Windows versions.
 
 #pragma once
 
