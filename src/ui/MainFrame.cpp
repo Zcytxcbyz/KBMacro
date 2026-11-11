@@ -106,8 +106,20 @@ MainFrame::MainFrame()
               wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
 
-    // 窗口与任务栏图标
-    SetIcon(wxICON(IDI_APP_ICON));
+    // 图标：用数字资源 id + MAKEINTRESOURCEW。
+    // 不能用 wxICON(IDI_APP_ICON)——wxICON 会把参数“字符串化”成 "IDI_APP_ICON"，
+    // 而 resource.rc 里 IDI_APP_ICON 已被 resource.h 展开成数字 101，名字查不到。
+    if (const auto appIcon = static_cast<HICON>(::LoadImageW(
+            ::GetModuleHandleW(nullptr), MAKEINTRESOURCEW(IDI_APP_ICON), IMAGE_ICON, 0, 0,
+            LR_DEFAULTSIZE | LR_DEFAULTCOLOR))) {
+        wxIcon icon;
+        icon.CreateFromHICON(appIcon);   // CreateFromHICON 内部 CopyIcon，不会双释放
+        SetIcon(icon);
+        LOG_DEBUG("mainframe: icon applied from resource id {}", IDI_APP_ICON);
+            } else {
+                LOG_WARN("mainframe: icon resource id {} failed, GetLastError={}", IDI_APP_ICON,
+                         ::GetLastError());
+            }
 
     // 输入注入层初始化：只记一条"虚拟屏 + DPI"（干跑模式下会多一条 WARN）
     input::init();
