@@ -107,7 +107,13 @@ MainFrame::MainFrame()
     LOG_INFO("mainframe: creating");
 
     // 窗口与任务栏图标（资源见 res/resource.rc 的 "KBMACRO_ICON"）
-    SetIcon(wxIcon("KBMACRO_ICON", wxBITMAP_TYPE_ICO_RESOURCE));
+    const wxIcon appIcon(wxT("KBMACRO_ICON"), wxBITMAP_TYPE_ICO_RESOURCE);
+    if (appIcon.IsOk()) {
+        SetIcon(appIcon);
+        LOG_INFO("mainframe: icon {}x{} applied", appIcon.GetWidth(), appIcon.GetHeight());
+    } else {
+        LOG_WARN("mainframe: icon resource 'KBMACRO_ICON' not found");
+    }
 
     // 输入注入层初始化：只记一条"虚拟屏 + DPI"（干跑模式下会多一条 WARN）
     input::init();
