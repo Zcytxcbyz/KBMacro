@@ -480,6 +480,7 @@ void RecorderPanel::onSpeedChanged(wxCommandEvent &) {
     LOG_DEBUG("recorder: playback speed selected {}x", speed);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void RecorderPanel::syncSpeedFromConfig() {
     const double speed = ConfigManager::instance().config().playbackSpeed;
 
