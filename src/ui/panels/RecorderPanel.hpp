@@ -70,6 +70,9 @@ private:
 
     // ---- 运行模式 ----
     void onRunModeChanged(wxCommandEvent &event);
+    // 从 config 同步回放倍率下拉框（页面显示时调用）
+    void syncSpeedFromConfig();
+    void onShow(wxShowEvent &event);
     // 回放倍率变化：归一化到档位后立即落盘
     void onSpeedChanged(wxCommandEvent &event);
     void refreshEnableStates();

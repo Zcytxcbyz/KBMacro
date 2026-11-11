@@ -237,19 +237,7 @@ void RecorderPanel::buildUi() {
             m_choiceSpeed->Append(wxString::Format("%0.2fx", speed));
         }
 
-        {
-            const double speed = ConfigManager::instance().config().playbackSpeed;
-            int selection = 0;
-            int index = 0;
-            for (const double candidate: kPlaybackSpeeds) {
-                if (candidate == speed) {
-                    selection = index;
-                    break;
-                }
-                ++index;
-            }
-            m_choiceSpeed->SetSelection(selection);
-        }
+        syncSpeedFromConfig();
 
         m_btnStartPlayback = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_START_PLAYBACK));
         m_btnStopPlayback = new wxButton(staticBox, wxID_ANY, TR(IDS_RECORDER_BTN_STOP_PLAYBACK));
@@ -294,6 +282,7 @@ void RecorderPanel::buildUi() {
 
     // ---- 运行模式下拉框事件 ----
     m_choiceSpeed->Bind(wxEVT_CHOICE, &RecorderPanel::onSpeedChanged, this);
+    Bind(wxEVT_SHOW, &RecorderPanel::onShow, this);
     m_choiceRunMode->Bind(wxEVT_CHOICE, &RecorderPanel::onRunModeChanged, this);
     refreshEnableStates();
 }
@@ -489,6 +478,33 @@ void RecorderPanel::onSpeedChanged(wxCommandEvent &) {
     const double speed = kPlaybackSpeeds[sel];
     ConfigManager::instance().setPlaybackSpeed(speed);
     LOG_DEBUG("recorder: playback speed selected {}x", speed);
+}
+
+void RecorderPanel::syncSpeedFromConfig() {
+    const double speed = ConfigManager::instance().config().playbackSpeed;
+
+    // 档位表里找同一个值：Config 侧已经 snap 过，这里只做匹配
+    int selection = 0;
+    int index = 0;
+    for (const double candidate: kPlaybackSpeeds) {
+        if (candidate == speed) {
+            selection = index;
+            break;
+        }
+        ++index;
+    }
+
+    m_choiceSpeed->SetSelection(selection);
+}
+
+void RecorderPanel::onShow(wxShowEvent &event) {
+    event.Skip();
+
+    // 切回本页时同步一次：设置页的"恢复默认设置"会改 config，
+    // 但碰不到这个面板里的控件；显示时机自愈，比跨面板通知简单
+    if (event.IsShown()) {
+        syncSpeedFromConfig();
+    }
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
