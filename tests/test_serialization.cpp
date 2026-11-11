@@ -412,3 +412,33 @@ TEST(ActionJson, OldScriptWithoutRelativeStillParses) {
     EXPECT_FALSE(a.relative);
     EXPECT_EQ(a.x, 100);
 }
+
+TEST(ConfigRoundTrip, PlaybackSpeedRoundTrips) {
+    Config c;
+    c.playbackSpeed = 2.0;
+
+    const nlohmann::json j = c;
+    EXPECT_DOUBLE_EQ(j.at("playbackSpeed").get<double>(), 2.0);
+
+    const auto back = j.get<Config>();
+    EXPECT_DOUBLE_EQ(back.playbackSpeed, 2.0);
+}
+
+TEST(ConfigRoundTrip, PlaybackSpeedIsSnapped) {
+    // 手改的配置里可能是任意值：读入时归到最近档位
+    nlohmann::json j = Config{};
+    j["playbackSpeed"] = 1.37;
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 1.5);   // 离 1.5 最近
+
+    j["playbackSpeed"] = 10.0;
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 4.0);   // 最大的档
+
+    j["playbackSpeed"] = 0.1;
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, 0.25);  // 最小的档
+
+    j["playbackSpeed"] = 0.0;
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // 回默认
+
+    j.erase("playbackSpeed");
+    EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed);  // 缺字段同理
+}

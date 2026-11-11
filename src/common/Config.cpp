@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <utility>
+#include <cmath>
 
 #include "common/Config.hpp"
 #include "common/Types.hpp"
@@ -25,6 +26,7 @@ void to_json(nlohmann::json &j, const Config &c) {
     j["recordIgnoreInjected"] = c.recordIgnoreInjected;
     j["recordStartDelayMs"] = c.recordStartDelayMs;
     j["recordMaxActions"] = c.recordMaxActions;
+    j["playbackSpeed"] = c.playbackSpeed;
     j["alwaysOnTop"] = c.alwaysOnTop;
     j["tabIndex"] = c.tabIndex;
 
@@ -70,6 +72,7 @@ void from_json(const nlohmann::json &j, Config &c) {
     c.recordMaxActions = std::clamp(
         j.value("recordMaxActions", kRecordMaxActionsDefault),
         kRecordMaxActionsMin, kRecordMaxActionsMax);
+    c.playbackSpeed = snapPlaybackSpeed(j.value("playbackSpeed", kPlaybackSpeedDefault));
     c.alwaysOnTop = j.value("alwaysOnTop", false);
     c.tabIndex = j.value("tabIndex", 0);
 
@@ -115,4 +118,21 @@ void from_json(const nlohmann::json &j, Config &c) {
         c.flags.adaptationPreference = adaptationPreferenceFromString(
             f.value("adaptationPreference", std::string{"Ask"}));
     }
+}
+
+double snapPlaybackSpeed(const double speed) noexcept {
+    // NaN 与 <= 0 一律回默认档（!(x > 0) 同时挡掉 NaN）
+    if (!(speed > 0.0)) {
+        return kPlaybackSpeedDefault;
+    }
+
+    double best = kPlaybackSpeeds[0];
+    double bestDelta = std::abs(speed - best);
+    for (const double candidate: kPlaybackSpeeds) {
+        if (const double delta = std::abs(speed - candidate); delta < bestDelta) {
+            best = candidate;
+            bestDelta = delta;
+        }
+    }
+    return best;
 }

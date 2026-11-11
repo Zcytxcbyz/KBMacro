@@ -58,6 +58,8 @@ public:
     void setRecordIgnoreInjected(bool v);
     void setRecordStartDelayMs(int ms);
     void setRecordMaxActions(int n);
+    // 回放倍率：归到最近档位后落盘
+    void setPlaybackSpeed(double speed);
     void setAlwaysOnTop(bool on);
     void setHotkey(int index, const Hotkey &hk);
     void setHotkeyEnabled(int index, bool enabled);

@@ -116,6 +116,17 @@ void ConfigManager::setRecordMaxActions(const int n) {
     LOG_DEBUG("config: recordMaxActions set to {}", clamped);
 }
 
+void ConfigManager::setPlaybackSpeed(const double speed) {
+    const double snapped = snapPlaybackSpeed(speed);
+    if (snapped == m_config.playbackSpeed) {
+        return;
+    }
+
+    m_config.playbackSpeed = snapped;
+    save();
+    LOG_DEBUG("config: playback speed set to {}x", snapped);
+}
+
 void ConfigManager::setAlwaysOnTop(const bool on) {
     if (m_config.alwaysOnTop == on) return;
     m_config.alwaysOnTop = on;

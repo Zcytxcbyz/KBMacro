@@ -74,6 +74,14 @@ inline constexpr int kRecordMaxActionsMin = 0;
 inline constexpr int kRecordMaxActionsMax = 1000000;
 inline constexpr int kRecordMaxActionsDefault = 100000;
 
+// 回放倍率：只允许这几个档位，UI 下拉与配置文件共用同一张表
+inline constexpr double kPlaybackSpeeds[] = {0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0};
+inline constexpr double kPlaybackSpeedDefault = 1.0;
+
+// 把任意值归到最近的合法档位；<= 0 或 NaN 回默认档。
+// 配置文件是手改的，不保证在表里，读写两侧都过一遍这个函数。
+[[nodiscard]] double snapPlaybackSpeed(double speed) noexcept;
+
 struct Config {
     // 界面语言代码（"zh-CN" / "en-US"）。
     // 空串表示"用户从未主动选择过"，启动时回退到系统语言且不写回。
@@ -99,6 +107,10 @@ struct Config {
 
     // 单次录制的动作上限，0 = 不限
     int recordMaxActions = kRecordMaxActionsDefault;
+
+    // 回放倍率（2.0 = 两倍速）。只影响回放前对 delayMs/holdMs 的缩放，
+    // 不写进 *.macro.json
+    double playbackSpeed = kPlaybackSpeedDefault;
 
     bool alwaysOnTop = false;
 
@@ -145,6 +157,7 @@ struct Config {
 //     "recordIgnoreInjected": false,
 //     "recordStartDelayMs": 200,
 //     "recordMaxActions": 100000,
+//     "playbackSpeed": 1.0,
 //     "alwaysOnTop": false,
 //     "tabIndex": 0,
 //     "hotkeys": [ {...}, ... ],
