@@ -106,6 +106,9 @@ MainFrame::MainFrame()
               wxDefaultPosition, wxDefaultSize, initialStyle()) {
     LOG_INFO("mainframe: creating");
 
+    // 窗口与任务栏图标（资源见 res/resource.rc 的 "KBMACRO_ICON"）
+    SetIcon(wxIcon("KBMACRO_ICON", wxBITMAP_TYPE_ICO_RESOURCE));
+
     // 输入注入层初始化：只记一条"虚拟屏 + DPI"（干跑模式下会多一条 WARN）
     input::init();
 
