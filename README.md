@@ -84,8 +84,8 @@ CMake 3.25+, Conan 2, Ninja, and Python 3 (only for the helper scripts).
 
 ```powershell
 # 1. dependencies (Debug and Release are separate folders)
-conan install . --output-folder=build/debug   --build=missing -s build_type=Debug
-conan install . --output-folder=build/release --build=missing -s build_type=Release
+conan install . --output-folder=build/debug --build=missing --profile=profiles/debug
+conan install . --output-folder=build/release --build=missing --profile=profiles/release
 
 # 2. configure
 cmake --preset x64-debug
