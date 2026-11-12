@@ -1,15 +1,15 @@
 # ============================================================
-# KBMacro 单元测试
+# KBMacro unit tests
 #
-# 由根 CMakeLists 通过 add_subdirectory(tests) 引入。
-# 被测源码直接列出，不抽库——理由：目前被测的几块（序列化、
-# 枚举、路径判定）不依赖 wxWidgets，独立可编；等 T2 引入更多
-# 模块、依赖变复杂时再考虑抽 KBMacroCore。
+# Pulled in by the root CMakeLists through add_subdirectory(tests).
+# Tested sources are listed explicitly instead of being extracted into a library:
+# the current subjects (serialisation, enums, paths) do not depend on wxWidgets
+# and build standalone; extract KBMacroCore once more modules need it.
 # ============================================================
 
 include(GoogleTest)
 
-# 被测源文件（按需增删，与根 CMakeLists 的 SOURCES 有重叠部分）
+# Tested source files (add or remove as needed; overlaps the root SOURCES list)
 set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/common/Action.cpp
         ${CMAKE_SOURCE_DIR}/src/common/ClickerParams.cpp
@@ -20,7 +20,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/common/Utils.cpp
         ${CMAKE_SOURCE_DIR}/src/common/Timer.cpp
         ${CMAKE_SOURCE_DIR}/src/common/RunController.cpp
-        # 连点器模块：依赖 win32/Input.cpp 里的 input::click/wheel/moveTo
+        # clicker module: needs input::click / wheel / moveTo from win32/Input.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Clicker.cpp
         ${CMAKE_SOURCE_DIR}/src/win32/Input.cpp
         ${CMAKE_SOURCE_DIR}/src/modules/Keyboard.cpp
@@ -30,7 +30,7 @@ set(TESTED_SOURCES
         ${CMAKE_SOURCE_DIR}/src/common/ActionScale.cpp
 )
 
-# 测试文件
+# Test files
 set(TEST_SOURCES
         test_serialization.cpp
         test_enums.cpp
@@ -64,19 +64,19 @@ target_include_directories(KBMacroTests
         ${CMAKE_SOURCE_DIR}/res
 )
 
-# 与主目标一致的编译设置
+# Same compile settings as the main target
 target_compile_definitions(KBMacroTests
         PRIVATE
         _CRT_SECURE_NO_WARNINGS
         _USE_MATH_DEFINES
         NOMINMAX
         WIN32_LEAN_AND_MEAN
-        # 必须：让 win32/Input.cpp 在测试里编译成干跑版本，
-        # 否则单测会真的往当前桌面发鼠标事件。
+        # Required: build win32/Input.cpp in dry-run mode inside the tests,
+        # otherwise they would inject real mouse events into the desktop.
         KBMACRO_DRY_RUN
 )
 
-# 与主目标一致的 MSVC 架构宏补丁（winnt.h 需要）
+# Same MSVC target-architecture workaround as the main target (winnt.h needs it)
 if(MSVC)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         target_compile_definitions(KBMacroTests PRIVATE _AMD64_)
