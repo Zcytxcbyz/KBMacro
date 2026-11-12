@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ 生成的包含文件。
-// 供 resource.rc 使用
+// Microsoft Visual C++ generated include file.
+// Used by resource.rc
 
 #define IDI_APP_ICON                    101
 #define IDS_APP_TITLE                   1001
@@ -10,7 +10,7 @@
 #define IDS_TAB_SETTINGS                1013
 #define IDS_TAB_ABOUT                   1014
 
-// ---- RC 数据资源 ----
+// ---- RC data resources ----
 #define IDR_LICENSE_KBMACRO             201
 #define IDR_LICENSE_WXWIDGETS           202
 #define IDR_LICENSE_SPDLOG              203
@@ -19,7 +19,7 @@
 #define IDR_LICENSE_CONCURRENTQUEUE     206
 #define IDR_LICENSE_GTEST               207
 
-// ---- 通用（跨面板共用）----
+// ---- Common (shared across panels) ----
 #define IDS_COMMON_BTN_START             1101
 #define IDS_COMMON_BTN_STOP              1102
 #define IDS_COMMON_BTN_IMPORT            1103
@@ -38,7 +38,7 @@
 #define IDS_COMMON_GROUP_RUNMODE         1120
 #define IDS_COMMON_GROUP_ACTIONS         1121
 
-// ---- 参数 / 脚本导入导出（跨面板共用）----
+// ---- Parameter / script import-export (shared across panels) ----
 #define IDS_DIALOG_IMPORT_PARAMS        1201
 #define IDS_DIALOG_EXPORT_PARAMS        1202
 #define IDS_DIALOG_IMPORT_SCRIPT        1203
@@ -55,13 +55,13 @@
 #define IDS_MSG_MACRO_REPLACE_CONFIRM   1224
 #define IDS_MSG_NO_KEY_CONFIGURED       1225
 
-// ---- 坐标适配对话框 ----
+// ---- Coordinate adaptation dialog ----
 #define IDS_MSG_ADAPT_CONFIRM           1230
 #define IDS_MSG_ADAPT_REMEMBER          1231
 #define IDS_MSG_ADAPT_YES               1232
 #define IDS_MSG_ADAPT_NO                1233
 
-// ---- Clicker 面板 ----
+// ---- Clicker panel ----
 #define IDS_CLICKER_LABEL_X              2001
 #define IDS_CLICKER_LABEL_Y              2002
 #define IDS_CLICKER_LABEL_TYPE           2003
@@ -83,7 +83,7 @@
 #define IDS_CLICKER_GROUP_POS            2040
 #define IDS_CLICKER_GROUP_CLICK          2041
 
-// ---- Keyboard 面板 ----
+// ---- Keyboard panel ----
 #define IDS_KEYBOARD_GROUP_KEY           3001
 #define IDS_KEYBOARD_LABEL_KEY           3002
 #define IDS_KEYBOARD_KEY_UNSET           3003
@@ -93,7 +93,7 @@
 #define IDS_KEYBOARD_LABEL_HOLD          3007
 #define IDS_KEYBOARD_BTN_SEND_ONCE       3008
 
-// ---- Recorder 面板 ----
+// ---- Recorder panel ----
 #define IDS_RECORDER_GROUP_RECORD           4001
 #define IDS_RECORDER_BTN_START_RECORD       4002
 #define IDS_RECORDER_BTN_STOP_RECORD        4003
@@ -115,7 +115,7 @@
 #define IDS_RECORDER_LIST_COL_DELAY         4023
 #define IDS_RECORDER_LIST_COL_HOLD          4024
 
-// ---- Recorder 交付 ----
+// ---- Recorder delivery ----
 #define IDS_MSG_RECORD_EMPTY                4030
 #define IDS_MSG_RECORD_FAILED               4031
 #define IDS_MSG_RECORD_DELIVER              4032
@@ -124,7 +124,7 @@
 #define IDS_MSG_RECORD_CANCEL               4035
 #define IDS_RECORDER_LABEL_PLAYBACK_SPEED   4036
 
-// ---- Settings 面板 ----
+// ---- Settings panel ----
 #define IDS_SETTINGS_GROUP_GENERAL                  5001
 #define IDS_SETTINGS_LABEL_LANGUAGE                 5002
 #define IDS_SETTINGS_HINT_RESTART                   5003
@@ -172,7 +172,7 @@
 #define IDS_SETTINGS_TIMER_HYBRID                   5073
 #define IDS_SETTINGS_LABEL_HYBRID_SPIN              5074
 
-// ---- 设置：录制 ----
+// ---- Settings: recording ----
 #define IDS_SETTINGS_GROUP_RECORD                5080
 #define IDS_SETTINGS_LABEL_REC_MOVE_INTERVAL     5081
 #define IDS_SETTINGS_LABEL_REC_START_DELAY       5082
@@ -181,7 +181,7 @@
 #define IDS_SETTINGS_HINT_REC_MOVE_INTERVAL      5085
 #define IDS_SETTINGS_HINT_REC_MAX_ACTIONS        5086
 
-// ---- About 面板 ----
+// ---- About panel ----
 #define IDS_ABOUT_GROUP_APP            6001
 #define IDS_ABOUT_LABEL_NAME           6002
 #define IDS_ABOUT_LABEL_VERSION        6003
@@ -193,16 +193,16 @@
 #define IDS_ABOUT_GROUP_LICENSE        6020
 #define IDS_ABOUT_BTN_LICENSE          6021
 
-// ---- 热键捕获对话框 ----
+// ---- Hotkey capture dialog ----
 #define IDS_HOTKEY_DIALOG_HINT          7001
 #define IDS_HOTKEY_DIALOG_BTN_CLEAR     7002
 #define IDS_HOTKEY_DIALOG_MSG_INVALID   7003
 #define IDS_HOTKEY_DIALOG_MSG_CONFLICT  7004
 
-// ---- 坐标捕获覆盖层 ----
+// ---- Coordinate capture overlay ----
 #define IDS_CAPTURE_HINT                8001
 
-// ---- 状态栏 ----
+// ---- Status bar ----
 #define IDS_STATUS_READY                9001
 #define IDS_STATUS_HOTKEY_FAILED        9002
 #define IDS_STATUS_RUNNING              9003
@@ -213,7 +213,7 @@
 #define IDS_TASK_RECORD                 9013
 #define IDS_TASK_PLAYBACK               9014
 
-// ---- 动作编辑对话框 ----
+// ---- Action edit dialog ----
 #define IDS_ACTION_TYPE_MOUSE_MOVE      10001
 #define IDS_ACTION_TYPE_MOUSE_CLICK     10002
 #define IDS_ACTION_TYPE_MOUSE_WHEEL     10003
