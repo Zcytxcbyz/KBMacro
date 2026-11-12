@@ -61,3 +61,15 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+* text=auto eol=lf
+
+# Windows resource scripts and batch files want CRLF (matches .editorconfig).
+*.rc   text eol=crlf
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Real binaries: never touch.
+*.ico  binary
+*.png  binary
+*.exe  binary
