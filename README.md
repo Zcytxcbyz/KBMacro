@@ -142,11 +142,8 @@ manual smoke checklist instead.
 | Script | Purpose |
 |---|---|
 | `tools/build.py` | Sync the version into `CMakeLists.txt`/`resource.rc`/git tag, then configure and build |
-| `tools/format_rc.py` | Align the strings in `res/langs/*.rc` |
 | `tools/fetch_licenses.py` | Download the pinned third-party licenses into `res/licenses/` and regenerate `THIRD_PARTY_LICENSES.txt` |
-| `tools/check_comments_only.py` | Verify a diff touches comments only |
 | `tools/generate_keynames.py` | Regenerate `src/common/KeyNames.gen.hpp` (needs `pywin32`) |
-| `tools/make_icon.py` | Regenerate `res/resources/KBMacro.ico` from a PNG (needs Pillow) |
 
 ## Known limitations
 
