@@ -74,7 +74,7 @@ inline constexpr LangInfo kLangs[] = {
         .baseResId = 0, // no .rc fallback table: JSON or English only
         .code = "de-DE",
         .displayName = L"Deutsch"
-    }, // Lang::de-DE
+    }, // Lang::de_DE
     {
         .id = Lang::FR_FR,
         .jsonResId = IDR_LANG_FR_FR,
