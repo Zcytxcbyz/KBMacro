@@ -1,8 +1,8 @@
 #include "managers/LanguageManager.hpp"
 
 #include <iterator>
-#include <windows.h>
 #include <wil/resource.h>
+#include <windows.h>
 
 #include "common/LangTable.hpp"
 #include "common/Log.hpp"
@@ -21,7 +21,8 @@ void LanguageManager::loadTable(const int jsonResId) {
 
     const HINSTANCE instance = ::GetModuleHandleW(nullptr); // NOLINT(*-misplaced-const)
     const HRSRC found = ::FindResourceW(instance, // NOLINT(*-misplaced-const)
-        MAKEINTRESOURCEW(jsonResId), reinterpret_cast<LPCWSTR>(RT_RCDATA));
+                                        MAKEINTRESOURCEW(jsonResId),
+                                        reinterpret_cast<LPCWSTR>(RT_RCDATA));
     if (found == nullptr) {
         LOG_WARN("i18n: JSON table resource {} not found, using the fallback table", jsonResId);
         return;
@@ -95,8 +96,8 @@ void LanguageManager::setLanguageFromSystem() {
     // Chinese is the one family where the region changes the script, so it needs
     // its own rule instead of the generic prefix match below.
     if (family == "zh") {
-        const bool traditional = full.starts_with("zh-TW") || full.starts_with("zh-HK") ||
-                                 full.starts_with("zh-MO") || full.find("Hant") != std::string::npos;
+        const bool traditional = full.starts_with("zh-TW") || full.starts_with("zh-HK") || full.starts_with("zh-MO") ||
+                                 full.find("Hant") != std::string::npos;
         if (setLanguageByCode(traditional ? "zh-TW" : "zh-CN")) {
             return;
         }
