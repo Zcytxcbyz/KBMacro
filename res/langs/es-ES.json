@@ -1,6 +1,6 @@
 {
   "1001": "KBMacro",
-  "1010": "Clic de ratón",
+  "1010": "Clic automático",
   "1011": "Simulador de teclado",
   "1012": "Grabar y organizar",
   "1013": "Configuración",
@@ -105,7 +105,7 @@
   "5011": "Acción",
   "5012": "Atajo",
   "5014": "Modificar atajo…",
-  "5020": "Configuración",
+  "5020": "Gestión de la configuración",
   "5021": "Archivo de configuración:",
   "5022": "Exportar al directorio del programa",
   "5023": "Tras exportar, el próximo inicio usará el modo portátil",
