@@ -178,6 +178,9 @@ def conan_profile(preset: str) -> str:
     CMakeUserPresets.json, neither of which the default profile does."""
     return "profiles/" + ("debug" if "debug" in preset else "release")
 
+def build_type_of(preset: str) -> str:
+    return "Debug" if "debug" in preset else "Release"
+
 def run(command: list[str], cwd: Path = ROOT) -> None:
     print(f">> {' '.join(command)}")
     result = subprocess.run(command, cwd=cwd)
