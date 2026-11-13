@@ -21,9 +21,15 @@
 enum class Lang {
     EN_US,
     ZH_CN,
+    ZH_TW,
     DE_DE,
+    FR_FR,
+    JA_JP,
+    IT_IT,
+    ES_ES,
+    RU_RU,
     COUNT
-};
+}; // enum class Lang
 
 // One entry per language.
 //   jsonResId : RCDATA id of the JSON table, the primary source at runtime
@@ -47,21 +53,63 @@ inline constexpr LangInfo kLangs[] = {
         .baseResId = LANG_EN_US_BASE,
         .code = "en-US",
         .displayName = L"English"
-    },
+    }, // Lang::EN_US
     {
         .id = Lang::ZH_CN,
         .jsonResId = IDR_LANG_ZH_CN,
         .baseResId = LANG_ZH_CN_BASE,
         .code = "zh-CN",
         .displayName = L"简体中文"
-    },
+    }, // Lang::ZH_CN
+    {
+        .id = Lang::ZH_TW,
+        .jsonResId = IDR_LANG_ZH_TW,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "zh-TW",
+        .displayName = L"繁體中文"
+    }, // Lang::ZH_TW
     {
         .id = Lang::DE_DE,
         .jsonResId = IDR_LANG_DE_DE,
         .baseResId = 0, // no .rc fallback table: JSON or English only
         .code = "de-DE",
         .displayName = L"Deutsch"
-    },
+    }, // Lang::de-DE
+    {
+        .id = Lang::FR_FR,
+        .jsonResId = IDR_LANG_FR_FR,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "fr-FR",
+        .displayName = L"Français"
+    }, // Lang::FR_FR
+    {
+        .id = Lang::JA_JP,
+        .jsonResId = IDR_LANG_JA_JP,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "ja-JP",
+        .displayName = L"日本語"
+    }, // Lang::JA_JP
+    {
+        .id = Lang::IT_IT,
+        .jsonResId = IDR_LANG_IT_IT,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "it-IT",
+        .displayName = L"Italiano"
+    }, // Lang::IT_IT
+    {
+        .id = Lang::ES_ES,
+        .jsonResId = IDR_LANG_ES_ES,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "es-ES",
+        .displayName = L"Español"
+    }, // Lang::ES_ES
+    {
+        .id = Lang::RU_RU,
+        .jsonResId = IDR_LANG_RU_RU,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "ru-RU",
+        .displayName = L"Русский"
+    }, // Lang::RU_RU
 };
 
 static_assert(std::size(kLangs) == static_cast<std::size_t>(Lang::COUNT),

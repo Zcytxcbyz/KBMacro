@@ -23,6 +23,12 @@
 #define IDR_LANG_EN_US                  210
 #define IDR_LANG_ZH_CN                  211
 #define IDR_LANG_DE_DE                  212
+#define IDR_LANG_ZH_TW                  213
+#define IDR_LANG_FR_FR                  214
+#define IDR_LANG_JA_JP                  215
+#define IDR_LANG_IT_IT                  216
+#define IDR_LANG_ES_ES                  217
+#define IDR_LANG_RU_RU                  218
 
 // ---- Common (shared across panels) ----
 #define IDS_COMMON_BTN_START             1101
