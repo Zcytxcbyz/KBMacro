@@ -233,7 +233,7 @@ def build(preset: str) -> Path:
         raise BuildError(f"missing conan profile: {profile}")
 
     run(["conan", "install", ".", f"--output-folder={conan_dir(preset)}",
-         "--build=missing", f"--profile={profile}", "-s", f"build_type={build_type}"])
+         "--build=missing", f"--profile={profile}"])
     run(["cmake", "--preset", preset])
     run(["cmake", "--build", preset_rel(preset)])
 
