@@ -84,6 +84,7 @@ set(SOURCES
         src/modules/RecorderNormalize.cpp
         src/modules/Recorder.cpp
         src/common/ActionScale.cpp
+        src/common/LangTable.cpp
         # add .cpp files here
 )
 
@@ -130,6 +131,7 @@ set(HEADERS
         src/ui/DialogButtons.hpp
         src/ui/ListHelpers.hpp
         src/common/ActionScale.hpp
+        src/common/LangTable.hpp
         # add .h files here
 )
 

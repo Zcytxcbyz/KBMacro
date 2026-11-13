@@ -19,6 +19,10 @@
 #define IDR_LICENSE_CONCURRENTQUEUE     206
 #define IDR_LICENSE_GTEST               207
 
+// ---- Language string tables (JSON, primary at runtime; the .rc tables fall back) ----
+#define IDR_LANG_EN_US                  210
+#define IDR_LANG_ZH_CN                  211
+
 // ---- Common (shared across panels) ----
 #define IDS_COMMON_BTN_START             1101
 #define IDS_COMMON_BTN_STOP              1102
