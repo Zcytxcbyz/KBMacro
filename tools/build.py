@@ -160,24 +160,23 @@ def report(check_only: bool) -> int:
 # --------------------------------------------------------------------------- #
 
 def preset_dir(preset: str) -> Path:
-    if not preset.startswith("x64-"):
-        raise BuildError(f"unexpected preset name: {preset}")
     return ROOT / "build" / preset[len("x64-"):]
 
 
-def conan_dir(preset: str) -> Path:
+def preset_rel(preset: str) -> str:
+    """Relative, forward-slash form: what the command line should see."""
+    return "build/" + preset[len("x64-"):]
+
+
+def conan_dir(preset: str) -> str:
     """The -user presets reuse the Conan output of their base preset."""
-    return ROOT / "build" / preset[len("x64-"):].replace("-user", "")
+    return "build/" + preset[len("x64-"):].replace("-user", "")
 
 
-def build_type_of(preset: str) -> str:
-    return "Debug" if "debug" in preset else "Release"
-
-def conan_profile(preset: str) -> Path:
-    """Pick profiles/<type>: it pins the Ninja generator and keeps Conan away
-    from CMakeUserPresets.json, neither of which the default profile does."""
-    name = "debug" if "debug" in preset else "release"
-    return ROOT / "profiles" / name
+def conan_profile(preset: str) -> str:
+    """profiles/<type> pins the Ninja generator and keeps Conan away from
+    CMakeUserPresets.json, neither of which the default profile does."""
+    return "profiles/" + ("debug" if "debug" in preset else "release")
 
 def run(command: list[str], cwd: Path = ROOT) -> None:
     print(f">> {' '.join(command)}")
@@ -227,13 +226,13 @@ def build(preset: str) -> Path:
     build_type = build_type_of(preset)
 
     profile = conan_profile(preset)
-    if not profile.is_file():
+    if not (ROOT / profile).is_file():
         raise BuildError(f"missing conan profile: {profile}")
 
-    run(["conan", "install", ".", "--output-folder", str(conan_dir(preset)),
-         "--build=missing", "--profile", str(profile)])
+    run(["conan", "install", ".", f"--output-folder={conan_dir(preset)}",
+         "--build=missing", f"--profile={profile}", "-s", f"build_type={build_type}"])
     run(["cmake", "--preset", preset])
-    run(["cmake", "--build", str(binary_dir)])
+    run(["cmake", "--build", preset_rel(preset)])
 
     exe = binary_dir / "bin" / EXE_NAME
     if not exe.is_file():
