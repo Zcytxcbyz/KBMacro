@@ -138,15 +138,9 @@ python tools\build.py
 ```
 
 It syncs the version into `CMakeLists.txt` and `res/resource.rc`, runs
-`conan install`, configures and builds the `x64-release` preset, then reports
-the result — the version shown is read back from the executable itself, so it
-also proves both version numbers made it into the resources:
-
-```
-   exe      E:\Product\KBMacro\build\release\bin\KBMacro.exe
-   size     8,123,456 bytes
-   version  0.0.1.0
-```
+`conan install`, configures and builds the `x64-release` preset, then prints the
+executable's path, its size and the file version read back from the binary —
+which also proves both version numbers made it into the resources.
 
 | Flag | Effect |
 |---|---|
