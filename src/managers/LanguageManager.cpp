@@ -106,14 +106,12 @@ void LanguageManager::setLanguageFromSystem() {
     }
 
     // Any other region: de-AT -> de-DE, fr-CA -> fr-FR, es-MX -> es-ES.
-    for ([[maybe_unused]] const auto &info : kLangs) {
-        if (!family.empty()) {
-            const std::string prefix = family + "-";
-            for (const auto &lang_info : kLangs) {
-                if (lang_info.code.starts_with(prefix)) {
-                    setLanguage(lang_info.id);
-                    return;
-                }
+    if (!family.empty()) {
+        const std::string prefix = family + "-";
+        for (const auto &info : kLangs) {
+            if (info.code.starts_with(prefix)) {
+                setLanguage(info.id);
+                return;
             }
         }
     }
