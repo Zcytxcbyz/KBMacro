@@ -127,7 +127,46 @@ table refresh the resource script before building:
 ## Build from source
 
 Prerequisites: Visual Studio 2022 (or newer) with the C++ desktop workload,
-CMake 3.25+, Conan 2, Ninja, and Python 3 (only for the helper scripts).
+CMake 3.25+, Conan 2, Ninja, and Python 3 (for the helper scripts). Run every
+command below from a **Developer PowerShell** for Visual Studio — `cl.exe` and
+`ninja` only exist inside that environment.
+
+### One command
+
+```powershell
+python tools\build.py
+```
+
+It syncs the version into `CMakeLists.txt` and `res/resource.rc`, runs
+`conan install`, configures and builds the `x64-release` preset, then reports
+the result — the version shown is read back from the executable itself, so it
+also proves both version numbers made it into the resources:
+
+```
+   exe      E:\Product\KBMacro\build\release\bin\KBMacro.exe
+   size     8,123,456 bytes
+   version  0.0.1.0
+```
+
+| Flag | Effect |
+|---|---|
+| `--preset x64-debug-user` | build another preset (default: `x64-release`) |
+| `--version 1.2.3` | write that version into both files, then build |
+| `--check` | only compare tag / `CMakeLists.txt` / `resource.rc`, exit 1 on mismatch |
+| `--tag` | after a successful build, create the annotated tag `v<version>` |
+| `--no-build` | sync the version files and stop |
+| `--dry-run` | print what would change, write nothing |
+
+The script does not run the tests, so do that separately:
+
+```powershell
+ctest --test-dir build\debug-user --output-on-failure
+```
+
+### By hand
+
+The same three steps, spelled out. Debug and Release use separate build trees
+and separate Conan output folders:
 
 ```powershell
 # 1. dependencies (Debug and Release are separate folders)
