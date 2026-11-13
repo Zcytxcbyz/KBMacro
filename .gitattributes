@@ -65,7 +65,6 @@
 * text=auto eol=lf
 
 # Windows resource scripts and batch files want CRLF (matches .editorconfig).
-*.rc   text eol=crlf
 *.bat  text eol=crlf
 *.cmd  text eol=crlf
 

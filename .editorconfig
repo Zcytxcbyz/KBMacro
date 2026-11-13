@@ -30,5 +30,3 @@ indent_style = tab
 
 [*.rc]
 charset = utf-8-bom
-end_of_line = crlf
-
