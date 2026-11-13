@@ -173,6 +173,11 @@ def conan_dir(preset: str) -> Path:
 def build_type_of(preset: str) -> str:
     return "Debug" if "debug" in preset else "Release"
 
+def conan_profile(preset: str) -> Path:
+    """Pick profiles/<type>: it pins the Ninja generator and keeps Conan away
+    from CMakeUserPresets.json, neither of which the default profile does."""
+    name = "debug" if "debug" in preset else "release"
+    return ROOT / "profiles" / name
 
 def run(command: list[str], cwd: Path = ROOT) -> None:
     print(f">> {' '.join(command)}")
@@ -221,8 +226,12 @@ def build(preset: str) -> Path:
     binary_dir = preset_dir(preset)
     build_type = build_type_of(preset)
 
+    profile = conan_profile(preset)
+    if not profile.is_file():
+        raise BuildError(f"missing conan profile: {profile}")
+
     run(["conan", "install", ".", "--output-folder", str(conan_dir(preset)),
-         "--build=missing", "-s", f"build_type={build_type}"])
+         "--build=missing", "--profile", str(profile), "-s", f"build_type={build_type}"])
     run(["cmake", "--preset", preset])
     run(["cmake", "--build", str(binary_dir)])
 
