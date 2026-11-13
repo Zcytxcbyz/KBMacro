@@ -83,9 +83,42 @@ void LanguageManager::setLanguageFromSystem() {
         setLanguage(LANG_DEFAULT);
         return;
     }
-    if (!setLanguageByCode(utils::ToUtf8(buf))) {
-        setLanguage(LANG_DEFAULT);
+
+    const std::string full = utils::ToUtf8(buf);
+    if (setLanguageByCode(full)) {
+        return;
     }
+
+    const auto dash = full.find('-');
+    const std::string family = dash == std::string::npos ? full : full.substr(0, dash);
+
+    // Chinese is the one family where the region changes the script, so it needs
+    // its own rule instead of the generic prefix match below.
+    if (family == "zh") {
+        const bool traditional = full.starts_with("zh-TW") || full.starts_with("zh-HK") ||
+                                 full.starts_with("zh-MO") || full.find("Hant") != std::string::npos;
+        if (setLanguageByCode(traditional ? "zh-TW" : "zh-CN")) {
+            return;
+        }
+        if (setLanguageByCode("zh-CN")) {
+            return;
+        }
+    }
+
+    // Any other region: de-AT -> de-DE, fr-CA -> fr-FR, es-MX -> es-ES.
+    for ([[maybe_unused]] const auto &info : kLangs) {
+        if (!family.empty()) {
+            const std::string prefix = family + "-";
+            for (const auto &lang_info : kLangs) {
+                if (lang_info.code.starts_with(prefix)) {
+                    setLanguage(lang_info.id);
+                    return;
+                }
+            }
+        }
+    }
+
+    setLanguage(LANG_DEFAULT);
 }
 
 std::string_view LanguageManager::currentCode() const noexcept {

@@ -22,6 +22,7 @@
 // ---- Language string tables (JSON, primary at runtime; the .rc tables fall back) ----
 #define IDR_LANG_EN_US                  210
 #define IDR_LANG_ZH_CN                  211
+#define IDR_LANG_DE_DE                  212
 
 // ---- Common (shared across panels) ----
 #define IDS_COMMON_BTN_START             1101

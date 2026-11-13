@@ -21,6 +21,7 @@
 enum class Lang {
     EN_US,
     ZH_CN,
+    DE_DE,
     COUNT
 };
 
@@ -53,6 +54,13 @@ inline constexpr LangInfo kLangs[] = {
         .baseResId = LANG_ZH_CN_BASE,
         .code = "zh-CN",
         .displayName = L"简体中文"
+    },
+    {
+        .id = Lang::DE_DE,
+        .jsonResId = IDR_LANG_DE_DE,
+        .baseResId = 0, // no .rc fallback table: JSON or English only
+        .code = "de-DE",
+        .displayName = L"Deutsch"
     },
 };
 
