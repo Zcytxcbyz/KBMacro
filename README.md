@@ -30,7 +30,8 @@ coordinates, and explicit delay actions.
   monitor resolution
 - Three timer modes: `Sleep` (low CPU), `Spin` (busy wait, highest precision)
   and `Hybrid` (sleep first, busy wait for the last few milliseconds)
-- Chinese and English UI, switchable at runtime (requires restart)
+- Nine UI languages (English, 简体中文, 繁體中文, Deutsch, Français, 日本語,
+  Italiano, Español, Русский), switchable at runtime (requires restart)
 - Portable mode: keep the configuration next to the executable
 - Dry-run builds that log input actions instead of injecting them
 
@@ -77,6 +78,52 @@ most recent files are kept. Exported parameters and scripts use plain JSON:
 - `*.keyboard.json` — keyboard simulator parameters
 - `*.macro.json` — action list plus the screen specification it was recorded on
 
+### UI languages
+
+The UI ships in nine languages: English, 简体中文, 繁體中文, Deutsch, Français,
+日本語, Italiano, Español and Русский. Pick one in Settings; it takes effect
+after a restart.
+
+Each language is a JSON table in `res/langs/<code>.json`, embedded in the
+executable as `RCDATA`. English and Simplified Chinese also keep a Win32 string
+table (`res/langs/*.rc`) as a fallback.
+
+Lookup order at runtime:
+
+1. the JSON table of the current language
+2. its string table (only en-US and zh-CN have one)
+3. the English string table
+4. an empty string, with one warning in the log
+
+A partially translated file therefore still works, but a complete one is what
+you want: `i18n: loaded N entr(ies) from JSON resource 21x` should report the
+same N as `en-US.json` (203 at the time of writing) and no `WARN` should follow
+in the same run.
+
+To add a language:
+
+1. copy `res/langs/en-US.json` and translate the values — the keys are string
+   ids, do not rename them
+2. add an `IDR_LANG_*` id in `res/resource.h`
+3. register the file as `RCDATA` in `res/resource.rc`
+4. add one entry to `kLangs[]` in `res/lang.h`
+
+`tools/lang_json.py` keeps the JSON tables and the fallback `.rc` tables in
+sync:
+
+```powershell
+python tools/lang_json.py export   # .rc  -> .json
+python tools/lang_json.py import   # .json -> .rc (only the quoted text changes)
+python tools/lang_json.py check    # report drift, write nothing
+```
+
+CMake does not track the files referenced by `RCDATA`, so after editing a JSON
+table refresh the resource script before building:
+
+```powershell
+(Get-Item 'res\resource.rc').LastWriteTime = Get-Date
+```
+
 ## Build from source
 
 Prerequisites: Visual Studio 2022 (or newer) with the C++ desktop workload,
@@ -104,11 +151,15 @@ The executable ends up in `build\<config>\bin\KBMacro.exe`.
 |---|---|---|---|---|
 | `x64-debug` | `build/debug` | off | off | real |
 | `x64-release` | `build/release` | off | off | real |
-| `x64-debug-user` | `build/debug-user` | on | on | dry run |
-| `x64-release-user` | `build/release-user` | on | on | dry run |
+| `x64-debug-user` | `build/debug-user` | on | on | dry run¹ |
+| `x64-release-user` | `build/release-user` | on | on | dry run¹ |
 
 The `*-user` presets come from `CMakeUserPresets.json`, which is not tracked by
 git — copy and adjust them for your own workflow.
+
+¹ `ENABLE_DRY_RUN` is a cache variable, not a preset property: set it to `OFF`
+in `CMakeUserPresets.json` when you want logging plus real input. That is the
+combination the manual smoke tests use.
 
 ### CMake options
 
@@ -144,6 +195,7 @@ manual smoke checklist instead.
 | `tools/build.py` | Sync the version into `CMakeLists.txt`/`resource.rc`/git tag, then configure and build |
 | `tools/fetch_licenses.py` | Download the pinned third-party licenses into `res/licenses/` and regenerate `THIRD_PARTY_LICENSES.txt` |
 | `tools/generate_keynames.py` | Regenerate `src/common/KeyNames.gen.hpp` (needs `pywin32`) |
+| `tools/lang_json.py` | Convert between `res/langs/*.rc` and `res/langs/*.json` (`export`, `import`, `check`) |
 
 ## Known limitations
 
