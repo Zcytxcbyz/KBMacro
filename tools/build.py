@@ -10,7 +10,7 @@ Usage:
     python tools/build.py                       # build with the current version
     python tools/build.py --version 1.2.3       # sync all three, then build
     python tools/build.py --check               # verify only, exit 1 on mismatch
-    python tools/build.py --preset x64-debug-user
+    python tools/build.py --preset x64-debug
     python tools/build.py --no-build            # sync version files only
     python tools/build.py --tag                 # tag v1.2.3 after a good build
 

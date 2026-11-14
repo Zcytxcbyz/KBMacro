@@ -71,8 +71,9 @@ doing nothing.
 | Portable configuration | `KBMacro.exe.json` next to the executable (takes precedence) |
 | Logs | `logs\KBMacro_<timestamp>.log` next to the executable |
 
-Logs are written at `DEBUG` level by default in the `*-user` presets and the 30
-most recent files are kept. Exported parameters and scripts use plain JSON:
+Logs are written only when the build enables `ENABLE_LOGGING` — the presets in
+this repository leave it off. The 30 most recent files are kept. Exported
+parameters and scripts use plain JSON:
 
 - `*.clicker.json` — mouse clicker parameters
 - `*.keyboard.json` — keyboard simulator parameters
@@ -144,17 +145,20 @@ which also proves both version numbers made it into the resources.
 
 | Flag | Effect |
 |---|---|
-| `--preset x64-debug-user` | build another preset (default: `x64-release`) |
+| `--preset x64-debug` | build another preset (default: `x64-release`) |
 | `--version 1.2.3` | write that version into both files, then build |
 | `--check` | only compare tag / `CMakeLists.txt` / `resource.rc`, exit 1 on mismatch |
 | `--tag` | after a successful build, create the annotated tag `v<version>` |
 | `--no-build` | sync the version files and stop |
 | `--dry-run` | print what would change, write nothing |
 
-The script does not run the tests, so do that separately:
+The script does not run the tests, so do that separately. The presets here leave
+`ENABLE_TESTS` off, so turn it on for one configure pass:
 
 ```powershell
-ctest --test-dir build\debug-user --output-on-failure
+cmake --preset x64-debug -DENABLE_TESTS=ON
+cmake --build build/debug
+ctest --test-dir build/debug --output-on-failure
 ```
 
 ### By hand
@@ -184,15 +188,37 @@ The executable ends up in `build\<config>\bin\KBMacro.exe`.
 |---|---|---|---|---|
 | `x64-debug` | `build/debug` | off | off | real |
 | `x64-release` | `build/release` | off | off | real |
-| `x64-debug-user` | `build/debug-user` | on | on | dry run¹ |
-| `x64-release-user` | `build/release-user` | on | on | dry run¹ |
 
-The `*-user` presets come from `CMakeUserPresets.json`, which is not tracked by
-git — copy and adjust them for your own workflow.
+Both keep logging and tests off, so a plain `cmake --preset` behaves like a
+release build. For development you want them on — either override once:
 
-¹ `ENABLE_DRY_RUN` is a cache variable, not a preset property: set it to `OFF`
-in `CMakeUserPresets.json` when you want logging plus real input. That is the
-combination the manual smoke tests use.
+```powershell
+cmake --preset x64-debug -DENABLE_LOGGING=ON -DENABLE_TESTS=ON
+```
+
+or create your own preset in `CMakeUserPresets.json` (not tracked by git, so it
+stays local):
+
+```json
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "dev-debug",
+      "inherits": "x64-debug",
+      "binaryDir": "${sourceDir}/build/dev-debug",
+      "cacheVariables": {
+        "ENABLE_LOGGING": "ON",
+        "ENABLE_TESTS": "ON"
+      }
+    }
+  ]
+}
+```
+
+`inherits` carries the Conan toolchain path over, so run the `conan install` for
+`build/debug` first. Add `"ENABLE_DRY_RUN": "ON"` to the same block for a build
+that logs what it would send but never calls `SendInput`.
 
 ### CMake options
 
@@ -211,15 +237,15 @@ still happen, so the timing behaviour you see is the real one.
 ## Tests
 
 ```powershell
-cmake --preset x64-debug-user
-cmake --build build/debug-user
-ctest --test-dir build/debug-user --output-on-failure
+cmake --preset x64-debug -DENABLE_TESTS=ON
+cmake --build build/debug
+ctest --test-dir build/debug --output-on-failure
 ```
 
-The suite covers the pure logic only — run modes, timing, action
-serialisation, coordinate adaptation, hotkey text formatting, recording
-normalisation and speed scaling. UI, hooks and `SendInput` are covered by the
-manual smoke checklist instead.
+185 cases, a few seconds on a modern machine. The suite covers the pure logic
+only — run modes, timing, action serialisation, coordinate adaptation, hotkey
+text formatting, recording normalisation and speed scaling. UI, hooks and
+`SendInput` are covered by the manual smoke checklist instead.
 
 ## Tools
 
