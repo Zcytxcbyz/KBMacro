@@ -356,6 +356,10 @@ void SettingsPanel::refreshHotkeyList() {
         m_hotkeyList->CheckItem(row, cfg.hotkeyEnabled[i]);
     }
 
+    // Column 0 must fit the longest action name: ru-RU is much wider than English,
+    // and wxLIST_AUTOSIZE does not count the checkbox gutter added by EnableCheckBoxes().
+    uifit::autoSizeColumns(m_hotkeyList, FromDIP(28));
+
     // Spread all 11 rows out, no scrollbar inside the list (the page handles scrolling)
     uifit::fitListToRows(m_hotkeyList);
 }

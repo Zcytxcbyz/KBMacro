@@ -19,6 +19,7 @@
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/ListHelpers.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
 
 namespace {
@@ -357,6 +358,9 @@ void RecorderPanel::refreshList() {
         }
     }
 
+    // Action names and parameter text vary a lot between languages; let the
+    // columns follow the content instead of clipping at the fixed widths.
+    uifit::autoSizeColumns(m_listCtrl);
     refreshButtonStates();
 }
 

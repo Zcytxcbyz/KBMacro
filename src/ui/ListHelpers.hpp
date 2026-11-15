@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <vector>
 
 #include <wx/listctrl.h>
 #include <wx/scrolwin.h>
@@ -72,6 +73,63 @@ inline void forwardWheelToPage(wxWindow *child) {
 
         event.Skip();
     });
+}
+
+// Fit every column to its widest cell, then hand the overflow back to the
+// widest column so no horizontal scrollbar appears.
+//   gutter: extra pixels added to column 0 (checkbox gutter / icon column)
+// Columns never shrink below the width they had when the helper was called,
+// so AppendColumn() keeps acting as the per-column floor.
+inline void autoSizeColumns(wxListCtrl *list, const int gutter = 0) {
+    if (list == nullptr || list->GetColumnCount() == 0) {
+        return;
+    }
+
+    // Autosizing scans every item; a very long recording would make that wasteful.
+    if (list->GetItemCount() > 500) {
+        return;
+    }
+
+    const int count = list->GetColumnCount();
+    std::vector<int> floors;
+    floors.reserve(static_cast<std::size_t>(count));
+    for (int col = 0; col < count; ++col) {
+        floors.push_back(list->GetColumnWidth(col));
+    }
+
+    for (int col = 0; col < count; ++col) {
+        list->SetColumnWidth(col, wxLIST_AUTOSIZE_USEHEADER);
+        const int content = list->GetColumnWidth(col) + (col == 0 ? gutter : 0);
+        list->SetColumnWidth(col, std::max(content, floors[static_cast<std::size_t>(col)]));
+    }
+
+    const int client = list->GetClientSize().x;
+    if (client <= 0) {
+        return;
+    }
+
+    int total = 0;
+    for (int col = 0; col < count; ++col) {
+        total += list->GetColumnWidth(col);
+    }
+
+    // Take the excess back from whichever column is currently the widest.
+    int overflow = total - client;
+    while (overflow > 0) {
+        int widest = 0;
+        for (int col = 1; col < count; ++col) {
+            if (list->GetColumnWidth(col) > list->GetColumnWidth(widest)) {
+                widest = col;
+            }
+        }
+        const int slack = list->GetColumnWidth(widest) - floors[static_cast<std::size_t>(widest)];
+        if (slack <= 0) {
+            break;
+        }
+        const int shrink = std::min(overflow, slack);
+        list->SetColumnWidth(widest, list->GetColumnWidth(widest) - shrink);
+        overflow -= shrink;
+    }
 }
 
 } // namespace uifit
