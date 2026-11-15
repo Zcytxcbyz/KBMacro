@@ -1,8 +1,8 @@
 #include "managers/LanguageManager.hpp"
 
+#include <Windows.h>
 #include <iterator>
 #include <wil/resource.h>
-#include <Windows.h>
 
 #include "common/LangTable.hpp"
 #include "common/Log.hpp"

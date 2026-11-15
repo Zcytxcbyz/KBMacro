@@ -250,7 +250,9 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
             res.reason = st.stop_requested() ? FinishReason::Stopped : FinishReason::Completed;
         } catch (const std::exception &e) {
             LOG_ERROR( // NOLINT(*-lambda-function-name)
-                    "threadmanager: task {} threw: {}", taskKindName(kind), e.what());
+                    "threadmanager: task {} threw: {}",
+                    taskKindName(kind),
+                    e.what());
             res = TaskResult{.reason = FinishReason::Failed};
         } catch (...) {
             LOG_ERROR("threadmanager: task {} threw: unknown exception", // NOLINT(*-lambda-function-name)

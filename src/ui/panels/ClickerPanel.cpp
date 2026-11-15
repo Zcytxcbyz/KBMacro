@@ -9,9 +9,9 @@
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/HotkeyHint.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/panels/ClickerPanel.hpp"
-#include "ui/HotkeyHint.hpp"
 
 namespace {
 // Indexes of the click type combo box: the wheel range

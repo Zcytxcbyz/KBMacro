@@ -12,10 +12,10 @@
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
 #include "ui/DialogButtons.hpp"
-#include "ui/dialogs/HotkeyCaptureDialog.hpp"
-#include "ui/panels/KeyboardPanel.hpp"
 #include "ui/HotkeyHint.hpp"
 #include "ui/MainFrame.hpp"
+#include "ui/dialogs/HotkeyCaptureDialog.hpp"
+#include "ui/panels/KeyboardPanel.hpp"
 #include "win32/Input.hpp"
 
 namespace {
@@ -321,7 +321,9 @@ void KeyboardPanel::startWithCurrentParams() {
     // ReSharper disable once CppPassValueParameterByConstReference
     m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
         setRunning(false);
-        LOG_INFO("keyboard: finished, reason={}, executed={}", static_cast<int>(res.reason), res.executed); // NOLINT(*-lambda-function-name)
+        LOG_INFO("keyboard: finished, reason={}, executed={}",
+                 static_cast<int>(res.reason),
+                 res.executed); // NOLINT(*-lambda-function-name)
     });
     setRunning(true);
 }

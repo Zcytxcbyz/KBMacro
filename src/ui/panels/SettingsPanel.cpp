@@ -204,8 +204,12 @@ void SettingsPanel::buildConfigGroup(wxSizer *parent) {
     form->AddGrowableCol(1, 1);
 
     // The config path is long: ellipsize it instead of letting the label widen the whole page.
-    m_configPathText = new wxStaticText(staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                                        wxDefaultSize, wxST_ELLIPSIZE_MIDDLE | wxST_NO_AUTORESIZE);
+    m_configPathText = new wxStaticText(staticBox,
+                                        wxID_ANY,
+                                        wxEmptyString,
+                                        wxDefaultPosition,
+                                        wxDefaultSize,
+                                        wxST_ELLIPSIZE_MIDDLE | wxST_NO_AUTORESIZE);
     m_configPathText->SetMinSize(wxSize(FromDIP(280), -1));
 
     form->Add(new wxStaticText(staticBox, wxID_ANY, TR(IDS_SETTINGS_LABEL_CONFIG_PATH)), 0, wxALIGN_CENTER_VERTICAL);

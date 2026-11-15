@@ -19,9 +19,9 @@
 #include "managers/LanguageManager.hpp"
 #include "managers/ThreadManager.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/HotkeyHint.hpp"
 #include "ui/ListHelpers.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
-#include "ui/HotkeyHint.hpp"
 
 namespace {
 

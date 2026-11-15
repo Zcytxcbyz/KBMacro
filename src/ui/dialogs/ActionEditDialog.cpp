@@ -8,8 +8,8 @@
 #include "managers/LanguageManager.hpp"
 #include "ui/DialogButtons.hpp"
 #include "ui/HotkeyHint.hpp"
-#include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/MainFrame.hpp"
+#include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {

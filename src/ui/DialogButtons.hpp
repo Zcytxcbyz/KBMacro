@@ -33,7 +33,8 @@ inline void localize(wxWindow *owner) {
     };
 
     for (const auto &entry : kMap) {
-        if (auto *btn = wxDynamicCast(owner->FindWindow(entry.id), wxButton)) { // NOLINT(*-pro-type-static-cast-downcast)
+        if (auto *btn =
+                    wxDynamicCast(owner->FindWindow(entry.id), wxButton)) { // NOLINT(*-pro-type-static-cast-downcast)
             btn->SetLabel(TR(entry.resId));
         }
     }
