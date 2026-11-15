@@ -651,7 +651,20 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
                             /*requireMainKey=*/true,
                             [this, index](const Hotkey &hk) { return m_hotkeyMgr.isConflicting(hk, index); });
 
-    if (dlg.ShowModal() != wxID_OK) {
+    // Release the global hotkeys while capturing: RegisterHotKey swallows the key
+    // system-wide, so F1..F11 would fire their actions instead of being captured.
+    auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this));
+    if (frame != nullptr) {
+        frame->suspendHotkeys();
+    }
+
+    const int ret = dlg.ShowModal();
+
+    if (frame != nullptr) {
+        frame->resumeHotkeys();
+    }
+
+    if (ret != wxID_OK) {
         LOG_DEBUG("settings: hotkey[{}] modify cancelled", index);
         return;
     }
