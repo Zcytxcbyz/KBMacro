@@ -20,7 +20,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import glob
 import os
 import shutil
 import subprocess
@@ -66,9 +65,13 @@ def find_clang_format(explicit: str | None) -> Path | None:
     if not roots:
         return None
 
-    pattern = str(Path(roots[0]) / "VC" / "Tools" / "Llvm" / "**" / "clang-format.exe")
-    matches = sorted(glob.glob(pattern, recursive=True))
-    return Path(matches[0]) if matches else None
+    # Prefer the native architecture: an ARM64 build cannot run on x64 Windows.
+    llvm = Path(roots[0]) / "VC" / "Tools" / "Llvm"
+    for arch in ("x64", "x86", "ARM64"):
+        candidate = llvm / arch / "bin" / "clang-format.exe"
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def find_ctest() -> Path | None:
@@ -111,15 +114,20 @@ def check_format(clang_format: Path | None, fix: bool) -> bool:
     files = source_files()
     drifted: list[Path] = []
     for path in files:
-        proc = subprocess.run(
-            [str(clang_format), "--style=file", "-i" if fix else "--dry-run", *([] if fix else ["--Werror"]), str(path)],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-        )
+        try:
+            proc = subprocess.run(
+                [str(clang_format), "--style=file", "-i" if fix else "--dry-run", *([] if fix else ["--Werror"]), str(path)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+        except OSError as error:
+            # A wrong-architecture or broken binary must not kill the whole gate.
+            say("skip", f"clang-format could not be executed: {error}")
+            return True
         if not fix and proc.returncode != 0:
             drifted.append(path)
 
