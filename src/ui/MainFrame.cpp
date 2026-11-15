@@ -373,6 +373,16 @@ void MainFrame::reportHotkeyFailures() {
     LOG_WARN("mainframe: {} hotkey(s) failed to register", failed);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
+void MainFrame::suspendHotkeys() {
+    m_hotkeyMgr->unregisterAll();
+}
+
+void MainFrame::resumeHotkeys() {
+    m_hotkeyMgr->registerAll();
+    reportHotkeyFailures();
+}
+
 // ============================================================
 // status bar: three states = ready / running (lists the running tasks)
 // ============================================================

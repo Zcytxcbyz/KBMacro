@@ -51,6 +51,12 @@ public:
     // write the failure count to the status bar when registration fails
     void reportHotkeyFailures();
 
+    // Temporarily release every global hotkey. Key-capture dialogs need the raw key:
+    // RegisterHotKey swallows the key system-wide, so the dialog would never see it
+    // and the bound action would fire instead.
+    void suspendHotkeys();
+    void resumeHotkeys();
+
 private:
     // HotkeyManager callback entry: switch to the matching panel method
     void dispatchHotkeyAction(HotkeyAction action);

@@ -15,6 +15,7 @@
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
 #include "ui/HotkeyHint.hpp"
+#include "ui/MainFrame.hpp"
 #include "win32/Input.hpp"
 
 namespace {
@@ -236,7 +237,19 @@ void KeyboardPanel::onSetKey(wxCommandEvent &) {
                             TR(IDS_KEYBOARD_BTN_SET_KEY),
                             m_hotkey,
                             /*requireMainKey=*/false);
-    if (dlg.ShowModal() != wxID_OK) return;
+
+    auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this));
+    if (frame != nullptr) {
+        frame->suspendHotkeys();
+    }
+
+    const int ret = dlg.ShowModal();
+
+    if (frame != nullptr) {
+        frame->resumeHotkeys();
+    }
+
+    if (ret != wxID_OK) return;
 
     m_hotkey = dlg.getHotkey();
     refreshKeyDisplay();
