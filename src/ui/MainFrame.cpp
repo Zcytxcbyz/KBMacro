@@ -197,6 +197,9 @@ MainFrame::MainFrame()
     m_hotkeyMgr->registerAll();
     reportHotkeyFailures();
 
+    // hotkeys are registered by now: mirror them onto the panels' buttons
+    refreshHotkeyHints();
+
     // ---- 8. the status timer drives the status bar's three states: task state lives only in ThreadManager,
     //        panels refresh their own buttons, the main window polls and aggregates (<=300ms late, decoupled)
     Bind(wxEVT_TIMER, &MainFrame::onStatusTimer, this);
@@ -221,6 +224,19 @@ void MainFrame::rebuildTimer() {
     LOG_DEBUG("mainframe: timer rebuilt: mode={}, spinTail={}ms",
               timerModeToString(cfg.timerMode),
               cfg.timerHybridSpinMs);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void MainFrame::refreshHotkeyHints() {
+    if (m_clickerPanel != nullptr) {
+        m_clickerPanel->refreshHotkeyHints();
+    }
+    if (m_keyboardPanel != nullptr) {
+        m_keyboardPanel->refreshHotkeyHints();
+    }
+    if (m_recorderPanel != nullptr) {
+        m_recorderPanel->refreshHotkeyHints();
+    }
 }
 
 // ============================================================

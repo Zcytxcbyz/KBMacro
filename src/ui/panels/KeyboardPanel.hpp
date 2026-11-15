@@ -24,6 +24,8 @@ public:
     void startWithCurrentParams();
     void stop();
 
+    void refreshHotkeyHints();
+
     // Called by MainFrame from the hotkey path, equivalent to the user clicking "Send once".
     // No RunSpec / thread involved: calls SendInput once with the current hotkey.
     void sendOnce();

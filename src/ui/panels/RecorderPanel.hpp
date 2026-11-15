@@ -30,6 +30,8 @@ public:
     void startPlayback();
     void stopPlayback();
 
+    void refreshHotkeyHints();
+
 private:
     void buildUi();
 

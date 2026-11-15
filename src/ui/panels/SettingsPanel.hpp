@@ -38,6 +38,9 @@ private:
     // Refill the hotkey list (data source: ConfigManager::config().hotkeys)
     void refreshHotkeyList();
 
+    // Hotkey labels are mirrored on the panels' buttons; refresh them after any change.
+    void notifyHotkeyHints();
+
     // Refresh the config file path display
     void refreshConfigPathText();
 

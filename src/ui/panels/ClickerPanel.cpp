@@ -11,6 +11,7 @@
 #include "ui/DialogButtons.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/panels/ClickerPanel.hpp"
+#include "ui/HotkeyHint.hpp"
 
 namespace {
 // Indexes of the click type combo box: the wheel range
@@ -189,6 +190,7 @@ void ClickerPanel::buildUi() {
 
     // Initial state refresh
     refreshEnableStates();
+    refreshHotkeyHints();
 }
 
 // ============================================================
@@ -436,6 +438,15 @@ void ClickerPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == kRunModeTimed);
     m_spinCount->Enable(runMode == kRunModeCounted);
+}
+
+void ClickerPanel::refreshHotkeyHints() {
+    uibtn::applyHotkeyHint(m_btnStart, IDS_COMMON_BTN_START, HotkeyAction::StartClicker);
+    uibtn::applyHotkeyHint(m_btnStop, IDS_COMMON_BTN_STOP, HotkeyAction::StopClicker);
+
+    // Labels may have grown: let the sizer and the scroll range follow.
+    Layout();
+    FitInside();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

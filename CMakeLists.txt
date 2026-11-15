@@ -132,6 +132,7 @@ set(HEADERS
         src/ui/ListHelpers.hpp
         src/common/ActionScale.hpp
         src/common/LangTable.hpp
+        src/ui/HotkeyHint.hpp
         # add .h files here
 )
 

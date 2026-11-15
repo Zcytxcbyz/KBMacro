@@ -366,6 +366,12 @@ void SettingsPanel::refreshHotkeyList() {
     uifit::fitListToRows(m_hotkeyList);
 }
 
+void SettingsPanel::notifyHotkeyHints() {
+    if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this)); frame != nullptr) {
+        frame->refreshHotkeyHints();
+    }
+}
+
 // ReSharper disable once CppMemberFunctionMayBeConst
 void SettingsPanel::refreshConfigPathText() {
     const auto &path = ConfigManager::instance().currentPath();
@@ -661,6 +667,7 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     }
 
     refreshHotkeyList();
+    notifyHotkeyHints();
 }
 
 void SettingsPanel::onExportConfig(wxCommandEvent &) {
@@ -713,6 +720,7 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     // Refresh all widgets back to their defaults
     refreshFromConfig();
     refreshHotkeyList();
+    notifyHotkeyHints();
     refreshConfigPathText();
 
     // Always-on-top also returns to its default (false)
@@ -783,6 +791,8 @@ void SettingsPanel::onHotkeyChecked(wxListEvent &event) {
         // so the UI is not reverted; the failure shows up through HotkeyManager::failedCount.
         LOG_WARN("settings: hotkey[{}] setEnabled({}) failed (occupied?)", index, checked);
     }
+
+    notifyHotkeyHints();
 
     event.Skip();
 }

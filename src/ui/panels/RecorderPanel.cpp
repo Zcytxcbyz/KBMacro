@@ -21,6 +21,7 @@
 #include "ui/DialogButtons.hpp"
 #include "ui/ListHelpers.hpp"
 #include "ui/dialogs/ActionEditDialog.hpp"
+#include "ui/HotkeyHint.hpp"
 
 namespace {
 
@@ -290,6 +291,7 @@ void RecorderPanel::buildUi() {
     Bind(wxEVT_SHOW, &RecorderPanel::onShow, this);
     m_choiceRunMode->Bind(wxEVT_CHOICE, &RecorderPanel::onRunModeChanged, this);
     refreshEnableStates();
+    refreshHotkeyHints();
 }
 
 // ============================================================
@@ -529,6 +531,16 @@ void RecorderPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == 1);
     m_spinCount->Enable(runMode == 2);
+}
+
+void RecorderPanel::refreshHotkeyHints() {
+    uibtn::applyHotkeyHint(m_btnStartRecord, IDS_RECORDER_BTN_START_RECORD, HotkeyAction::StartRecord);
+    uibtn::applyHotkeyHint(m_btnStopRecord, IDS_RECORDER_BTN_STOP_RECORD, HotkeyAction::StopRecord);
+    uibtn::applyHotkeyHint(m_btnStartPlayback, IDS_RECORDER_BTN_START_PLAYBACK, HotkeyAction::StartPlayback);
+    uibtn::applyHotkeyHint(m_btnStopPlayback, IDS_RECORDER_BTN_STOP_PLAYBACK, HotkeyAction::StopPlayback);
+
+    Layout();
+    FitInside();
 }
 
 // ============================================================

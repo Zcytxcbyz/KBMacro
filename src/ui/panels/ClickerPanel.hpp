@@ -21,6 +21,10 @@ public:
     void startWithCurrentParams();
     void stop();
 
+    // Re-apply the button labels with the current global hotkeys: "Start (F1)".
+    // Called once after the UI is built and again whenever a hotkey changes.
+    void refreshHotkeyHints();
+
 private:
     // Toggle the "running" button state: disable Start and enable Stop while running
     void setRunning(bool running);

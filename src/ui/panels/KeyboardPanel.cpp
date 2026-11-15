@@ -14,6 +14,7 @@
 #include "ui/DialogButtons.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 #include "ui/panels/KeyboardPanel.hpp"
+#include "ui/HotkeyHint.hpp"
 #include "win32/Input.hpp"
 
 namespace {
@@ -160,6 +161,7 @@ void KeyboardPanel::buildUi() {
 
     refreshKeyDisplay();
     refreshEnableStates();
+    refreshHotkeyHints();
 }
 
 // ============================================================
@@ -382,6 +384,15 @@ void KeyboardPanel::refreshEnableStates() {
     const int runMode = m_choiceRunMode->GetSelection();
     m_spinDuration->Enable(runMode == kRunModeTimed);
     m_spinCount->Enable(runMode == kRunModeCounted);
+}
+
+void KeyboardPanel::refreshHotkeyHints() {
+    uibtn::applyHotkeyHint(m_btnSendOnce, IDS_KEYBOARD_BTN_SEND_ONCE, HotkeyAction::SendOnce);
+    uibtn::applyHotkeyHint(m_btnStart, IDS_COMMON_BTN_START, HotkeyAction::StartKeyboard);
+    uibtn::applyHotkeyHint(m_btnStop, IDS_COMMON_BTN_STOP, HotkeyAction::StopKeyboard);
+
+    Layout();
+    FitInside();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

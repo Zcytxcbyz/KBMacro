@@ -44,6 +44,10 @@ public:
     // The old instance stays alive via shared_ptr: running tasks finish on it, later tasks use the new one.
     void rebuildTimer();
 
+    // Re-label the panels' hotkey-driven buttons with the current keys ("Start (F1)").
+    // Called after the hotkey list changes on the settings tab.
+    void refreshHotkeyHints();
+
 private:
     // HotkeyManager callback entry: switch to the matching panel method
     void dispatchHotkeyAction(HotkeyAction action);
