@@ -46,6 +46,7 @@ BEGIN
     L(IDS_MSG_EXPORT_FAILED)                    "Export failed. Please check the file path."
     L(IDS_MSG_MACRO_REPLACE_CONFIRM)            "This will replace the current action list. Continue?"
     L(IDS_MSG_NO_KEY_CONFIGURED)                "Set a key in the keyboard simulator first."
+    L(IDS_MSG_KEY_IS_HOTKEY)                    "Key %s is used by a global hotkey; sending it will trigger that action.\nPick another key, or disable that hotkey in Settings first."
 
     // ---- Screen adaptation dialog ----
     L(IDS_MSG_ADAPT_CONFIRM)                    "Script was recorded at %d×%d (DPI %d),\ncurrent screen is %d×%d (DPI %d).\n\nScale coordinates proportionally?"

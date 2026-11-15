@@ -65,6 +65,7 @@
 #define IDS_MSG_EXPORT_FAILED           1223
 #define IDS_MSG_MACRO_REPLACE_CONFIRM   1224
 #define IDS_MSG_NO_KEY_CONFIGURED       1225
+#define IDS_MSG_KEY_IS_HOTKEY           1226
 
 // ---- Coordinate adaptation dialog ----
 #define IDS_MSG_ADAPT_CONFIRM           1230
