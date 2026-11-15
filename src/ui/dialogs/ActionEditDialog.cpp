@@ -298,7 +298,7 @@ void ActionEditDialog::onSetKey(wxCommandEvent &) {
 
     // Release the global hotkeys while capturing: RegisterHotKey swallows the key
     // system-wide, so F1..F11 would fire their actions instead of being captured.
-    auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this));
+    auto *frame = dynamic_cast<MainFrame *>(wxTheApp->GetTopWindow()); // NOLINT(*-pro-type-static-cast-downcast)
     if (frame != nullptr) {
         frame->suspendHotkeys();
     }
