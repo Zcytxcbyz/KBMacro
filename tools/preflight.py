@@ -112,6 +112,7 @@ def check_format(clang_format: Path | None, fix: bool) -> bool:
         return True
 
     files = source_files()
+    say("info", f"clang-format: {clang_format}")
     drifted: list[Path] = []
     for path in files:
         try:
