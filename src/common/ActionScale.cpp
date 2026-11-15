@@ -1,6 +1,7 @@
 #include "common/ActionScale.hpp"
 
 #include <algorithm>
+// ReSharper disable once CppUnusedIncludeDirective
 #include <cmath>
 
 namespace {

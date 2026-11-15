@@ -2,6 +2,7 @@
 
 #include <wx/listctrl.h>
 #include <wx/scrolwin.h>
+// ReSharper disable once CppUnusedIncludeDirective
 #include <wx/spinctrl.h>
 #include <wx/wx.h>
 

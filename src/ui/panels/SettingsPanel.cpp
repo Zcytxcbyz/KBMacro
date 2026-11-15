@@ -451,7 +451,7 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
             //   calling it inside an event handler is easily deferred or ignored (old window stays).
             //   ExitMainLoop exits the event loop directly, guaranteeing the old process quits.
             // OnExit is still called normally, so logs are flushed.
-            wxTheApp->ExitMainLoop();
+            wxTheApp->ExitMainLoop(); // NOLINT(*-pro-type-static-cast-downcast)
         } else {
             // Failed to launch the new process: do not exit, let the user keep using this instance
             // The config is already saved, so the next manual start still uses the new language.
@@ -550,7 +550,7 @@ void SettingsPanel::onRecorderMoveIntervalChanged(wxCommandEvent &event) {
 
 // ReSharper disable once CppMemberFunctionMayBeStatic
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
-void SettingsPanel::onRecorderIgnoreInjectedToggled(
+void SettingsPanel::onRecorderIgnoreInjectedToggled( // NOLINT(*-convert-member-functions-to-static)
         wxCommandEvent &event) { // NOLINT(*-convert-member-functions-to-static)
     const bool on = event.IsChecked();
     auto &cfgMgr = ConfigManager::instance();
@@ -600,7 +600,7 @@ void SettingsPanel::onAlwaysOnTopToggled(wxCommandEvent &event) {
     ConfigManager::instance().setAlwaysOnTop(on);
 
     // Apply to the window immediately
-    auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame);
+    auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame); // NOLINT(*-pro-type-static-cast-downcast)
     if (!frame) {
         LOG_WARN("settings: top-level frame not found");
         return;
@@ -710,7 +710,7 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     refreshConfigPathText();
 
     // Always-on-top also returns to its default (false)
-    if (auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame)) {
+    if (auto *frame = wxDynamicCast(wxGetTopLevelParent(this), wxFrame)) { // NOLINT(*-pro-type-static-cast-downcast)
         int style = frame->GetWindowStyleFlag();
         style &= ~wxSTAY_ON_TOP;
         frame->SetWindowStyleFlag(style);
