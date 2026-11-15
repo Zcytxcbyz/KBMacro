@@ -4,8 +4,10 @@
 
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"
+#include "common/Utils.hpp"
 #include "managers/LanguageManager.hpp"
 #include "ui/DialogButtons.hpp"
+#include "ui/HotkeyHint.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
 #include "ui/MainFrame.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
@@ -314,6 +316,12 @@ void ActionEditDialog::onSetKey(wxCommandEvent &) {
     }
 
     m_action.hotkey = dlg.getHotkey();
+
+    if (uibtn::warnIfHotkeyKey(this, m_action.hotkey.vk)) {
+        LOG_WARN("action dialog: key '{}' is bound to a global hotkey",
+                 utils::ToUtf8(utils::hotkeyToString(m_action.hotkey)));
+    }
+
     m_grid->GetPropertyByName(kPropKey)->SetValue(wxString(utils::hotkeyToString(m_action.hotkey)));
 }
 

@@ -35,6 +35,7 @@
   "1223": "Esportazione non riuscita. Controlla il percorso del file.",
   "1224": "Questa operazione sostituirà l'elenco azioni corrente. Continuare?",
   "1225": "Imposta prima un tasto nel simulatore tastiera.",
+  "1226": "Il tasto %s è assegnato a una scorciatoia globale; inviarlo attiverà quell'azione.\nScegli un altro tasto o disattiva prima la scorciatoia nelle impostazioni.",
   "1230": "Lo script è stato registrato a %d×%d (DPI %d),\nlo schermo attuale è %d×%d (DPI %d).\n\nRidimensionare le coordinate in proporzione?",
   "1231": "Ricorda la mia scelta",
   "1232": "Adatta",

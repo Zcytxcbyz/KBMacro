@@ -35,6 +35,7 @@
   "1223": "Échec de l'exportation. Veuillez vérifier le chemin du fichier.",
   "1224": "Cela remplacera la liste d'actions actuelle. Continuer ?",
   "1225": "Définissez d'abord une touche dans le simulateur de clavier.",
+  "1226": "La touche %s est utilisée par un raccourci global ; l'envoyer déclenchera cette action.\nChoisissez une autre touche ou désactivez d'abord ce raccourci dans les paramètres.",
   "1230": "Le script a été enregistré en %d×%d (DPI %d),\nl'écran actuel est en %d×%d (DPI %d).\n\nMettre les coordonnées à l'échelle proportionnellement ?",
   "1231": "Se souvenir de mon choix",
   "1232": "Adapter",

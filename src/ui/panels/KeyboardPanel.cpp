@@ -252,6 +252,11 @@ void KeyboardPanel::onSetKey(wxCommandEvent &) {
     if (ret != wxID_OK) return;
 
     m_hotkey = dlg.getHotkey();
+
+    if (uibtn::warnIfHotkeyKey(this, m_hotkey.vk)) {
+        LOG_WARN("keyboard: key '{}' is bound to a global hotkey", utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
+    }
+
     refreshKeyDisplay();
 
     LOG_DEBUG("keyboard: hotkey set to {}", utils::ToUtf8(utils::hotkeyToString(m_hotkey)));
@@ -272,6 +277,8 @@ void KeyboardPanel::sendOnce() {
         uibtn::messageBox(TR(IDS_MSG_NO_KEY_CONFIGURED), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
         return;
     }
+
+    static_cast<void>(uibtn::warnIfHotkeyKey(this, p.hotkey.vk));
 
     // One-shot send uses no thread and does not go through ThreadManager, so nothing catches exceptions;
     // we must catch them here: letting SendInputError escape the wx event loop calls terminate
@@ -302,6 +309,8 @@ void KeyboardPanel::startWithCurrentParams() {
         uibtn::messageBox(TR(IDS_MSG_NO_KEY_CONFIGURED), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);
         return;
     }
+
+    static_cast<void>(uibtn::warnIfHotkeyKey(this, p.hotkey.vk));
 
     LOG_INFO("keyboard: start requested (interval={}ms, key='{}', run={})",
              p.intervalMs,

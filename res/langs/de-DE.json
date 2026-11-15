@@ -35,6 +35,7 @@
   "1223": "Export fehlgeschlagen. Bitte prüfen Sie den Dateipfad.",
   "1224": "Die aktuelle Aktionsliste wird ersetzt. Fortfahren?",
   "1225": "Legen Sie zuerst eine Taste im Tastatur-Simulator fest.",
+  "1226": "Die Taste %s ist als globaler Hotkey belegt; beim Senden wird diese Aktion ausgelöst.\nBitte eine andere Taste wählen oder den Hotkey zuerst in den Einstellungen deaktivieren.",
   "1230": "Skript wurde mit %d×%d (DPI %d) aufgezeichnet,\nder aktuelle Bildschirm ist %d×%d (DPI %d).\n\nKoordinaten proportional skalieren?",
   "1231": "Auswahl merken",
   "1232": "Anpassen",

@@ -35,6 +35,7 @@
   "1223": "Export failed. Please check the file path.",
   "1224": "This will replace the current action list. Continue?",
   "1225": "Set a key in the keyboard simulator first.",
+  "1226": "Key %s is used by a global hotkey; sending it will trigger that action.\nPick another key, or disable that hotkey in Settings first.",
   "1230": "Script was recorded at %d×%d (DPI %d),\ncurrent screen is %d×%d (DPI %d).\n\nScale coordinates proportionally?",
   "1231": "Remember my choice",
   "1232": "Adapt",

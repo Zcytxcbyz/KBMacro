@@ -35,6 +35,7 @@
   "1223": "Error al exportar. Compruebe la ruta del archivo.",
   "1224": "Se reemplazará la lista de acciones actual. ¿Continuar?",
   "1225": "Configure primero una tecla en el simulador de teclado.",
+  "1226": "La tecla %s está asignada a un atajo global; al enviarla se activará esa acción.\nElige otra tecla o desactiva antes ese atajo en la configuración.",
   "1230": "El script se grabó a %d×%d (DPI %d),\nla pantalla actual es %d×%d (DPI %d).\n\n¿Escalar las coordenadas proporcionalmente?",
   "1231": "Recordar mi elección",
   "1232": "Adaptar",
