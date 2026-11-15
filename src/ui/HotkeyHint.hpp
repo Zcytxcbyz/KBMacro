@@ -13,6 +13,7 @@
 #include "common/Utils.hpp"
 #include "managers/ConfigManager.hpp"
 #include "managers/LanguageManager.hpp"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "managers/LanguageManager.hpp"
 #include "ui/DialogButtons.hpp"
 
