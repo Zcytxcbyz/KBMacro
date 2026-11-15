@@ -255,6 +255,7 @@ text formatting, recording normalisation and speed scaling. UI, hooks and
 | `tools/fetch_licenses.py` | Download the pinned third-party licenses into `res/licenses/` and regenerate `THIRD_PARTY_LICENSES.txt` |
 | `tools/generate_keynames.py` | Regenerate `src/common/KeyNames.gen.hpp` (needs `pywin32`) |
 | `tools/lang_json.py` | Convert between `res/langs/*.rc` and `res/langs/*.json` (`export`, `import`, `check`) |
+| `tools/preflight.py` | Pre-commit gate: language tables, formatting, tests |
 
 ## Known limitations
 
