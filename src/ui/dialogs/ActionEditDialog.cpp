@@ -7,6 +7,7 @@
 #include "managers/LanguageManager.hpp"
 #include "ui/DialogButtons.hpp"
 #include "ui/ScreenCaptureOverlay.hpp"
+#include "ui/MainFrame.hpp"
 #include "ui/dialogs/HotkeyCaptureDialog.hpp"
 
 namespace {
@@ -294,7 +295,23 @@ void ActionEditDialog::onCapturePosition(wxCommandEvent &) {
 // ============================================================
 void ActionEditDialog::onSetKey(wxCommandEvent &) {
     HotkeyCaptureDialog dlg(this, TR(IDS_ACTION_DIALOG_BTN_SET_KEY), m_action.hotkey, /*requireMainKey=*/false);
-    if (dlg.ShowModal() != wxID_OK) return;
+
+    // Release the global hotkeys while capturing: RegisterHotKey swallows the key
+    // system-wide, so F1..F11 would fire their actions instead of being captured.
+    auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this));
+    if (frame != nullptr) {
+        frame->suspendHotkeys();
+    }
+
+    const int ret = dlg.ShowModal();
+
+    if (frame != nullptr) {
+        frame->resumeHotkeys();
+    }
+
+    if (ret != wxID_OK) {
+        return;
+    }
 
     m_action.hotkey = dlg.getHotkey();
     m_grid->GetPropertyByName(kPropKey)->SetValue(wxString(utils::hotkeyToString(m_action.hotkey)));
