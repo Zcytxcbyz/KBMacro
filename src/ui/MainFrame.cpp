@@ -363,6 +363,7 @@ void MainFrame::dispatchHotkeyAction(const HotkeyAction action) {
 void MainFrame::reportHotkeyFailures() {
     const int failed = m_hotkeyMgr->failedCount();
     if (failed <= 0) {
+        m_statusBar->SetNotice(wxString());
         LOG_INFO("mainframe: all configured hotkeys registered");
         return;
     }

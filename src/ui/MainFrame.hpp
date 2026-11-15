@@ -48,6 +48,9 @@ public:
     // Called after the hotkey list changes on the settings tab.
     void refreshHotkeyHints();
 
+    // write the failure count to the status bar when registration fails
+    void reportHotkeyFailures();
+
 private:
     // HotkeyManager callback entry: switch to the matching panel method
     void dispatchHotkeyAction(HotkeyAction action);
@@ -57,9 +60,6 @@ private:
 
     // wxEVT_CLOSE_WINDOW handler: save window geometry + current tab, then allow the close
     void onClose(wxCloseEvent &event);
-
-    // write the failure count to the status bar when registration fails
-    void reportHotkeyFailures();
 
     void refreshStatus();
     void onStatusTimer(wxTimerEvent &event);

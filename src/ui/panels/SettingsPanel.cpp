@@ -369,6 +369,7 @@ void SettingsPanel::refreshHotkeyList() {
 void SettingsPanel::notifyHotkeyHints() {
     if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this)); frame != nullptr) {
         frame->refreshHotkeyHints();
+        frame->reportHotkeyFailures(); // hotkey set may have failed: refresh the status-bar notice
     }
 }
 
