@@ -44,4 +44,4 @@ public:
     }
 };
 
-wxIMPLEMENT_APP(KBMacroApp);
+wxIMPLEMENT_APP(KBMacroApp); // NOLINT(*-pro-type-static-cast-downcast)

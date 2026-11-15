@@ -166,6 +166,7 @@ void AboutPanel::buildUi() {
 
 // Full license texts are shown in a modal dialog: content is just a long text + an OK button,
 // not worth a dedicated class. Texts run into thousands of lines, so use wxTE_RICH2 for smooth scrolling.
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void AboutPanel::onShowLicense(wxCommandEvent &event) {
     (void)event;
 

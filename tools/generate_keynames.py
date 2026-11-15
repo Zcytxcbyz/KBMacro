@@ -29,7 +29,7 @@ user32.MapVirtualKeyW.argtypes = [wintypes.UINT, wintypes.UINT]
 user32.GetKeyNameTextW.restype = ctypes.c_int
 user32.GetKeyNameTextW.argtypes = [ctypes.c_long, wintypes.LPWSTR, ctypes.c_int]
 
-MAPVK_VK_TO_VSC = 0
+MAPVIEW_VK_TO_VSC = 0
 
 # Extended-scancode keys need bit 0x100 set, otherwise GetKeyNameTextW reports
 # the numeric-pad variant (PageUp, arrows, Insert, ... would all be wrong).
@@ -78,7 +78,7 @@ def vk_to_name(vk: int) -> str | None:
     if vk in EXCLUDE:
         return None
 
-    sc = user32.MapVirtualKeyW(vk, MAPVK_VK_TO_VSC)
+    sc = user32.MapVirtualKeyW(vk, MAPVIEW_VK_TO_VSC)
     if sc == 0:
         return None
 

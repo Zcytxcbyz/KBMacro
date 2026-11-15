@@ -230,9 +230,9 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
 
             // stale notification: belongs to the previous run, drop it
             if (gen != s.generation) {
-                LOG_DEBUG("threadmanager: stale result ignored: gen={} (current={})",
+                LOG_DEBUG("threadmanager: stale result ignored: gen={} (current={})", // NOLINT(*-lambda-function-name)
                           gen,
-                          s.generation); // NOLINT(*-lambda-function-name)
+                          s.generation);
                 return;
             }
 
@@ -249,12 +249,12 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
             res = body(st);
             res.reason = st.stop_requested() ? FinishReason::Stopped : FinishReason::Completed;
         } catch (const std::exception &e) {
-            LOG_ERROR(
-                    "threadmanager: task {} threw: {}", taskKindName(kind), e.what()); // NOLINT(*-lambda-function-name)
+            LOG_ERROR( // NOLINT(*-lambda-function-name)
+                    "threadmanager: task {} threw: {}", taskKindName(kind), e.what());
             res = TaskResult{.reason = FinishReason::Failed};
         } catch (...) {
-            LOG_ERROR("threadmanager: task {} threw: unknown exception",
-                      taskKindName(kind)); // NOLINT(*-lambda-function-name)
+            LOG_ERROR("threadmanager: task {} threw: unknown exception", // NOLINT(*-lambda-function-name)
+                      taskKindName(kind));
             res = TaskResult{.reason = FinishReason::Failed};
         }
 

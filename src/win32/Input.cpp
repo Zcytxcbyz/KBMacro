@@ -142,6 +142,7 @@ void sendEvents(std::vector<INPUT> events, std::string what, std::vector<INPUT> 
     const auto expected = static_cast<UINT>(events.size());
 
     // dry run: no SendInput call, assume everything was inserted
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     UINT sent = expected;
     if constexpr (!kDryRun) {
         sent = ::SendInput(expected, events.data(), static_cast<int>(sizeof(INPUT)));

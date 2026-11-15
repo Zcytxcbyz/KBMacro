@@ -33,7 +33,7 @@ SEPARATOR = "=" * 80
 
 
 @dataclass(frozen=True)
-class Library:
+class Library:  # type: ignore[class-has-no-init]
     name: str
     version: str
     license_name: str
@@ -121,7 +121,7 @@ def download(url: str) -> str:
     request = urllib.request.Request(
         url, headers={"User-Agent": "KBMacro-license-fetch/1.0"}
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30) as response:  # type: ignore[inconsistent-returns]
         if response.status != 200:
             raise urllib.error.HTTPError(url, response.status, "unexpected status", None, None)
         return normalize(response.read())

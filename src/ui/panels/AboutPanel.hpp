@@ -1,5 +1,6 @@
 #pragma once
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include <wx/hyperlink.h>
 #include <wx/listctrl.h>
 #include <wx/scrolwin.h>

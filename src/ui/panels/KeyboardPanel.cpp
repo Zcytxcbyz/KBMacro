@@ -297,7 +297,7 @@ void KeyboardPanel::startWithCurrentParams() {
     // ReSharper disable once CppPassValueParameterByConstReference
     m_threadMgr.StartKeyboard(p, [this](const TaskResult res) {
         setRunning(false);
-        LOG_INFO("keyboard: finished, reason={}, executed={}", static_cast<int>(res.reason), res.executed);
+        LOG_INFO("keyboard: finished, reason={}, executed={}", static_cast<int>(res.reason), res.executed); // NOLINT(*-lambda-function-name)
     });
     setRunning(true);
 }

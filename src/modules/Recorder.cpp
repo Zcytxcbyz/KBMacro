@@ -306,6 +306,7 @@ struct CaptureState {
 bool drainInto(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &queue) {
     static thread_local std::array<RawHookEvent, kDrainBatch> batch{};
 
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     std::size_t got = 0;
     while ((got = queue.try_dequeue_bulk(batch.data(), batch.size())) > 0) {
         for (std::size_t i = 0; i < got; ++i) {
@@ -328,6 +329,7 @@ void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &qu
     const auto started = ITimer::now();
 
     MSG msg{};
+    // ReSharper disable once CppInitializedValueIsAlwaysRewritten
     bool limitReached = false;
 
     while (true) {

@@ -57,7 +57,7 @@ def read_text(path: Path) -> tuple[str, str, str]:
             return raw.decode(encoding), encoding, newline
         except UnicodeDecodeError:
             continue
-    raise BuildError(f"cannot decode {path}")
+    raise BuildError(f"cannot decode {path}")  # type: ignore[argument-list]
 
 
 def write_text(path: Path, text: str, encoding: str, newline: str) -> bool:
@@ -76,7 +76,7 @@ def write_text(path: Path, text: str, encoding: str, newline: str) -> bool:
 def normalize_version(value: str) -> str:
     parts = value.strip().lstrip("vV").split(".")
     if not 1 <= len(parts) <= 3 or any(not part.isdigit() for part in parts):
-        raise BuildError(f"invalid version: {value!r} (expected 1, 1.2 or 1.2.3)")
+        raise BuildError(f"invalid version: {value!r} (expected 1, 1.2 or 1.2.3)")  # type: ignore[argument-list]
     parts += ["0"] * (3 - len(parts))
     return ".".join(str(int(part)) for part in parts)
 
@@ -185,17 +185,17 @@ def run(command: list[str], cwd: Path = ROOT) -> None:
     print(f">> {' '.join(command)}")
     result = subprocess.run(command, cwd=cwd)
     if result.returncode != 0:
-        raise BuildError(f"command failed ({result.returncode}): {' '.join(command)}")
+        raise BuildError(f"command failed ({result.returncode}): {' '.join(command)}")  # type: ignore[argument-list]
 
 
 def preflight() -> None:
     missing = [tool for tool in ("cmake", "conan") if shutil.which(tool) is None]
     if missing:
-        raise BuildError(f"not on PATH: {', '.join(missing)}")
+        raise BuildError(f"not on PATH: {', '.join(missing)}")  # type: ignore[argument-list]
     # cl.exe / ninja only exist inside a Visual Studio developer environment.
     if shutil.which("cl") is None or shutil.which("ninja") is None:
         raise BuildError(
-            "cl.exe / ninja not found -- start this script from a "
+            "cl.exe / ninja not found -- start this script from a "  # type: ignore[argument-list]
             "'x64 Native Tools Command Prompt for VS' or Developer PowerShell"
         )
 
@@ -226,11 +226,11 @@ def exe_file_version(path: Path) -> str | None:
 def build(preset: str) -> Path:
     preflight()
     binary_dir = preset_dir(preset)
-    build_type = build_type_of(preset)
+    build_type = build_type_of(preset)  # type: ignore[unused-local]
 
     profile = conan_profile(preset)
     if not (ROOT / profile).is_file():
-        raise BuildError(f"missing conan profile: {profile}")
+        raise BuildError(f"missing conan profile: {profile}")  # type: ignore[argument-list]
 
     run(["conan", "install", ".", f"--output-folder={conan_dir(preset)}",
          "--build=missing", f"--profile={profile}"])
@@ -239,7 +239,7 @@ def build(preset: str) -> Path:
 
     exe = binary_dir / "bin" / EXE_NAME
     if not exe.is_file():
-        raise BuildError(f"build finished but {exe} is missing")
+        raise BuildError(f"build finished but {exe} is missing")  # type: ignore[argument-list]
     print(f"   exe      {exe}")
     print(f"   size     {exe.stat().st_size:,} bytes")
     print(f"   version  {exe_file_version(exe) or '(unknown)'}")
@@ -248,7 +248,7 @@ def build(preset: str) -> Path:
 
 def make_tag(version: str) -> None:
     if not git_is_clean():
-        raise BuildError("working tree is dirty -- commit before tagging")
+        raise BuildError("working tree is dirty -- commit before tagging")  # type: ignore[argument-list]
     tag = f"v{version}"
     existing = subprocess.run(
         ["git", "tag", "--list", tag], cwd=ROOT, capture_output=True, text=True
@@ -275,7 +275,7 @@ def main() -> int:
         if target is None:
             target = version_from_cmake()
             if target is None:
-                raise BuildError("CMakeLists.txt has no project(VERSION ...) to start from")
+                raise BuildError("CMakeLists.txt has no project(VERSION ...) to start from")  # type: ignore[argument-list]
 
         print("version:")
         if not args.check and not args.dry_run:

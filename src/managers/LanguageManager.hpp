@@ -4,8 +4,8 @@
 #include <string_view>
 #include <unordered_map>
 
-// ReSharper disable once CppUnusedIncludeDirective
 #include "lang.h"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "resource.h"
 
 class LanguageManager {

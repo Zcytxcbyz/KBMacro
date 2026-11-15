@@ -332,6 +332,7 @@ void ClickerPanel::startWithCurrentParams() {
 
     // ThreadManager ignores this request while already running (the same task must not run concurrently),
     // so ignore the return value and flip the buttons to "started"; the callback flips them back on real exit
+    // ReSharper disable once CppPassValueParameterByConstReference
     m_threadMgr.StartClicker(p, [this](const TaskResult res) {
         setRunning(false);
         LOG_INFO("clicker: finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)

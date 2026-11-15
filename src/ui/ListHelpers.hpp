@@ -36,7 +36,7 @@ inline void fitListToRows(wxListCtrl *list) {
 
     // update the scrolled page's virtual size too, otherwise its scroll range stays stale
     for (wxWindow *w = parent; w != nullptr; w = w->GetParent()) {
-        if (auto *page = wxDynamicCast(w, wxScrolledWindow)) {
+        if (auto *page = wxDynamicCast(w, wxScrolledWindow)) { // NOLINT(*-pro-type-static-cast-downcast)
             page->FitInside();
             break;
         }
@@ -52,7 +52,7 @@ inline void forwardWheelToPage(wxWindow *child) {
 
     child->Bind(wxEVT_MOUSEWHEEL, [child](wxMouseEvent &event) {
         for (wxWindow *w = child->GetParent(); w != nullptr; w = w->GetParent()) {
-            auto *page = wxDynamicCast(w, wxScrolledWindow);
+            auto *page = wxDynamicCast(w, wxScrolledWindow); // NOLINT(*-pro-type-static-cast-downcast)
             if (page == nullptr) {
                 continue;
             }

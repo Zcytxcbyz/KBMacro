@@ -38,7 +38,7 @@ public:
 
     // Number of waits with the given duration (the only way to tell holds from round intervals)
     [[nodiscard]] std::size_t countWaits(const Duration d) const {
-        return static_cast<std::size_t>(std::count(m_waited.begin(), m_waited.end(), d));
+        return static_cast<std::size_t>(std::ranges::count(m_waited, d));
     }
 
 private:

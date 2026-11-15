@@ -3,9 +3,9 @@
 KBMacroStatusBar::KBMacroStatusBar(wxWindow *parent)
     : wxStatusBar(parent, wxID_ANY) {
     // field 0: run status (flexible); field 1: persistent notice (fixed width)
-    SetFieldsCount(2);
+    wxStatusBar::SetFieldsCount(2);
     const int widths[2] = {-1, FromDIP(240)};
-    SetStatusWidths(2, widths);
+    wxStatusBar::SetStatusWidths(2, widths);
 }
 
 void KBMacroStatusBar::SetMessage(const wxString &text) {

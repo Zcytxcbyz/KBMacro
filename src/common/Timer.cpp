@@ -1,5 +1,6 @@
 #include "common/Timer.hpp"
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include <immintrin.h> // _mm_pause()
 #include <thread> // std::this_thread::sleep_for
 

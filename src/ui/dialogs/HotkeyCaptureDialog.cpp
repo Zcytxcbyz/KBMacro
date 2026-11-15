@@ -2,6 +2,7 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <utility>
+// ReSharper disable once CppUnusedIncludeDirective
 #include <wx/statbox.h>
 
 #include "common/Hotkey.hpp"

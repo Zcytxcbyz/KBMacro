@@ -15,10 +15,10 @@ struct ModifierEntry {
 };
 
 constexpr ModifierEntry kModifiers[] = {
-        {L"Ctrl", hk::kModCtrl},
-        {L"Shift", hk::kModShift},
-        {L"Alt", hk::kModAlt},
-        {L"Win", hk::kModWin},
+        {.name = L"Ctrl", .bit = hk::kModCtrl},
+        {.name = L"Shift", .bit = hk::kModShift},
+        {.name = L"Alt", .bit = hk::kModAlt},
+        {.name = L"Win", .bit = hk::kModWin},
 };
 
 unsigned modifierBit(const std::wstring_view name) {
