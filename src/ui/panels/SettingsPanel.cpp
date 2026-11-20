@@ -398,6 +398,31 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     // User switched back to the current language: do nothing
     if (newLang == curLang) return;
 
+    const int ret = showRestartPrompt();
+
+    if (ret == wxID_CANCEL) {
+        // Revert the widget to the current language
+        for (std::size_t i = 0; i < std::size(kLangs); ++i) {
+            if (kLangs[i].id == curLang) {
+                m_choiceLanguage->SetSelection(static_cast<int>(i));
+                break;
+            }
+        }
+        LOG_DEBUG("settings: language change cancelled");
+        return;
+    }
+
+    // Persist (an explicit user choice = remember it)
+    ConfigManager::instance().setLanguage(kLangs[sel].code);
+    LOG_INFO("settings: language changed to '{}'", kLangs[sel].code);
+
+    if (ret == wxID_YES) {
+        restartApplication();
+    }
+    // wxID_NO = restart later: do nothing, the config is already saved
+}
+
+int SettingsPanel::showRestartPrompt() {
     // Three-way choice: restart now / restart later / cancel.
     // Not wxMessageDialog: its parent classes only provide SetOKLabel / SetYesNoLabels /
     // SetYesNoCancelLabels, no SetCancelLabel, so the cancel button would always read "Cancel".
@@ -426,59 +451,42 @@ void SettingsPanel::onLanguageChanged(wxCommandEvent &event) {
     dlg.SetSizerAndFit(root);
     dlg.CentreOnParent();
     btnNow->SetDefault(); // Enter = restart now
-    const int ret = dlg.ShowModal();
+    return dlg.ShowModal();
+}
 
-    if (ret == wxID_CANCEL) {
-        // Revert the widget to the current language
-        for (std::size_t i = 0; i < std::size(kLangs); ++i) {
-            if (kLangs[i].id == curLang) {
-                m_choiceLanguage->SetSelection(static_cast<int>(i));
-                break;
-            }
-        }
-        LOG_DEBUG("settings: language change cancelled");
+void SettingsPanel::restartApplication() {
+    const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
+    LOG_INFO("settings: restarting immediately, exe={}", utils::ToUtf8(exePath.ToStdWstring()));
+
+    // The path below goes through ExitMainLoop, which does not fire wxEVT_CLOSE_WINDOW,
+    // and the new process reads the config right away. So save the window state explicitly.
+    // The order matters: save → yield hotkeys → launch the new process → exit the old one.
+    if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
+        frame->saveWindowState();
+    }
+
+    // These 11 global hotkeys must be yielded before restarting: RegisterHotKey is exclusive,
+    // and the new process registers within tens of milliseconds; if the old process still holds
+    // them, all registrations fail (1409). Unregister before launching, the order must not change.
+    m_hotkeyMgr.unregisterAll();
+
+    if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
+        // New process started.
+        // Use ExitMainLoop rather than Close(true):
+        //   Close is a "request to close the window" handled by the event loop;
+        //   calling it inside an event handler is easily deferred or ignored (old window stays).
+        //   ExitMainLoop exits the event loop directly, guaranteeing the old process quits.
+        // OnExit is still called normally, so logs are flushed.
+        wxTheApp->ExitMainLoop(); // NOLINT(*-pro-type-static-cast-downcast)
         return;
     }
 
-    // Persist (an explicit user choice = remember it)
-    ConfigManager::instance().setLanguage(kLangs[sel].code);
-    LOG_INFO("settings: language changed to '{}'", kLangs[sel].code);
-
-    if (ret == wxID_YES) {
-        // Restart now
-        const wxString exePath = wxStandardPaths::Get().GetExecutablePath();
-        LOG_INFO("settings: restarting immediately, exe={}", utils::ToUtf8(exePath.ToStdWstring()));
-
-        // The path below goes through ExitMainLoop, which does not fire wxEVT_CLOSE_WINDOW,
-        // and the new process reads the config right away. So save the window state explicitly.
-        // The order matters: save → yield hotkeys → launch the new process → exit the old one.
-        if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
-            frame->saveWindowState();
-        }
-
-        // These 11 global hotkeys must be yielded before restarting: RegisterHotKey is exclusive,
-        // and the new process registers within tens of milliseconds; if the old process still holds
-        // them, all registrations fail (1409). Unregister before launching, the order must not change.
-        m_hotkeyMgr.unregisterAll();
-
-        if (wxExecute(wxString::Format("\"%s\"", exePath), wxEXEC_ASYNC) > 0) {
-            // New process started.
-            // Use ExitMainLoop rather than Close(true):
-            //   Close is a "request to close the window" handled by the event loop;
-            //   calling it inside an event handler is easily deferred or ignored (old window stays).
-            //   ExitMainLoop exits the event loop directly, guaranteeing the old process quits.
-            // OnExit is still called normally, so logs are flushed.
-            wxTheApp->ExitMainLoop(); // NOLINT(*-pro-type-static-cast-downcast)
-        } else {
-            // Failed to launch the new process: do not exit, let the user keep using this instance
-            // The config is already saved, so the next manual start still uses the new language.
-            // But we just unregistered the hotkeys, so register them back or this instance loses them.
-            LOG_ERROR("settings: failed to launch new instance");
-            m_hotkeyMgr.registerAll();
-            LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}", m_hotkeyMgr.failedCount());
-        }
-    }
-    // wxID_NO = restart later: do nothing, the config is already saved
+    // Failed to launch the new process: do not exit, let the user keep using this instance
+    // The config is already saved, so the next manual start still uses the new language.
+    // But we just unregistered the hotkeys, so register them back or this instance loses them.
+    LOG_ERROR("settings: failed to launch new instance");
+    m_hotkeyMgr.registerAll();
+    LOG_WARN("settings: hotkeys re-registered after restart failure, failed={}", m_hotkeyMgr.failedCount());
 }
 
 void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
@@ -729,6 +737,10 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
             uibtn::messageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM), TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
+    // resetToDefaults() clears config.language, so the next start follows the system locale
+    // instead. Only a non-empty value means the user had an explicit choice that is being lost.
+    const std::string languageBefore = ConfigManager::instance().config().language;
+
     ConfigManager::instance().resetToDefaults();
 
     // After the reset: every hotkey in the config is empty, so register them again
@@ -750,6 +762,25 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
     }
 
     LOG_INFO("settings: reset to defaults completed");
+
+    if (languageBefore.empty()) {
+        return;
+    }
+
+    LOG_INFO("settings: reset cleared the UI language (was '{}'), asking for restart", languageBefore);
+    const int choice = showRestartPrompt();
+    if (choice == wxID_YES) {
+        restartApplication();
+        return;
+    }
+    if (choice == wxID_CANCEL) {
+        // Keep the language this window is already in, and write it back so the next start
+        // agrees with what the user sees on screen.
+        ConfigManager::instance().setLanguage(languageBefore);
+        refreshFromConfig();
+        LOG_INFO("settings: reset keeps the UI language '{}'", languageBefore);
+    }
+    // wxID_NO = restart later: config stays at the default, the next start follows the system
 }
 
 void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {

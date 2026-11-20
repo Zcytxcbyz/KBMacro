@@ -44,6 +44,13 @@ private:
     // Refresh the config file path display
     void refreshConfigPathText();
 
+    // Three-way restart prompt shared by the language switcher and the reset path:
+    // wxID_YES = restart now, wxID_NO = restart later, wxID_CANCEL = keep the current language.
+    [[nodiscard]] int showRestartPrompt();
+
+    // Unregister the global hotkeys, save the window geometry, launch a new instance and exit.
+    void restartApplication();
+
     void onLanguageChanged(wxCommandEvent &event);
     void onTimerModeChanged(const wxCommandEvent &event);
     void onHybridSpinChanged(wxCommandEvent &event);
