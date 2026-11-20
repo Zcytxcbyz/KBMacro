@@ -886,9 +886,8 @@ RecorderPanel::AdaptChoice RecorderPanel::askAdaptCoordinates(const ScreenSpec &
                                           currentSpec.dpi);
 
     wxRichMessageDialog dlg(this, msg, TR(IDS_APP_TITLE), wxYES_NO | wxCANCEL | wxICON_QUESTION);
-    dlg.SetYesNoCancelLabels(wxString(TR(IDS_MSG_ADAPT_YES)),
-                             wxString(TR(IDS_MSG_ADAPT_NO)),
-                             wxString(TR(IDS_COMMON_BTN_CANCEL)));
+    dlg.SetYesNoCancelLabels(
+            wxString(TR(IDS_MSG_ADAPT_YES)), wxString(TR(IDS_MSG_ADAPT_NO)), wxString(TR(IDS_COMMON_BTN_CANCEL)));
     dlg.ShowCheckBox(TR(IDS_MSG_ADAPT_REMEMBER));
 
     const int ret = dlg.ShowModal();

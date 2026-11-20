@@ -270,6 +270,13 @@ text formatting, recording normalisation and speed scaling. UI, hooks and
 - Playback speed scales delays and hold times, not the cost of the input
   actions themselves, so very short actions end up slower than the nominal
   multiplier.
+- A script whose delays are all zero runs as fast as the machine allows; the
+  clicker can spin through thousands of rounds per second. Add an interval if
+  that matters.
+- Two instances share `%APPDATA%\KBMacro\config.json`; whichever closes last
+  overwrites the window geometry remembered by the other.
+- Closing the window while recording discards what has been recorded so far:
+  no delivery dialog is shown and the actions are dropped.
 
 ## Third-party components
 

@@ -21,12 +21,12 @@ struct HeldKey {
     return (hk.vk & 0xFFFFu) | (hk.modifiers << 16);
 }
 
-    // Release every key still held down.
-    // Normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
-    // cutoff landed exactly between down and up -- without this fix the key would stay stuck.
-    //   loud: true only on thread exit. A release at round end is a routine safety net (an unbalanced
-    //         script repeats it every round), so it must not flood the log at warning level.
-    void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held, const bool loud) {
+// Release every key still held down.
+// Normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
+// cutoff landed exactly between down and up -- without this fix the key would stay stuck.
+//   loud: true only on thread exit. A release at round end is a routine safety net (an unbalanced
+//         script repeats it every round), so it must not flood the log at warning level.
+void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held, const bool loud) {
     int released = 0;
     for (auto &val : held | std::views::values) {
         auto &[hotkey, count] = val;
@@ -53,9 +53,9 @@ void pressHeldButton(std::unordered_map<MouseButton, int> &held, const MouseButt
     ++held[button];
 }
 
-    // Release every mouse button still held down (once per round end and once on thread exit).
-    // loud has the same meaning as in releaseHeldKeys().
-    void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool loud) {
+// Release every mouse button still held down (once per round end and once on thread exit).
+// loud has the same meaning as in releaseHeldKeys().
+void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool loud) {
     int released = 0;
     for (auto &[button, count] : held) {
         if (count <= 0) continue;

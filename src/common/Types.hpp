@@ -101,7 +101,7 @@ struct RunSpec {
     // not run until the user notices. Infinite is one click away in the dropdown.
     RunMode mode = RunMode::Counted;
     int durationSec = 10; // only valid when mode == Timed
-    int count = 1;        // only valid when mode == Counted
+    int count = 1; // only valid when mode == Counted
     int startDelayMs = 0; // wait this long after thread start before the first action (independent of mode)
 };
 
