@@ -127,9 +127,9 @@ inline void to_json(nlohmann::json &j, const RunSpec &r) {
 
 inline void from_json(const nlohmann::json &j, RunSpec &r) {
     r = RunSpec{};
-    r.mode = runModeFromString(j.value("mode", std::string{"Infinite"}));
+    r.mode = runModeFromString(j.value("mode", std::string{"Counted"}));
     r.durationSec = j.value("durationSec", 10);
-    r.count = j.value("count", 100);
+    r.count = j.value("count", 1);
     r.startDelayMs = j.value("startDelayMs", 0);
 }
 
