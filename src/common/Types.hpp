@@ -85,21 +85,23 @@ inline constexpr RunModeEntry kRunModeEntries[] = {
     for (const auto &[mode, name] : kRunModeEntries) {
         if (name == s) return mode;
     }
-    return RunMode::Infinite;
+    return RunMode::Counted;
 }
 
 [[nodiscard]] constexpr std::string_view runModeToString(const RunMode m) noexcept {
     for (const auto &[mode, name] : kRunModeEntries) {
         if (mode == m) return name;
     }
-    return "Infinite";
+    return "Counted";
 }
 
 // run mode parameters: infinite / timed / fixed count
 struct RunSpec {
-    RunMode mode = RunMode::Infinite;
+    // Counted/1 by default: pressing start should do something finite and obvious,
+    // not run until the user notices. Infinite is one click away in the dropdown.
+    RunMode mode = RunMode::Counted;
     int durationSec = 10; // only valid when mode == Timed
-    int count = 100; // only valid when mode == Counted
+    int count = 1;        // only valid when mode == Counted
     int startDelayMs = 0; // wait this long after thread start before the first action (independent of mode)
 };
 

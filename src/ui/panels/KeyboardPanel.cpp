@@ -102,12 +102,12 @@ void KeyboardPanel::buildUi() {
         m_choiceRunMode->Append(TR(IDS_COMMON_RUNMODE_INFINITE));
         m_choiceRunMode->Append(TR(IDS_COMMON_RUNMODE_TIMED));
         m_choiceRunMode->Append(TR(IDS_COMMON_RUNMODE_COUNTED));
-        m_choiceRunMode->SetSelection(0);
+        m_choiceRunMode->SetSelection(kRunModeCounted);
 
         m_spinDuration = new wxSpinCtrl(
                 staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 86400, 10);
         m_spinCount = new wxSpinCtrl(
-                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 999999, 100);
+                staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 999999, 1);
         m_spinStartDelay = new wxSpinCtrl(
                 staticBox, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 5000, 0);
 
