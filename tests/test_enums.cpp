@@ -36,7 +36,7 @@ TEST(RunModeConversion, RoundTrip) {
     }
 }
 
-TEST(RunModeConversion, UnknownFallsBackToInfinite) {
+TEST(RunModeConversion, UnknownFallsBackToCounted) {
     EXPECT_EQ(runModeFromString("bogus"), RunMode::Counted);
 }
 
