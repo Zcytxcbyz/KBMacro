@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <iterator>
+#include <optional>
 #include <wil/resource.h>
 
 #include "common/LangTable.hpp"
@@ -78,16 +79,25 @@ bool LanguageManager::setLanguageByCode(std::string_view code) {
     return false;
 }
 
-void LanguageManager::setLanguageFromSystem() {
+Lang LanguageManager::resolveSystemLanguage() {
     wchar_t buf[LOCALE_NAME_MAX_LENGTH] = {};
     if (::GetUserDefaultLocaleName(buf, LOCALE_NAME_MAX_LENGTH) <= 0) {
-        setLanguage(LANG_DEFAULT);
-        return;
+        return LANG_DEFAULT;
     }
 
     const std::string full = utils::ToUtf8(buf);
-    if (setLanguageByCode(full)) {
-        return;
+
+    const auto lookup = [](const std::string_view code) -> std::optional<Lang> {
+        for (const auto &info : kLangs) {
+            if (std::string_view{info.code} == code) {
+                return info.id;
+            }
+        }
+        return std::nullopt;
+    };
+
+    if (const auto exact = lookup(full)) {
+        return *exact;
     }
 
     const auto dash = full.find('-');
@@ -98,11 +108,11 @@ void LanguageManager::setLanguageFromSystem() {
     if (family == "zh") {
         const bool traditional = full.starts_with("zh-TW") || full.starts_with("zh-HK") || full.starts_with("zh-MO") ||
                                  full.find("Hant") != std::string::npos;
-        if (setLanguageByCode(traditional ? "zh-TW" : "zh-CN")) {
-            return;
+        if (const auto picked = lookup(traditional ? "zh-TW" : "zh-CN")) {
+            return *picked;
         }
-        if (setLanguageByCode("zh-CN")) {
-            return;
+        if (const auto simplified = lookup("zh-CN")) {
+            return *simplified;
         }
     }
 
@@ -110,14 +120,17 @@ void LanguageManager::setLanguageFromSystem() {
     if (!family.empty()) {
         const std::string prefix = family + "-";
         for (const auto &info : kLangs) {
-            if (info.code.starts_with(prefix)) {
-                setLanguage(info.id);
-                return;
+            if (std::string_view{info.code}.starts_with(prefix)) {
+                return info.id;
             }
         }
     }
 
-    setLanguage(LANG_DEFAULT);
+    return LANG_DEFAULT;
+}
+
+void LanguageManager::setLanguageFromSystem() {
+    setLanguage(resolveSystemLanguage());
 }
 
 std::string_view LanguageManager::currentCode() const noexcept {

@@ -18,6 +18,10 @@ public:
 
     void setLanguageFromSystem();
 
+    // The language a start without an explicit config code would pick: the system locale mapped
+    // to a known code, otherwise LANG_DEFAULT. Pure: it does not change the current language.
+    [[nodiscard]] static Lang resolveSystemLanguage();
+
     [[nodiscard]] Lang currentLang() const noexcept { return m_lang; }
 
     [[nodiscard]] std::string_view currentCode() const noexcept;

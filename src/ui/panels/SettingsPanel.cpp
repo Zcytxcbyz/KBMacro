@@ -737,10 +737,6 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
             uibtn::messageBox(TR(IDS_SETTINGS_MSG_RESET_CONFIRM), TR(IDS_APP_TITLE), wxYES_NO | wxICON_QUESTION, this);
     if (ret != wxID_YES) return;
 
-    // resetToDefaults() clears config.language, so the next start follows the system locale
-    // instead. Only a non-empty value means the user had an explicit choice that is being lost.
-    const std::string languageBefore = ConfigManager::instance().config().language;
-
     ConfigManager::instance().resetToDefaults();
 
     // After the reset: every hotkey in the config is empty, so register them again
@@ -763,24 +759,25 @@ void SettingsPanel::onResetDefaults(wxCommandEvent &) {
 
     LOG_INFO("settings: reset to defaults completed");
 
-    if (languageBefore.empty()) {
-        return;
+    // resetToDefaults() clears config.language, so the next start follows the system locale.
+    // Only ask when that would actually change what is on screen right now.
+    if (LanguageManager::instance().currentLang() != LanguageManager::resolveSystemLanguage()) {
+        LOG_INFO("settings: reset changes the UI language ({}) to the system default, asking for restart",
+                 LanguageManager::instance().currentCode());
+        const int choice = showRestartPrompt();
+        if (choice == wxID_YES) {
+            restartApplication();
+            return;
+        }
+        if (choice == wxID_CANCEL) {
+            // Keep the language this window is already in, and pin it in the config so the next
+            // start agrees with what the user sees.
+            ConfigManager::instance().setLanguage(std::string(LanguageManager::instance().currentCode()));
+            refreshFromConfig();
+            LOG_INFO("settings: reset keeps the UI language '{}'", LanguageManager::instance().currentCode());
+        }
+        // wxID_NO = restart later: config stays at the default, the next start follows the system
     }
-
-    LOG_INFO("settings: reset cleared the UI language (was '{}'), asking for restart", languageBefore);
-    const int choice = showRestartPrompt();
-    if (choice == wxID_YES) {
-        restartApplication();
-        return;
-    }
-    if (choice == wxID_CANCEL) {
-        // Keep the language this window is already in, and write it back so the next start
-        // agrees with what the user sees on screen.
-        ConfigManager::instance().setLanguage(languageBefore);
-        refreshFromConfig();
-        LOG_INFO("settings: reset keeps the UI language '{}'", languageBefore);
-    }
-    // wxID_NO = restart later: config stays at the default, the next start follows the system
 }
 
 void SettingsPanel::onDeletePortableConfig(wxCommandEvent &) {
