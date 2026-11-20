@@ -12,9 +12,7 @@ void adaptActions(std::vector<Action> &actions, const ScreenSpec &from, const Sc
         return;
     }
 
-    // identical specs need no work; skip the whole loop
-    if (from.width == to.width && from.height == to.height) return;
-
+    int adapted = 0;
     for (Action &action : actions) {
         // relative coordinates are offsets and independent of resolution; do not scale them
         if (action.relative) continue;
@@ -26,9 +24,11 @@ void adaptActions(std::vector<Action> &actions, const ScreenSpec &from, const Sc
 
         action.x = ::MulDiv(action.x, to.width, from.width);
         action.y = ::MulDiv(action.y, to.height, from.height);
+        ++adapted;
     }
 
-    LOG_DEBUG("coord: adapted {} actions from {}x{} to {}x{}",
+    LOG_DEBUG("coord: adapted {} of {} actions from {}x{} to {}x{}",
+              adapted,
               actions.size(),
               from.width,
               from.height,
