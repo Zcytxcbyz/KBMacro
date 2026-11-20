@@ -21,10 +21,12 @@ struct HeldKey {
     return (hk.vk & 0xFFFFu) | (hk.modifiers << 16);
 }
 
-// Release every key still held down.
-// normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
-// cutoff landed exactly between down and up -- without this fix the key would stay stuck.
-void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held) {
+    // Release every key still held down.
+    // Normally the table is empty; having work to do means the script itself is unbalanced, or a stop/timed
+    // cutoff landed exactly between down and up -- without this fix the key would stay stuck.
+    //   loud: true only on thread exit. A release at round end is a routine safety net (an unbalanced
+    //         script repeats it every round), so it must not flood the log at warning level.
+    void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held, const bool loud) {
     int released = 0;
     for (auto &val : held | std::views::values) {
         auto &[hotkey, count] = val;
@@ -35,7 +37,14 @@ void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held) {
         ++released;
     }
 
-    if (released > 0) LOG_WARN("playback: released {} stuck key(s)", released);
+    if (released == 0) {
+        return;
+    }
+    if (loud) {
+        LOG_WARN("playback: released {} stuck key(s)", released);
+    } else {
+        LOG_DEBUG("playback: released {} stuck key(s) at round end", released);
+    }
 }
 
 // Mouse button matching table: MouseDown adds a record, MouseUp clears it.
@@ -44,8 +53,9 @@ void pressHeldButton(std::unordered_map<MouseButton, int> &held, const MouseButt
     ++held[button];
 }
 
-// Release every mouse button still held down (once per round end and once on thread exit).
-void releaseHeldButtons(std::unordered_map<MouseButton, int> &held) {
+    // Release every mouse button still held down (once per round end and once on thread exit).
+    // loud has the same meaning as in releaseHeldKeys().
+    void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool loud) {
     int released = 0;
     for (auto &[button, count] : held) {
         if (count <= 0) continue;
@@ -55,7 +65,14 @@ void releaseHeldButtons(std::unordered_map<MouseButton, int> &held) {
         ++released;
     }
 
-    if (released > 0) LOG_WARN("playback: released {} stuck mouse button(s)", released);
+    if (released == 0) {
+        return;
+    }
+    if (loud) {
+        LOG_WARN("playback: released {} stuck mouse button(s)", released);
+    } else {
+        LOG_DEBUG("playback: released {} stuck mouse button(s) at round end", released);
+    }
 }
 
 // Move the cursor to the position given by the action:
@@ -183,16 +200,16 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
         if (interrupted) break;
 
         // release stuck keys at each round end so the next round starts with every key up.
-        releaseHeldKeys(held);
-        releaseHeldButtons(heldButtons);
+        releaseHeldKeys(held, /*loud=*/false);
+        releaseHeldButtons(heldButtons, /*loud=*/false);
         rc.noteIteration();
 
         if (st.stop_requested()) break;
     }
 
     // exit fallback: a stop interruption may leave keys/mouse buttons held down
-    releaseHeldKeys(held);
-    releaseHeldButtons(heldButtons);
+    releaseHeldKeys(held, /*loud=*/true);
+    releaseHeldButtons(heldButtons, /*loud=*/true);
 
     LOG_DEBUG("playback: run finished, executed={}", executed);
     return executed;
