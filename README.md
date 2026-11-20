@@ -98,7 +98,7 @@ Lookup order at runtime:
 
 A partially translated file therefore still works, but a complete one is what
 you want: `i18n: loaded N entr(ies) from JSON resource 21x` should report the
-same N as `en-US.json` (203 at the time of writing) and no `WARN` should follow
+same N as `en-US.json` (204 at the time of writing) and no `WARN` should follow
 in the same run.
 
 To add a language:
@@ -128,7 +128,7 @@ table refresh the resource script before building:
 ## Build from source
 
 Prerequisites: Visual Studio 2022 (or newer) with the C++ desktop workload,
-CMake 3.25+, Conan 2, Ninja, and Python 3 (for the helper scripts). Run every
+CMake 4.0+, Conan 2, Ninja, and Python 3 (for the helper scripts). Run every
 command below from a **Developer PowerShell** for Visual Studio — `cl.exe` and
 `ninja` only exist inside that environment.
 
@@ -277,6 +277,9 @@ text formatting, recording normalisation and speed scaling. UI, hooks and
   overwrites the window geometry remembered by the other.
 - Closing the window while recording discards what has been recorded so far:
   no delivery dialog is shown and the actions are dropped.
+- Global hotkeys belong to one instance: a second copy registers none of them
+  (error 1409) and shows “Failed to register 11 hotkey(s)” in the status bar,
+  while the first copy keeps working.
 
 ## Third-party components
 
