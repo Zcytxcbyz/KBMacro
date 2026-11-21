@@ -76,8 +76,8 @@ void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool l
 }
 
 // Move the cursor to the position given by the action:
-//   relative == true  → offset from the current position (moveBy, no coordinate adaptation)
-//   relative == false → absolute virtual-desktop coordinates (moveTo)
+//   relative == true  -> offset from the current position (moveBy, no coordinate adaptation)
+//   relative == false -> absolute virtual-desktop coordinates (moveTo)
 void positionCursor(const Action &action) {
     if (action.relative) {
         input::moveBy(action.x, action.y);

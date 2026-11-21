@@ -5,7 +5,7 @@
 
 #include "common/Action.hpp"
 
-// Normalization of recorded events: raw events → Action list.
+// Normalization of recorded events: raw events -> Action list.
 //
 // deliberately does not depend on <windows.h>: normalization is a pure function, unit tests need no Win32
 // environment, and it reads no config and logs nothing. how the hook side fills events is another module's job.

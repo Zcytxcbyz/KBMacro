@@ -18,7 +18,7 @@
 
 namespace {
 
-// intervalMs = 100, holdMs = 5 → the round gap is 95, unlike the 5ms hold
+// intervalMs = 100, holdMs = 5 -> the round gap is 95, unlike the 5ms hold
 KeyboardParams makeParams(const RunMode mode, const int count, const Hotkey &hotkey = Hotkey{.vk = 0x41}) { // default A
     KeyboardParams p;
     p.hotkey = hotkey;

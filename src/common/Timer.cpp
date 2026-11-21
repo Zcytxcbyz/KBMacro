@@ -58,8 +58,8 @@ bool SpinTimer::wait(const Duration d, const std::stop_token &st) const {
 // HybridTimer: chunked sleep for long waits, busy wait at the tail
 // ============================================================
 // two phases:
-//   1) remaining > spinTail → chunked sleep (absolute deadline recompute, same as SleepTimer)
-//   2) remaining <= spinTail → busy-wait until the deadline
+//   1) remaining > spinTail -> chunked sleep (absolute deadline recompute, same as SleepTimer)
+//   2) remaining <= spinTail -> busy-wait until the deadline
 // the key is that phase one uses "remaining - spinTail", not "remaining": otherwise the
 // overshoot of the last sleep chunk eats the tail and the hybrid is pointless.
 bool HybridTimer::wait(const Duration d, const std::stop_token &st) const {

@@ -77,7 +77,7 @@ TEST(PlaybackRun, CountedZeroDoesNothing) {
 // ---- rounds and waits ----
 
 TEST(PlaybackRun, CountedRepeatsScript) {
-    // two actions, 2 rounds → 4 actions, 4 delay waits
+    // two actions, 2 rounds -> 4 actions, 4 delay waits
     const std::vector<Action> actions{moveAction(95), moveAction(95)};
     FakeTimer timer;
 
@@ -106,7 +106,7 @@ TEST(PlaybackRun, ClickHoldWaitIsDistinctFromDelay) {
 }
 
 TEST(PlaybackRun, KeyboardPairDoesNotLeak) {
-    // Down has delay 0, Up has delay 95 → only one wait
+    // Down has delay 0, Up has delay 95 -> only one wait
     const std::vector<Action> actions{keyAction(KeyEventType::Down, 0), keyAction(KeyEventType::Up, 95)};
     FakeTimer timer;
 
@@ -191,7 +191,7 @@ TEST(Playback, StuckMouseButtonIsReleasedEveryRound) {
     };
 
     FakeTimer timer;
-    // 3 rounds × 2 actions
+    // 3 rounds x 2 actions
     EXPECT_EQ(playback::run(actions, countedRun(3), timer, std::stop_token{}), 6);
     EXPECT_EQ(timer.countWaits(kDelay), 3u);
 }

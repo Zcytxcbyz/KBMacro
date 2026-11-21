@@ -2,8 +2,8 @@
 // ConfigPaths::resolveConfigPath tests
 //
 // This is the P1 test item from the design doc. The core logic is:
-//   - {exePath}.json exists → portable mode
-//   - otherwise         → APPDATA mode
+//   - {exePath}.json exists -> portable mode
+//   - otherwise         -> APPDATA mode
 //
 // Cases work in a temp directory and do not pollute the real environment.
 // ============================================================
@@ -46,7 +46,7 @@ protected:
 } // namespace
 
 TEST_F(ConfigPathsTest, NoPortableFileFallsBackToAppData) {
-    // {exe}.json absent → APPDATA mode
+    // {exe}.json absent -> APPDATA mode
     const auto result = config::resolveConfigPath(fakeExe(), fakeAppData());
 
     EXPECT_FALSE(result.portable);
@@ -69,7 +69,7 @@ TEST_F(ConfigPathsTest, PortableFileExistsUsesPortableMode) {
 }
 
 TEST_F(ConfigPathsTest, PortablePathIsExePathPlusJson) {
-    // check the append rule: KBMacro.exe → KBMacro.exe.json
+    // check the append rule: KBMacro.exe -> KBMacro.exe.json
     auto portablePath = fakeExe();
     portablePath.concat(L".json");
     {

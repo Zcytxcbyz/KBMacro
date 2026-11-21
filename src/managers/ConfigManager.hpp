@@ -30,7 +30,7 @@ class ConfigManager {
 public:
     static ConfigManager &instance();
 
-    // call once at startup: decide path → read file → fill m_config; on failure keep the defaults.
+    // call once at startup: decide path -> read file -> fill m_config; on failure keep the defaults.
     // a read failure does not throw, equivalent to "use the default config".
     void load();
 

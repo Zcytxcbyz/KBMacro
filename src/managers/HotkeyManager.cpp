@@ -10,7 +10,7 @@
 
 namespace {
 
-// hk::kMod* bitmask → Win32 MOD_* bitmask
+// hk::kMod* bitmask -> Win32 MOD_* bitmask
 // MOD_NOREPEAT is always added: holding the key triggers only once
 UINT toWin32Modifiers(const unsigned mods) {
     UINT m = MOD_NOREPEAT;
@@ -194,7 +194,7 @@ int HotkeyManager::failedCount() const noexcept {
     int n = 0;
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue; // ← added: disabled slots do not count as failures
+        if (!cfg.hotkeyEnabled[idx]) continue; // <- added: disabled slots do not count as failures
         // only count items "set by the user but failed to register"; empty hotkeys do not count
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             ++n;
@@ -210,7 +210,7 @@ std::vector<int> HotkeyManager::failedIndices() const {
 
     for (int i = 0; i < kHotkeyCount; ++i) {
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue; // ← added
+        if (!cfg.hotkeyEnabled[idx]) continue; // <- added
         if (!m_registered[i] && !isEmptyHotkey(cfg.hotkeys[idx])) {
             result.push_back(i);
         }
@@ -227,7 +227,7 @@ bool HotkeyManager::isConflicting(const Hotkey &hk, // NOLINT(*-convert-member-f
     for (int i = 0; i < kHotkeyCount; ++i) {
         if (i == excludeIndex) continue;
         const auto idx = static_cast<std::size_t>(i);
-        if (!cfg.hotkeyEnabled[idx]) continue; // ← added: disabled slots never conflict
+        if (!cfg.hotkeyEnabled[idx]) continue; // <- added: disabled slots never conflict
         if (cfg.hotkeys[idx].vk == hk.vk && cfg.hotkeys[idx].modifiers == hk.modifiers) {
             return true;
         }

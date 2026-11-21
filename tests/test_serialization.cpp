@@ -4,7 +4,7 @@
 // covers: Action / Hotkey / RunSpec / ClickerParams /
 //       KeyboardParams / ScreenSpec / Config
 //
-// every test is to_json → from_json → field-by-field comparison.
+// every test is to_json -> from_json -> field-by-field comparison.
 // the goal is to catch silent bugs like "from_json forgot a field".
 // ============================================================
 
@@ -357,7 +357,7 @@ TEST(ConfigRoundTrip, RecorderSettingsAreClamped) {
     EXPECT_EQ(back.recordStartDelayMs, kRecordStartDelayMsMin);
     EXPECT_EQ(back.recordMaxActions, kRecordMaxActionsMax);
 
-    // fields entirely missing → all defaults
+    // fields entirely missing -> all defaults
     const auto empty = nlohmann::json::object().get<Config>();
     EXPECT_EQ(empty.recordMoveIntervalMs, kRecordMoveIntervalMsDefault);
     EXPECT_EQ(empty.recordIgnoreInjected, false);

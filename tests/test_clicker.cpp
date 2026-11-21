@@ -22,7 +22,7 @@
 namespace {
 
 // ignorePosition = true: skip moveTo each round, the test only checks click and wait.
-// intervalMs = 100, holdMs = 5 → button rounds wait 95ms, unlike the 5ms hold,
+// intervalMs = 100, holdMs = 5 -> button rounds wait 95ms, unlike the 5ms hold,
 // so countWaits can tell the two kinds of waits apart.
 ClickerParams makeParams(const RunMode mode, const int count, const ClickType type = ClickType::Left) {
     ClickerParams p;
@@ -116,7 +116,7 @@ TEST(Run, GapDeductsHoldTime) {
 
     EXPECT_EQ(clicker::run(p, timer, std::stop_token{}), 2);
 
-    // intervalMs = 100, holdMs = 5 → the round gap is 95, not 100
+    // intervalMs = 100, holdMs = 5 -> the round gap is 95, not 100
     EXPECT_EQ(timer.countWaits(kGap), 1u);
     EXPECT_EQ(timer.countWaits(ITimer::Duration{100}), 0u);
 }
@@ -143,7 +143,7 @@ TEST(Run, StopOnFirstWaitCountsFirstRound) {
 
 TEST(Run, InfiniteStopsOnThirdRound) {
     // call sequence: hold, gap, hold, gap, hold, gap, ...
-    // the 6th wait = the gap after round 3 → stopping there leaves exactly 3 rounds
+    // the 6th wait = the gap after round 3 -> stopping there leaves exactly 3 rounds
     FakeTimer timer(6);
     const ClickerParams p = makeParams(RunMode::Infinite, 0);
 

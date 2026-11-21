@@ -12,7 +12,7 @@
 // ============================================================
 // Implementation notes
 //
-// Coordinates: SendInput's absolute coordinate is a normalized 0–65535 value, which together with
+// Coordinates: SendInput's absolute coordinate is a normalized 0-65535 value, which together with
 //   MOUSEEVENTF_VIRTUALDESK maps onto the whole virtual desktop (multi-monitor, negative coords included),
 //   so it is first converted with SM_X/YVIRTUALSCREEN + SM_CX/CYVIRTUALSCREEN.
 //   the divisor is "width - 1": 65535 maps to the last pixel; with "width" the rightmost/bottom row would
@@ -42,7 +42,7 @@ constexpr bool kDryRun = true;
 constexpr bool kDryRun = false;
 #endif
 
-// Modifier press order: Ctrl → Shift → Alt → Win; reversed on release.
+// Modifier press order: Ctrl -> Shift -> Alt -> Win; reversed on release.
 struct ModifierKey {
     unsigned mask;
     WORD vk;
@@ -130,7 +130,7 @@ struct ButtonFlags {
 }
 
 // Send a batch of events: one SendInput = one DEBUG line.
-// failure (return value below expected) → one WARN line → replay cleanup (release-type events) → throw.
+// failure (return value below expected) -> one WARN line -> replay cleanup (release-type events) -> throw.
 //   what    : action description for the log and the exception
 //   cleanup : events replayed after a failure; nullptr = nothing to clean up (move, wheel)
 void sendEvents(std::vector<INPUT> events, std::string what, std::vector<INPUT> *cleanup = nullptr) {
@@ -202,7 +202,7 @@ void moveTo(const int x, const int y) {
     const int screenW = ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
     const int screenH = ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
-    // 65535 maps to the last pixel → the divisor is width/height - 1; a 1-pixel edge case falls back to 1.
+    // 65535 maps to the last pixel -> the divisor is width/height - 1; a 1-pixel edge case falls back to 1.
     const int spanW = (screenW > 1) ? screenW - 1 : 1;
     const int spanH = (screenH > 1) ? screenH - 1 : 1;
 

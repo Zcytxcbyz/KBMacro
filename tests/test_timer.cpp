@@ -30,7 +30,7 @@ template<typename Fn> long long measureMs(Fn &&fn) {
     return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
 }
 
-// put the timer into a wait, request stop after 30ms, return the measured stop→wait latency.
+// put the timer into a wait, request stop after 30ms, return the measured stop->wait latency.
 // returning -1 means wait was not interrupted by stop (waited fully); the test fails on that.
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 long long stopLatencyMs(ITimer &timer, const Duration d) {
@@ -46,7 +46,7 @@ long long stopLatencyMs(ITimer &timer, const Duration d) {
 
     const auto t0 = Clock::now();
     src.request_stop();
-    worker.join(); // join returns ≈ wait returns
+    worker.join(); // join returns ~ wait returns
 
     if (!interrupted) return -1;
     return std::chrono::duration_cast<Duration>(Clock::now() - t0).count();
@@ -84,7 +84,7 @@ TYPED_TEST(TimerTest, NonPositiveDurationReturnsTrueImmediately) {
     EXPECT_TRUE(timer.wait(Duration(-5), src.get_token()));
 }
 
-// stopped before entering the wait → false immediately, no sleep
+// stopped before entering the wait -> false immediately, no sleep
 TYPED_TEST(TimerTest, AlreadyStoppedReturnsFalseImmediately) {
     TypeParam timer;
     std::stop_source src;
@@ -197,7 +197,7 @@ TEST(HybridTimerTest, AlreadyStoppedReturnsFalseImmediately) {
     EXPECT_LT(elapsed, 20) << "stop was requested but the wait kept going";
 }
 
-// wait falls inside the tail → full spin; precision should match SpinTimer
+// wait falls inside the tail -> full spin; precision should match SpinTimer
 TEST(HybridTimerTest, ShortWaitWithinTailIsPureSpin) {
     const HybridTimer timer(Duration(10));
     std::stop_source src;
@@ -208,7 +208,7 @@ TEST(HybridTimerTest, ShortWaitWithinTailIsPureSpin) {
     EXPECT_LT(elapsed, 20) << "this part should be a busy wait";
 }
 
-// longer than the tail → sleep + spin; the tail must absorb the sleep overshoot
+// longer than the tail -> sleep + spin; the tail must absorb the sleep overshoot
 TEST(HybridTimerTest, LongWaitEndsCloseToDeadline) {
     const HybridTimer timer(Duration(10));
     std::stop_source src;
@@ -219,7 +219,7 @@ TEST(HybridTimerTest, LongWaitEndsCloseToDeadline) {
     EXPECT_LT(elapsed, 60 + 10 + 50) << "the spin tail did not absorb the sleep overshoot";
 }
 
-// stop-response bound ≈ spinTail + one slice
+// stop-response bound ~ spinTail + one slice
 TEST(HybridTimerTest, StopDuringWaitReturnsFalseQuickly) {
     HybridTimer timer(Duration(10));
 
@@ -229,7 +229,7 @@ TEST(HybridTimerTest, StopDuringWaitReturnsFalseQuickly) {
     EXPECT_LT(latency, Duration(10).count() + SleepTimer::kSlice.count() + 50);
 }
 
-// spinTail <= 0 → degrades to pure sliced sleep
+// spinTail <= 0 -> degrades to pure sliced sleep
 TEST(HybridTimerTest, ZeroTailBehavesLikeSleepTimer) {
     const HybridTimer timer(Duration(0));
     std::stop_source src;

@@ -54,8 +54,8 @@ bool loadFrom(const std::filesystem::path &path, Config &out) {
         return false;
     }
 
-    // version check: file version above the supported one → refuse to load
-    // lower or equal → read as the current version (missing fields use defaults)
+    // version check: file version above the supported one -> refuse to load
+    // lower or equal -> read as the current version (missing fields use defaults)
     if (const int fileVersion = j.value("version", 1); fileVersion > kConfigVersion) {
         LOG_WARN("config: file version {} > supported {}, ignoring", fileVersion, kConfigVersion);
         return false;

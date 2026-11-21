@@ -49,7 +49,7 @@ enum class KeyEventType {
 };
 
 // ============================================================
-// enum ↔ string (table-driven)
+// enum <-> string (table-driven)
 // ============================================================
 
 struct ActionTypeEntry {

@@ -15,7 +15,7 @@
 // Responsibilities:
 //   - hold hotkey registration state (which entries registered successfully)
 //   - register the hotkeys from Config in bulk at startup
-//   - modify a single hotkey: conflict check → unregister old → persist → register new
+//   - modify a single hotkey: conflict check -> unregister old -> persist -> register new
 //   - dispatch WM_HOTKEY to the trigger callback by id
 //
 // Not responsible for:
@@ -54,7 +54,7 @@ public:
     // unregister all registered hotkeys (also called from the destructor, idempotent)
     void unregisterAll();
 
-    // modify one hotkey: conflict check → unregister old → persist (ConfigManager) → register new
+    // modify one hotkey: conflict check -> unregister old -> persist (ConfigManager) -> register new
     //   returns true  = success
     //   returns false = failure (conflict / taken by the system or another program / index out of range)
     //
@@ -66,8 +66,8 @@ public:
     bool setHotkey(int index, const Hotkey &hk);
 
     // change the enabled state of one hotkey.
-    //   enabled == true  → persist + register (fails if taken by the system / another program)
-    //   enabled == false → persist + unregister
+    //   enabled == true  -> persist + register (fails if taken by the system / another program)
+    //   enabled == false -> persist + unregister
     //   returns true  = operation succeeded (disable always succeeds)
     //   returns false = index out of range, or registration failed while enabling
     //

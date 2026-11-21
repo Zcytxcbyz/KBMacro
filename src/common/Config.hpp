@@ -14,7 +14,7 @@
 //
 // not here:
 //   - per-module parameters (ClickerParams / KeyboardParams / recording scripts)
-//     → persisted separately by each module's "import / export parameters" buttons
+//     -> persisted separately by each module's "import / export parameters" buttons
 //   - runtime state (threads, timer instances, UI widget values)
 // ============================================================
 
@@ -31,12 +31,12 @@ inline constexpr auto kHotkeyEnabledDefault = [] {
     return a;
 }();
 
-// default hotkeys: single keys F1–F11, 1:1 with the HotkeyAction order
+// default hotkeys: single keys F1-F11, 1:1 with the HotkeyAction order
 //   F1 start clicker / F2 stop clicker / F3 start keyboard / F4 stop keyboard / F5 send once
 //   F6 start recording / F7 stop recording / F8 start playback / F9 stop playback
 //   F10 start all / F11 stop all
 //
-// vk uses raw numbers because Config.hpp does not include windows.h (VK_F1 == 0x70 … VK_F11 == 0x7A).
+// vk uses raw numbers because Config.hpp does not include windows.h (VK_F1 == 0x70 ... VK_F11 == 0x7A).
 inline constexpr std::array<Hotkey, kHotkeyCount> kHotkeyDefault{{
         {.modifiers = 0, .vk = 0x70},
         {.modifiers = 0, .vk = 0x71},
@@ -58,10 +58,10 @@ inline constexpr int kTimerHybridSpinMsMax = 50;
 inline constexpr int kTimerHybridSpinMsDefault = 10;
 
 // ranges and defaults of the recording settings.
-//   recordMoveIntervalMs — WH_MOUSE_LL move sampling interval: moves closer than that are dropped.
+//   recordMoveIntervalMs - WH_MOUSE_LL move sampling interval: moves closer than that are dropped.
 //                          0 means no sampling (record all), 1000 means at most one per second.
-//   recordStartDelayMs   — wait this long after starting to record, dodging the start hotkey itself.
-//   recordMaxActions     — action limit per recording, auto-stops when reached. 0 = unlimited.
+//   recordStartDelayMs   - wait this long after starting to record, dodging the start hotkey itself.
+//   recordMaxActions     - action limit per recording, auto-stops when reached. 0 = unlimited.
 inline constexpr int kRecordMoveIntervalMsMin = 0;
 inline constexpr int kRecordMoveIntervalMsMax = 1000;
 inline constexpr int kRecordMoveIntervalMsDefault = 16;
@@ -167,8 +167,8 @@ struct Config {
 //   }
 //
 // compatibility policy:
-//   - missing fields → defaults
-//   - extra fields → ignored
+//   - missing fields -> defaults
+//   - extra fields -> ignored
 //   - "version" is validated by ConfigPaths in loadFrom and never reaches the Config struct
 // ============================================================
 

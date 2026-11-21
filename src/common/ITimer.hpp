@@ -7,8 +7,8 @@
 // interruptible waiter
 //
 // semantics:
-//   - stop requested during wait() → returns false early
-//   - waited the full duration    → returns true
+//   - stop requested during wait() -> returns false early
+//   - waited the full duration    -> returns true
 //   - stateless: one instance may be called concurrently by several threads (hence const wait)
 //
 // implementation: SleepTimer (chunked sleep) / SpinTimer (busy wait), see common/Timer.hpp

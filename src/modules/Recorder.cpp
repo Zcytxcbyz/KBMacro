@@ -24,15 +24,15 @@
 // Thread model (everything except the UI calls at both ends happens on the recording thread):
 //
 //   UI thread                      recording thread
-//   ─────────                      ────────────────
-//   StartRecord(opts, cb) ────────→ run()
-//                                      ├ start delay (timer.wait, interruptible)
-//                                      ├ PeekMessage(PM_NOREMOVE)  create message queue
-//                                      ├ SetWindowsHookEx ×2       install hooks
-//                                      ├ stop_callback             wakes me on stop
-//                                      └ pump loop ←── the system calls the callbacks here
-//   StopRecord() ─── request_stop ─────┘
-//                └── join waits for the finish
+//   ---------                      ----------------
+//   StartRecord(opts, cb) --------> run()
+//                                      |-- start delay (timer.wait, interruptible)
+//                                      |-- PeekMessage(PM_NOREMOVE)  create message queue
+//                                      |-- SetWindowsHookEx x2       install hooks
+//                                      |-- stop_callback             wakes me on stop
+//                                      +-- pump loop <--- the system calls the callbacks here
+//   StopRecord() --- request_stop -----+
+//                +-- join waits for the finish
 //
 // Two rules that span the whole file:
 //
@@ -48,7 +48,7 @@
 
 namespace {
 
-// ─────────────────────────────── constants ───────────────────────────────
+// ------------------------------- constants -------------------------------
 
 // Stop signal. WM_APP and above is the application range, it never collides with system messages.
 //   posted by PostThreadMessage inside stop_callback, to wake the pump blocked in the wait
@@ -56,7 +56,7 @@ namespace {
 constexpr UINT kStopMessage = WM_APP + 0x4B;
 
 // Queue capacity. Because the callback does not filter, even unwanted move events are queued first:
-//   125Hz mouse → 125 records/s; 65536 records ≈ 8.7 minutes of continuous movement.
+//   125Hz mouse -> 125 records/s; 65536 records ~ 8.7 minutes of continuous movement.
 //   each RawHookEvent is about 48 bytes, so about 3MB preallocated; one-off, zero allocation afterwards.
 constexpr std::size_t kQueueCapacity = 65536;
 
@@ -76,7 +76,7 @@ constexpr std::size_t kRawPerAction = 2;
 constexpr std::uint8_t kSourceKeyboard = 0;
 constexpr std::uint8_t kSourceMouse = 1;
 
-// ───────────────────────── records the callback writes to the queue ─────────────────────────
+// ------------------------- records the callback writes to the queue -------------------------
 
 // Field-by-field copy of the hook struct, with no interpretation.
 //   why not store KBDLLHOOKSTRUCT / MSLLHOOKSTRUCT directly?
@@ -85,7 +85,7 @@ constexpr std::uint8_t kSourceMouse = 1;
 struct RawHookEvent {
     std::uint8_t source = kSourceKeyboard;
 
-    std::uint32_t msg = 0; // raw wParam: WM_KEYDOWN / WM_LBUTTONDOWN / WM_MOUSEWHEEL …
+    std::uint32_t msg = 0; // raw wParam: WM_KEYDOWN / WM_LBUTTONDOWN / WM_MOUSEWHEEL ...
     std::uint32_t vk = 0; // keyboard: vkCode
     std::int32_t x = 0; // mouse: pt.x (virtual-desktop coordinates)
     std::int32_t y = 0; // mouse: pt.y
@@ -111,12 +111,12 @@ struct QueueGuard {
     ~QueueGuard() { t_queue = nullptr; }
 };
 
-// ─────────────────── hook callbacks (hot path: copy params + enqueue only) ───────────────────
+// ------------------- hook callbacks (hot path: copy params + enqueue only) -------------------
 
 // Low-level keyboard hook. Note:
 //   - the nCode check is API protocol, not an event decision (the struct is invalid when nCode < 0)
 //   - CallNextHookEx must run whether or not the event is dropped, otherwise the app never sees the key
-//   - time budget: 48-byte copy + one try_enqueue ≈ tens of nanoseconds
+//   - time budget: 48-byte copy + one try_enqueue ~ tens of nanoseconds
 LRESULT CALLBACK onKeyboard(const int nCode, const WPARAM wParam, const LPARAM lParam) {
     if (nCode == HC_ACTION && t_queue != nullptr) {
         const auto *data = reinterpret_cast<const KBDLLHOOKSTRUCT *>(lParam);
@@ -156,7 +156,7 @@ LRESULT CALLBACK onMouse(const int nCode, const WPARAM wParam, const LPARAM lPar
     return ::CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
-// ───────────────────────────── pump-side state ─────────────────────────────
+// ----------------------------- pump-side state -----------------------------
 
 // Counts of the five dropped categories. Only for the exit log -- when debugging "why nothing was
 //   recorded", the raw/actions numbers alone do not show what ate the events.
@@ -245,7 +245,7 @@ struct CaptureState {
     return true;
 }
 
-// Translation table: RawHookEvent → the RawEvent used by normalization. Empty means unknown (drop).
+// Translation table: RawHookEvent -> the RawEvent used by normalization. Empty means unknown (drop).
 [[nodiscard]] std::optional<recorder::RawEvent> translate(const RawHookEvent &e) {
     recorder::RawEvent r;
     r.time = e.time;
@@ -299,9 +299,9 @@ struct CaptureState {
     return r;
 }
 
-// ─────────────────────────────── pump ───────────────────────────────
+// ------------------------------- pump -------------------------------
 
-// Move every event currently in the queue out: bulk take → decide → translate → append.
+// Move every event currently in the queue out: bulk take -> decide -> translate -> append.
 //   returning true means the raw count reached the early-stop threshold (the caller exits on it).
 bool drainInto(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &queue) {
     static thread_local std::array<RawHookEvent, kDrainBatch> batch{};
@@ -333,10 +333,10 @@ void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &qu
     bool limitReached = false;
 
     while (true) {
-        // ① drain the queue first (filtering/translation live here, not in the callback)
+        // 1) drain the queue first (filtering/translation live here, not in the callback)
         limitReached = drainInto(state, queue);
 
-        // ② progress: RateLimiter allows at most one per second; the first call passes immediately
+        // 2) progress: RateLimiter allows at most one per second; the first call passes immediately
         if (progress.allow()) {
             const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(ITimer::now() - started).count();
             LOG_INFO("recorder: recording... {}s, raw={}, dropped injected={} packet={} "
@@ -350,20 +350,20 @@ void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &qu
                      t_droppedQueueFull);
         }
 
-        // ③ raw limit reached: exact truncation is left to normalize
+        // 3) raw limit reached: exact truncation is left to normalize
         if (limitReached) {
             LOG_WARN("recorder: action limit reached");
             break;
         }
-        // ④ someone already requested stop (the second safety net besides stop_callback)
+        // 4) someone already requested stop (the second safety net besides stop_callback)
         if (st.stop_requested()) break;
 
-        // ⑤ wait for input: returns at once with a message (≈0 delay), otherwise after 1s to log progress
+        // 5) wait for input: returns at once with a message (~0 delay), otherwise after 1s to log progress
         const DWORD waited = ::MsgWaitForMultipleObjects(
                 0, nullptr, FALSE, static_cast<DWORD>(kProgressInterval.count()), QS_ALLINPUT);
 
         if (waited == WAIT_OBJECT_0) {
-            // ⑥ take messages. the system calls the low-level hook callbacks right inside this
+            // 6) take messages. the system calls the low-level hook callbacks right inside this
             //    (PeekMessage dispatches internally), so this step is "receiving input" itself.
             bool stopMessage = false;
             while (::PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -378,7 +378,7 @@ void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &qu
             LOG_WARN("recorder: message wait failed");
             break;
         }
-        // WAIT_TIMEOUT: do nothing, go back to ① (which is also the next progress time point)
+        // WAIT_TIMEOUT: do nothing, go back to 1) (which is also the next progress time point)
     }
 
     // drain once more before exiting: events may still be left between the stop signal and the last enqueue
@@ -402,7 +402,7 @@ void pumpLoop(CaptureState &state, moodycamel::ConcurrentQueue<RawHookEvent> &qu
 // ============================================================================
 
 std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer, const std::stop_token &st) {
-    // ── 1. start delay ─────────────────────────────────────────────────────
+    // -- 1. start delay -----------------------------------------------------
     // placed before installing hooks: nothing is intercepted during this wait, a few ms late does not matter;
     // the other way round, installing hooks first means "nothing recorded for 200ms while the system is hooked".
     // the main goal is letting the start hotkey's keys come up first, head/tail stripping is the second net.
@@ -413,20 +413,20 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
         }
     }
 
-    // ── 2. make this thread own a message queue first ────────────────────────────────────────
+    // -- 2. make this thread own a message queue first ----------------------------------------
     // a Windows thread message queue is created lazily; without one PostThreadMessage fails,
     // the stop signal never gets posted and StopRecord stays blocked in join forever.
     // touch it at minimal cost here: look only at WM_USER and do not remove the message.
     MSG msg{};
     ::PeekMessageW(&msg, nullptr, WM_USER, WM_USER, PM_NOREMOVE);
 
-    // ── 3. queue and callback entry ───────────────────────────────────────────────
+    // -- 3. queue and callback entry -----------------------------------------------
     moodycamel::ConcurrentQueue<RawHookEvent> queue{kQueueCapacity}; // preallocated, zero allocation in callbacks
     t_droppedQueueFull = 0;
     t_queue = &queue;
     QueueGuard queueGuard; // any exit path from this function clears t_queue
 
-    // ── 4. install both hooks ──────────────────────────────────────────────────
+    // -- 4. install both hooks --------------------------------------------------
     // constructed in order: if the second fails the first is already removed by wil::unique_hhook,
     //   "either both installed or neither" holds structurally, no hand-written rollback needed.
     // hMod is our own EXE handle; low-level hook callbacks run on our own thread,
@@ -439,7 +439,7 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
     wil::unique_hhook mouseHook{::SetWindowsHookExW(WH_MOUSE_LL, &onMouse, ::GetModuleHandleW(nullptr), 0)};
     THROW_LAST_ERROR_IF_NULL(mouseHook);
 
-    // ── 5. stop callback: wake the pump blocked in the wait ──────────────────────────────
+    // -- 5. stop callback: wake the pump blocked in the wait ------------------------------
     // request_stop may happen at any moment (StopRecord on the UI thread), even right at registration --
     //   std::stop_callback runs the callback immediately when stop was already requested,
     //   so this message is already in the queue before the pump starts and the first take sees it.
@@ -452,20 +452,20 @@ std::vector<Action> recorder::run(const RecordOptions &opts, const ITimer &timer
              opts.ignoreInjected,
              opts.maxActions);
 
-    // ── 6. pump: wait for input, drain the queue, log progress until stopped or the limit is hit ─────────────────
+    // -- 6. pump: wait for input, drain the queue, log progress until stopped or the limit is hit -----------------
     CaptureState state{opts};
     pumpLoop(state, queue, st);
 
-    // ── 7. teardown order (the order itself is the correctness) ────────────────────────────────
-    // ① cut the callback entry first: from now on even a late callback never writes to the queue about to die
-    // ② then remove the hooks: from here the system no longer calls our callbacks
-    // ③ finally drain once (already done at the end of pumpLoop): an event may have been queued just before
+    // -- 7. teardown order (the order itself is the correctness) --------------------------------
+    // 1) cut the callback entry first: from now on even a late callback never writes to the queue about to die
+    // 2) then remove the hooks: from here the system no longer calls our callbacks
+    // 3) finally drain once (already done at the end of pumpLoop): an event may have been queued just before
     //    the hooks were removed and not yet taken by the pump; skipping this loses the tail
     t_queue = nullptr;
     mouseHook.reset();
     keyboardHook.reset();
 
-    // ── 8. normalization ──────────────────────────────────────────────────────
+    // -- 8. normalization ------------------------------------------------------
     // pure function: head/tail modifier stripping, auto-repeat merge, click/drag decision, wheel accumulation,
     //   delayMs computation, exact maxActions truncation, all done here (not in the hook callback).
     std::vector<Action> actions = normalize(state.raw, makeNormalizeOptions(opts));

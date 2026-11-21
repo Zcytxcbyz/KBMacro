@@ -22,8 +22,8 @@
 //   - no stop request, no thread handling; stop_token is provided by the caller
 //
 // Error contract: failures always throw, the receiver handles them
-//   - every SendInput checks its return value; fewer than expected → re-send the up to clean up → throw SendInputError
-//   - thread tasks are covered by ThreadManager (catch → FinishReason::Failed)
+//   - every SendInput checks its return value; fewer than expected -> re-send the up to clean up -> throw SendInputError
+//   - thread tasks are covered by ThreadManager (catch -> FinishReason::Failed)
 //   - direct calls on the UI thread (keyboard's SendOnce) must try/catch themselves,
 //     otherwise the exception crosses the wx event loop and terminates
 //
@@ -57,7 +57,7 @@ void moveTo(int x, int y);
 void moveBy(int dx, int dy);
 void buttonDown(MouseButton button);
 void buttonUp(MouseButton button);
-void wheel(WheelDirection direction, int steps); // steps 1–10, one event carries steps × WHEEL_DELTA
+void wheel(WheelDirection direction, int steps); // steps 1-10, one event carries steps x WHEEL_DELTA
 void keyDown(const Hotkey &hk); // modifiers first, main key after
 void keyUp(const Hotkey &hk); // main key first, modifiers after
 

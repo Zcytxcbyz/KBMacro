@@ -25,7 +25,7 @@ namespace clicker {
 
 // Expand ClickType into "what to send, how many times". Pure function, testable on its own.
 //   - double-click = two full clicks (each waits holdMs), times = 2
-//   - wheel types always use times = 1 (one event carries steps × WHEEL_DELTA)
+//   - wheel types always use times = 1 (one event carries steps x WHEEL_DELTA)
 struct ClickStep {
     bool wheel = false; // true: use direction + wheelSteps
     int times = 1; // how many times to send
@@ -37,7 +37,7 @@ struct ClickStep {
 
 // Clicker main loop, returns the actual number of rounds executed.
 //   - returns immediately when interrupted by stop, the value is the completed rounds
-//   - per round: first moveTo (unless ignorePosition) → then send input by ClickType
+//   - per round: first moveTo (unless ignorePosition) -> then send input by ClickType
 //   - wait between rounds = max(0, intervalMs - holdMs) (interval is the cycle, hold time deducted);
 //     wheel types have no hold, wait = intervalMs
 [[nodiscard]] int run(const ClickerParams &p, const ITimer &timer, const std::stop_token &st);

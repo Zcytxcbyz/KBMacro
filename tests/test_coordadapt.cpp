@@ -50,14 +50,14 @@ TEST(CoordAdapt, HalvesWithRounding) {
 }
 
 TEST(CoordAdapt, RoundsHalfAwayFromZero) {
-    // 200 → 100: half of the positions land on .5
+    // 200 -> 100: half of the positions land on .5
     std::vector<Action> actions{move(1, 3), move(5, 0)};
 
     coord::adaptActions(actions, spec(200, 200), spec(100, 100));
 
-    EXPECT_EQ(actions[0].x, 1); // 0.5 → 1
-    EXPECT_EQ(actions[0].y, 2); // 1.5 → 2
-    EXPECT_EQ(actions[1].x, 3); // 2.5 → 3
+    EXPECT_EQ(actions[0].x, 1); // 0.5 -> 1
+    EXPECT_EQ(actions[0].y, 2); // 1.5 -> 2
+    EXPECT_EQ(actions[1].x, 3); // 2.5 -> 3
     EXPECT_EQ(actions[1].y, 0);
 }
 

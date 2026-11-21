@@ -57,7 +57,7 @@ SettingsPanel::SettingsPanel(wxWindow *parent, HotkeyManager &hotkeyMgr)
       m_hotkeyMgr(hotkeyMgr) {
     buildUi();
 
-    // The five groups are taller than one screen: vertical scrolling, one row ≈ 10 DIP per step;
+    // The five groups are taller than one screen: vertical scrolling, one row ~ 10 DIP per step;
     // no horizontal scrolling (0 = off); label text adapts via the sizer's growable col
     SetScrollRate(FromDIP(10), FromDIP(10));
     wxWindowBase::FitInside();
@@ -112,7 +112,7 @@ void SettingsPanel::buildGeneralGroup(wxSizer *parent) {
     auto *form = new wxFlexGridSizer(2, FromDIP(wxSize(8, 8)));
     form->AddGrowableCol(1, 1);
 
-    // Language: iterate kLangs, index ↔ language is one-to-one
+    // Language: iterate kLangs, index <-> language is one-to-one
     m_choiceLanguage = new wxChoice(staticBox, wxID_ANY);
     for (const auto &lang : kLangs) {
         m_choiceLanguage->Append(wxString(lang.displayName.data(), lang.displayName.size()));
@@ -183,13 +183,13 @@ void SettingsPanel::buildHotkeyGroup(wxSizer *parent) {
 
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_SELECTED, &SettingsPanel::onHotkeySelectionChanged, this);
     m_hotkeyList->Bind(wxEVT_LIST_ITEM_DESELECTED, &SettingsPanel::onHotkeySelectionChanged, this);
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED, &SettingsPanel::onHotkeyChecked, this); // ← added
-    m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED, &SettingsPanel::onHotkeyChecked, this); // ← added
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_CHECKED, &SettingsPanel::onHotkeyChecked, this); // <- added
+    m_hotkeyList->Bind(wxEVT_LIST_ITEM_UNCHECKED, &SettingsPanel::onHotkeyChecked, this); // <- added
 
     // Still scroll the page when the mouse is over the list
     uifit::forwardWheelToPage(m_hotkeyList);
 
-    // Initially nothing selected → button disabled
+    // Initially nothing selected -> button disabled
     m_btnModifyHotkey->Enable(false);
 }
 
@@ -460,7 +460,7 @@ void SettingsPanel::restartApplication() {
 
     // The path below goes through ExitMainLoop, which does not fire wxEVT_CLOSE_WINDOW,
     // and the new process reads the config right away. So save the window state explicitly.
-    // The order matters: save → yield hotkeys → launch the new process → exit the old one.
+    // The order matters: save -> yield hotkeys -> launch the new process -> exit the old one.
     if (auto *frame = dynamic_cast<MainFrame *>(wxGetTopLevelParent(this))) {
         frame->saveWindowState();
     }
@@ -504,7 +504,7 @@ void SettingsPanel::onTimerModeChanged(const wxCommandEvent &event) {
         wxRichMessageDialog dlg(this,
                                 TR(IDS_SETTINGS_MSG_SPIN_WARNING),
                                 TR(IDS_APP_TITLE),
-                                wxYES_NO | wxICON_WARNING); // wxOK|wxCANCEL → wxYES_NO
+                                wxYES_NO | wxICON_WARNING); // wxOK|wxCANCEL -> wxYES_NO
         // ↓ added this line so both buttons follow the language
         dlg.SetYesNoLabels(uibtn::label(IDS_COMMON_BTN_YES), uibtn::label(IDS_COMMON_BTN_NO));
         dlg.ShowCheckBox(TR(IDS_SETTINGS_CHK_SPIN_DONT_ASK));
@@ -684,7 +684,7 @@ void SettingsPanel::onModifyHotkey(wxCommandEvent &) {
     const Hotkey wanted = dlg.getHotkey();
     const std::string wantedStr = utils::ToUtf8(utils::hotkeyToString(wanted));
 
-    // setHotkey does: conflict check → unregister old → persist → register new
+    // setHotkey does: conflict check -> unregister old -> persist -> register new
     // Conflicts prompt here (HotkeyCaptureDialog checks first); a failure here usually means "occupied"
     if (!m_hotkeyMgr.setHotkey(index, wanted)) {
         LOG_WARN("settings: hotkey[{}] set to '{}' failed (occupied?)", index, wantedStr);

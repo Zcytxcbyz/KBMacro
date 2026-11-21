@@ -45,8 +45,8 @@ class wxEvtHandler;
 //     that old notification must not mark the running new task as stopped
 //
 // Conflict handling (reject instead of preempt):
-//   - Start again while the same task is running → ignore this request (LOG_DEBUG), Stop first to change params
-//   - recording ↔ playback are mutually exclusive → the latecomer is rejected (LOG_WARN), the other is not stopped
+//   - Start again while the same task is running -> ignore this request (LOG_DEBUG), Stop first to change params
+//   - recording <-> playback are mutually exclusive -> the latecomer is rejected (LOG_WARN), the other is not stopped
 //
 // Lifetime:
 //   - MainFrame member (unique_ptr), must be constructed before the three panels and destroyed after them
@@ -62,11 +62,11 @@ enum class TaskKind {
 };
 
 // Task finish report.
-//   executed                  → how many rounds this run actually executed
+//   executed                  -> how many rounds this run actually executed
 //                               clicker/keyboard: number of clicks (key presses); playback: actions played;
 //                               not applicable to recording, always 0
-//   recorded == nullptr       → not a recording task
-//   recorded non-null but ->empty() → recording task, but no action was captured
+//   recorded == nullptr       -> not a recording task
+//   recorded non-null but ->empty() -> recording task, but no action was captured
 struct TaskResult {
     FinishReason reason = FinishReason::Completed;
     int executed = 0;
@@ -103,14 +103,14 @@ public:
     // ---- recording ----
     // opts is read on the UI thread (four config values + vk/mods of the start/stop hotkeys) and passed in:
     //   the thread does not read ConfigManager (singleton, not thread-safe) nor touch HotkeyManager.
-    // playback is running → reject: log LOG_WARN, do not start and do not callback
+    // playback is running -> reject: log LOG_WARN, do not start and do not callback
     void StartRecord(const recorder::RecordOptions &opts, FinishCallback onFinished);
     void StopRecord();
 
     // ---- playback ----
     // actions is taken by value: the caller passes the UI-side m_actions (one copy), moved into the thread.
     // coordinate conversion is already done at import/delivery, only the final result is taken here.
-    // recording is running → reject: log LOG_WARN, do not start and do not callback
+    // recording is running -> reject: log LOG_WARN, do not start and do not callback
     void StartPlayback(std::vector<Action> actions, const RunSpec &run, FinishCallback onFinished);
     void StopPlayback();
 
@@ -142,8 +142,8 @@ private:
 
     [[nodiscard]] static constexpr std::size_t index(TaskKind kind) noexcept { return static_cast<std::size_t>(kind); }
 
-    // single entry for starting a thread: conflict check → defensive reclaim → bump generation → set Running →
-    // wrap in try/catch → finish notification (exactly once)
+    // single entry for starting a thread: conflict check -> defensive reclaim -> bump generation -> set Running ->
+    // wrap in try/catch -> finish notification (exactly once)
     void launch(TaskKind kind, FinishCallback userCb, ThreadBody body);
 
     // shared implementation of StopXxx: request_stop + blocking join + set Stopped

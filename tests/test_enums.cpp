@@ -1,9 +1,9 @@
 // ============================================================
-// enum ↔ string conversion tests
+// enum <-> string conversion tests
 //
 // covers all table-driven enums and checks:
 //   1. every enum value converts to a non-empty string
-//   2. to → from round-trips consistently
+//   2. to -> from round-trips consistently
 //   3. unknown strings fall back to the default value
 // ============================================================
 

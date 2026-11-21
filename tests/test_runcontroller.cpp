@@ -78,7 +78,7 @@ TEST(RunControllerTimed, ClampWaitShrinksToTimeLeft) {
     // 3s left, 10s interval -> wait only 3s
     EXPECT_EQ(rc.clampWait(Duration(10'000), at(7'000)).count(), 3'000);
 
-    // 12s left, 10s interval → wait the full 10s
+    // 12s left, 10s interval -> wait the full 10s
     EXPECT_EQ(rc.clampWait(Duration(10'000), at(-2'000)).count(), 10'000);
 
     // deadline reached / already past -> 0
@@ -170,5 +170,5 @@ TEST(RunControllerCounted, LoopRunsExactCount) {
     }
 
     EXPECT_EQ(iterations, 4);
-    EXPECT_EQ(now, at(400)); // 4 rounds × 100ms
+    EXPECT_EQ(now, at(400)); // 4 rounds x 100ms
 }

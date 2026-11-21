@@ -24,8 +24,8 @@ struct ResolvedPath {
 };
 
 // resolve the config path (pure function, no IO)
-//   {exePath}.json exists → portable mode, use that file
-//   otherwise             → APPDATA mode,
+//   {exePath}.json exists -> portable mode, use that file
+//   otherwise             -> APPDATA mode,
 //                              {appDataDir}/KBMacro/config.json
 //
 // note: portable is decided by "does the file exist", not "is it writable".

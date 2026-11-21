@@ -42,7 +42,7 @@ public:
     //   Timed             : min(interval, time left to the deadline); 0 once past it
     //
     // why clamp: with interval 60s + timed 10s, waiting the full 60s would make
-    // the task run 60s before it ends — "timed 10 sec" would be a lie.
+    // the task run 60s before it ends - "timed 10 sec" would be a lie.
     [[nodiscard]] Duration clampWait(Duration interval, TimePoint now) const;
 
     // one iteration done, keep count (Counted increments it here)

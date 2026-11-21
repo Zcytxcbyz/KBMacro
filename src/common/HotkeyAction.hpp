@@ -29,7 +29,7 @@ enum class HotkeyAction {
 // number of hotkeys. shared by Config / HotkeyManager / SettingsPanel.
 inline constexpr int kHotkeyCount = 11;
 
-// action → display-name resource id. SettingsPanel indexes into it directly.
+// action -> display-name resource id. SettingsPanel indexes into it directly.
 inline constexpr int kHotkeyActionResIds[kHotkeyCount] = {
         IDS_SETTINGS_HOTKEY_START_CLICKER,
         IDS_SETTINGS_HOTKEY_STOP_CLICKER,

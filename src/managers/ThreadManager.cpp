@@ -99,7 +99,7 @@ void ThreadManager::StartKeyboard(const KeyboardParams &p, FinishCallback onFini
     wxASSERT_MSG(wxIsMainThread(), "ThreadManager::StartKeyboard must be called from the UI thread");
 
     launch(TaskKind::Keyboard, std::move(onFinished), [timer = m_timerRef, p](const std::stop_token &st) {
-        // each round: press → wait holdMs → release; on stop, pressKey already compensates the release
+        // each round: press -> wait holdMs -> release; on stop, pressKey already compensates the release
         const int executed = keyboard::run(p, *timer, st);
         return TaskResult{.executed = executed};
     });
@@ -189,7 +189,7 @@ bool ThreadManager::IsRunning(const TaskKind kind) const {
 void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body) {
     auto &[thread, state, generation] = m_slots[index(kind)];
 
-    // same task already running → ignore this request (reject instead of preempt).
+    // same task already running -> ignore this request (reject instead of preempt).
     // stopping the old one on the way is wrong: it would silently drop the old result (e.g. what is being recorded),
     // and that notification is dropped by the generation check, so the "recording finished" window never appears.
     if (state == TaskState::Running) {
@@ -198,7 +198,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     }
 
     // defensive reclaim: after the previous run the thread is dead but still joinable.
-    // it must be reaped here, otherwise the assignment below destroys a joinable jthread → std::terminate.
+    // it must be reaped here, otherwise the assignment below destroys a joinable jthread -> std::terminate.
     // state is never Running here, so join returns immediately.
     // hitting this means the previous notification is still queued on the UI thread (generation not yet advanced)
     if (thread.joinable()) {
@@ -217,7 +217,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // cb goes into a shared_ptr: CallAfter copies the functor into the event object, avoid repeated closure copies
     auto cb = std::make_shared<FinishCallback>(std::move(userCb));
 
-    // worker thread → UI thread. notify is called on the worker thread;
+    // worker thread -> UI thread. notify is called on the worker thread;
     // CallAfter copies its inner lambda into the event, so capture only pointer / shared_ptr / small POD
     auto notify = [this, kind, gen, cb](TaskResult res) {
         LOG_INFO("threadmanager: task {} finishing: gen={}, reason={}", // NOLINT(*-lambda-function-name)
@@ -268,7 +268,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
 void ThreadManager::stopTask(const TaskKind kind) {
     Slot &slot = m_slots[index(kind)];
 
-    // never started / already reaped → nothing to do
+    // never started / already reaped -> nothing to do
     if (!slot.thread.joinable()) {
         LOG_DEBUG("threadmanager: task {} not running, stop ignored", taskKindName(kind));
         return;
@@ -287,7 +287,7 @@ void ThreadManager::stopTask(const TaskKind kind) {
 void ThreadManager::StopAll() {
     LOG_INFO("threadmanager: stop all");
 
-    // signal all first: wait in parallel, closing the window drops from 4×20ms to ~20ms
+    // signal all first: wait in parallel, closing the window drops from 4x20ms to ~20ms
     for (auto &slot : m_slots) {
         if (slot.thread.joinable()) slot.thread.request_stop();
     }

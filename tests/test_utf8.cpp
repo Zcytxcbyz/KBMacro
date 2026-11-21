@@ -1,5 +1,5 @@
 // ============================================================
-// UTF-8 ↔ wide character conversion tests
+// UTF-8 <-> wide character conversion tests
 //
 // ToUtf8 / ToWide are the gate for all "human-visible text" entering and leaving Win32:
 // logs (spdlog only takes UTF-8), JSON (Hotkey key names), file names.
@@ -34,14 +34,14 @@ TEST(ToUtf8, AsciiIsBytePerChar) {
 }
 
 TEST(ToUtf8, ChineseIsThreeBytesPerChar) {
-    // U+4E2D U+6587 → E4 B8 AD / E6 96 87
+    // U+4E2D U+6587 -> E4 B8 AD / E6 96 87
     const std::string utf8 = utils::ToUtf8(L"中文");
     EXPECT_EQ(utf8.size(), 6u);
     EXPECT_EQ(utf8, std::string("\xE4\xB8\xAD\xE6\x96\x87", 6));
 }
 
 TEST(ToUtf8, NonBmpIsFourBytes) {
-    // U+1F600 in a wide string is two surrogates 0xD83D 0xDE00 → F0 9F 98 80
+    // U+1F600 in a wide string is two surrogates 0xD83D 0xDE00 -> F0 9F 98 80
     const std::wstring emoji = L"\xD83D\xDE00";
     const std::string utf8 = utils::ToUtf8(emoji);
     EXPECT_EQ(utf8.size(), 4u);
@@ -58,7 +58,7 @@ TEST(ToUtf8, KeepsEmbeddedNul) {
     EXPECT_EQ(utf8.size(), 3u);
     EXPECT_EQ(utf8, std::string("a\0b", 3));
 
-    // the way back also needs an explicit length → the embedded NUL survives the round-trip
+    // the way back also needs an explicit length -> the embedded NUL survives the round-trip
     EXPECT_EQ(utils::ToWide(utf8).size(), 3u);
 }
 
@@ -93,7 +93,7 @@ TEST(ToWide, NonBmpBecomesSurrogatePair) {
 }
 
 TEST(ToWide, InvalidBytesBecomeReplacement) {
-    // 0xFF is invalid in UTF-8 → U+FFFD, no failure, no empty string
+    // 0xFF is invalid in UTF-8 -> U+FFFD, no failure, no empty string
     const std::wstring wide = utils::ToWide(std::string("\xFF", 1));
     EXPECT_EQ(wide.size(), 1u);
     EXPECT_EQ(utils::ToUtf8(wide), std::string("\xEF\xBF\xBD", 3));

@@ -25,7 +25,7 @@
 
 namespace {
 
-// ---- Action → display text ----
+// ---- Action -> display text ----
 
 wxString actionTypeText(const ActionType t) {
     switch (t) {
@@ -117,7 +117,7 @@ wxString actionParamText(const Action &a) {
     return static_cast<long>(i);
 }
 
-// size_t → signed index (for iterator arithmetic)
+// size_t -> signed index (for iterator arithmetic)
 [[nodiscard]] std::ptrdiff_t toDiff(const std::size_t i) {
     return static_cast<std::ptrdiff_t>(i);
 }
