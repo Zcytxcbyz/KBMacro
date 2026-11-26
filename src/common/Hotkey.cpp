@@ -22,14 +22,15 @@ constexpr ModifierEntry kModifiers[] = {
 };
 
 // Modifier keys are missing from the generated table: GetKeyNameTextW returns an
-// empty string for them, so the generator has nothing to record. They still need a
-// name in both directions, otherwise a recorded Ctrl/Alt/Shift action serializes as
-// "?" and comes back as key 0.
+// empty string for them. The app models modifiers as four bits (see hk::kMod*), with no
+// left/right distinction, so every variant maps to the same plain name. Playback sends the
+// generic vk, which Windows resolves the usual way.
 constexpr KeyNameEntry kModifierNames[] = {
-    {VK_CONTROL, L"Ctrl"}, {VK_LCONTROL, L"Left Ctrl"}, {VK_RCONTROL, L"Right Ctrl"},
-    {VK_SHIFT, L"Shift"},  {VK_LSHIFT, L"Left Shift"},  {VK_RSHIFT, L"Right Shift"},
-    {VK_MENU, L"Alt"},     {VK_LMENU, L"Left Alt"},     {VK_RMENU, L"Right Alt"},
-    {VK_LWIN, L"Win"},     {VK_RWIN, L"Right Win"},     {VK_APPS, L"Menu"},
+    {VK_CONTROL, L"Ctrl"}, {VK_LCONTROL, L"Ctrl"}, {VK_RCONTROL, L"Ctrl"},
+    {VK_SHIFT, L"Shift"},  {VK_LSHIFT, L"Shift"},  {VK_RSHIFT, L"Shift"},
+    {VK_MENU, L"Alt"},     {VK_LMENU, L"Alt"},     {VK_RMENU, L"Alt"},
+    {VK_LWIN, L"Win"},     {VK_RWIN, L"Win"},
+    {VK_APPS, L"Menu"},
 };
 
 unsigned modifierBit(const std::wstring_view name) {

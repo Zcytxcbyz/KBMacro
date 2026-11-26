@@ -46,13 +46,13 @@ TEST(VkToString, UnknownKeyIsQuestionMark) {
 
 TEST(VkToString, ModifierKeys) {
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_CONTROL)), "Ctrl");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LCONTROL)), "Left Ctrl");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LCONTROL)), "Ctrl");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RCONTROL)), "Ctrl");
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_SHIFT)), "Shift");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RSHIFT)), "Right Shift");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RSHIFT)), "Shift");
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_MENU)), "Alt");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RMENU)), "Right Alt");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LWIN)), "Win");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RWIN)), "Right Win");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RMENU)), "Alt");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RWIN)), "Win");
 }
 
 // ---- vkFromString ----
@@ -75,7 +75,8 @@ TEST(VkFromString, KnownNames) {
 
 TEST(VkFromString, ModifierNames) {
     EXPECT_EQ(utils::vkFromString(L"Ctrl"), static_cast<unsigned>(VK_CONTROL));
-    EXPECT_EQ(utils::vkFromString(L"Right Shift"), static_cast<unsigned>(VK_RSHIFT));
+    EXPECT_EQ(utils::vkFromString(L"Shift"), static_cast<unsigned>(VK_SHIFT));
+    EXPECT_EQ(utils::vkFromString(L"Alt"), static_cast<unsigned>(VK_MENU));
     EXPECT_EQ(utils::vkFromString(L"Win"), static_cast<unsigned>(VK_LWIN));
 }
 
