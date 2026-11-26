@@ -55,7 +55,11 @@ void ConfigManager::load() {
 // ============================================================
 
 void ConfigManager::save() const {
-    (void)config::saveTo(m_path, m_config);
+    // A failed write used to be silent: on a read-only medium every setting change appeared to work
+    // and then vanished on restart. Report it instead of discarding the result.
+    if (!config::saveTo(m_path, m_config)) {
+        LOG_ERROR("config: failed to save: {}", utils::ToUtf8(m_path.wstring()));
+    }
 }
 
 // ============================================================

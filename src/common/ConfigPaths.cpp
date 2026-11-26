@@ -99,21 +99,38 @@ bool saveTo(const std::filesystem::path &path, const Config &cfg) {
 
     nlohmann::json j = cfg;
 
-    std::ofstream ofs(path, std::ios::binary | std::ios::trunc);
-    if (!ofs) {
-        LOG_ERROR("config: cannot open file for write: {}", pathStr);
-        return false;
+    // Write a sibling temp file and rename it into place: if the volume is full or the process dies
+    // mid-write, the previous config survives instead of being truncated to nothing.
+    std::filesystem::path tmp = path;
+    tmp += L".tmp";
+
+    {
+        std::ofstream ofs(tmp, std::ios::binary | std::ios::trunc);
+        if (!ofs) {
+            LOG_ERROR("config: cannot open temp file for write: {}", utils::ToUtf8(tmp.wstring()));
+            return false;
+        }
+
+        try {
+            ofs << j.dump(2) << '\n';
+        } catch (const std::exception &e) {
+            LOG_ERROR("config: write failed: {} ({})", utils::ToUtf8(tmp.wstring()), e.what());
+            return false;
+        }
+
+        ofs.close();
+        if (!ofs) {
+            LOG_ERROR("config: write stream error: {}", utils::ToUtf8(tmp.wstring()));
+            return false;
+        }
     }
 
-    try {
-        ofs << j.dump(2) << '\n';
-    } catch (const std::exception &e) {
-        LOG_ERROR("config: write failed: {} ({})", pathStr, e.what());
-        return false;
-    }
-
-    if (!ofs) {
-        LOG_ERROR("config: write stream error: {}", pathStr);
+    std::error_code ec;
+    std::filesystem::rename(tmp, path, ec);
+    if (ec) {
+        LOG_ERROR("config: cannot replace {} ({})", pathStr, ec.message());
+        std::error_code ignored;
+        std::filesystem::remove(tmp, ignored);
         return false;
     }
 
