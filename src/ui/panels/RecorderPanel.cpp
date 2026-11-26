@@ -757,31 +757,33 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
         return;
     }
 
-    if (const int fileVer = j.value("version", 1); fileVer > kMacroVersion) {
+    // Parse every field that could carry the wrong type before touching the panel state: a
+    // hand-edited script must end in an error box, not in an exception escaping the event handler.
+    int fileVer = 1;
+    std::vector<Action> imported;
+    ScreenSpec scriptSpec;
+    RunSpec runSpec;
+    bool hasRunSpec = false;
+    try {
+        fileVer = j.value("version", 1);
+        imported = j["actions"].get<std::vector<Action>>();
+        if (j.contains("screen") && j["screen"].is_object()) {
+            scriptSpec = j["screen"].get<ScreenSpec>();
+        }
+        if (j.contains("run") && j["run"].is_object()) {
+            runSpec = j["run"].get<RunSpec>();
+            hasRunSpec = true;
+        }
+    } catch (const std::exception &e) {
+        LOG_WARN("recorder: import parse failed: {}", e.what());
+        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
+        return;
+    }
+
+    if (fileVer > kMacroVersion) {
         LOG_WARN("recorder: import version {} > supported {}", fileVer, kMacroVersion);
         uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
         return;
-    }
-
-    if (!j.contains("actions") || !j["actions"].is_array()) {
-        LOG_WARN("recorder: import missing 'actions' array");
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
-        return;
-    }
-
-    std::vector<Action> imported;
-    try {
-        imported = j["actions"].get<std::vector<Action>>();
-    } catch (const std::exception &e) {
-        LOG_WARN("recorder: import deserialize failed: {}", e.what());
-        uibtn::messageBox(TR(IDS_MSG_IMPORT_FAILED), TR(IDS_APP_TITLE), wxOK | wxICON_ERROR, this);
-        return;
-    }
-
-    // ---- Screen spec comparison ----
-    ScreenSpec scriptSpec;
-    if (j.contains("screen") && j["screen"].is_object()) {
-        scriptSpec = j["screen"].get<ScreenSpec>();
     }
 
     const ScreenSpec currentSpec = utils::GetPrimaryScreenSpec();
@@ -823,9 +825,8 @@ void RecorderPanel::onImportScript(wxCommandEvent &) {
     m_actions = std::move(imported);
     refreshList();
 
-    // Run mode: missing means default (Infinite)
-    if (j.contains("run") && j["run"].is_object()) {
-        applyRunSpec(j["run"].get<RunSpec>());
+    if (hasRunSpec) {
+        applyRunSpec(runSpec);
     }
 
     uibtn::messageBox(TR(IDS_MSG_IMPORT_SUCCESS), TR(IDS_APP_TITLE), wxOK | wxICON_INFORMATION, this);

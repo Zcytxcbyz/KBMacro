@@ -56,7 +56,15 @@ bool loadFrom(const std::filesystem::path &path, Config &out) {
 
     // version check: file version above the supported one -> refuse to load
     // lower or equal -> read as the current version (missing fields use defaults)
-    if (const int fileVersion = j.value("version", 1); fileVersion > kConfigVersion) {
+    // the read itself is guarded: a hand-edited file may hold a string where an integer belongs
+    int fileVersion = 1;
+    try {
+        fileVersion = j.value("version", 1);
+    } catch (const std::exception &e) {
+        LOG_WARN("config: bad version field: {} ({})", pathStr, e.what());
+        return false;
+    }
+    if (fileVersion > kConfigVersion) {
         LOG_WARN("config: file version {} > supported {}, ignoring", fileVersion, kConfigVersion);
         return false;
     }
