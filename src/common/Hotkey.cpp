@@ -21,6 +21,17 @@ constexpr ModifierEntry kModifiers[] = {
         {.name = L"Win", .bit = hk::kModWin},
 };
 
+// Modifier keys are missing from the generated table: GetKeyNameTextW returns an
+// empty string for them, so the generator has nothing to record. They still need a
+// name in both directions, otherwise a recorded Ctrl/Alt/Shift action serializes as
+// "?" and comes back as key 0.
+constexpr KeyNameEntry kModifierNames[] = {
+    {VK_CONTROL, L"Ctrl"}, {VK_LCONTROL, L"Left Ctrl"}, {VK_RCONTROL, L"Right Ctrl"},
+    {VK_SHIFT, L"Shift"},  {VK_LSHIFT, L"Left Shift"},  {VK_RSHIFT, L"Right Shift"},
+    {VK_MENU, L"Alt"},     {VK_LMENU, L"Left Alt"},     {VK_RMENU, L"Right Alt"},
+    {VK_LWIN, L"Win"},     {VK_RWIN, L"Right Win"},     {VK_APPS, L"Menu"},
+};
+
 unsigned modifierBit(const std::wstring_view name) {
     for (const auto &[n, b] : kModifiers) {
         if (name == n) return b;
@@ -75,6 +86,9 @@ unsigned modifierBitForVk(const unsigned vk) {
 
 std::wstring vkToString(const unsigned vk) {
     if (vk == 0) return {};
+    for (const auto &[v, name] : kModifierNames) {
+        if (v == vk) return name;
+    }
     for (const auto &[v, name] : kKeyNames) {
         if (v == vk) return name;
     }
@@ -83,6 +97,9 @@ std::wstring vkToString(const unsigned vk) {
 
 unsigned vkFromString(const std::wstring_view name) {
     if (name.empty()) return 0;
+    for (const auto &[vk, n] : kModifierNames) {
+        if (name == n) return vk;
+    }
     for (const auto &[vk, n] : kKeyNames) {
         if (name == n) return vk;
     }

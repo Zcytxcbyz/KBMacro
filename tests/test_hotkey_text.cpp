@@ -42,9 +42,17 @@ TEST(VkToString, KnownKeys) {
 
 TEST(VkToString, UnknownKeyIsQuestionMark) {
     EXPECT_EQ(utils::ToUtf8(utils::vkToString(0x07)), "?");
-    // modifiers are not in the key table: they use the modifiers bits, not vk text
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LCONTROL)), "?");
-    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RWIN)), "?");
+}
+
+TEST(VkToString, ModifierKeys) {
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_CONTROL)), "Ctrl");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LCONTROL)), "Left Ctrl");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_SHIFT)), "Shift");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RSHIFT)), "Right Shift");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_MENU)), "Alt");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RMENU)), "Right Alt");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_LWIN)), "Win");
+    EXPECT_EQ(utils::ToUtf8(utils::vkToString(VK_RWIN)), "Right Win");
 }
 
 // ---- vkFromString ----
@@ -63,6 +71,12 @@ TEST(VkFromString, KnownNames) {
     // case-sensitive: the display name is the only accepted spelling
     EXPECT_EQ(utils::vkFromString(L"f1"), 0u);
     EXPECT_EQ(utils::vkFromString(L"esc"), 0u);
+}
+
+TEST(VkFromString, ModifierNames) {
+    EXPECT_EQ(utils::vkFromString(L"Ctrl"), static_cast<unsigned>(VK_CONTROL));
+    EXPECT_EQ(utils::vkFromString(L"Right Shift"), static_cast<unsigned>(VK_RSHIFT));
+    EXPECT_EQ(utils::vkFromString(L"Win"), static_cast<unsigned>(VK_LWIN));
 }
 
 TEST(VkFromString, WholeTableRoundTrip) {
