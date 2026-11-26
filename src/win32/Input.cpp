@@ -132,7 +132,7 @@ struct ButtonFlags {
 // Send a batch of events: one SendInput = one DEBUG line.
 // failure (return value below expected) -> one WARN line -> replay cleanup (release-type events) -> throw.
 //   what    : action description for the log and the exception
-//   cleanup : events replayed after a failure; nullptr = nothing to clean up (move, wheel)
+//   cleanup : events replayed after a partial failure (sent > 0); nullptr = nothing to clean up (move, wheel)
 void sendEvents(std::vector<INPUT> events, std::string what, std::vector<INPUT> *cleanup = nullptr) {
     if (events.empty()) {
         LOG_DEBUG("input: {} skipped, no events", what);
@@ -158,7 +158,9 @@ void sendEvents(std::vector<INPUT> events, std::string what, std::vector<INPUT> 
     const DWORD error = ::GetLastError();
     LOG_WARN("input: {} failed: sent={}/{}, GetLastError={}", what, sent, expected, error);
 
-    if (cleanup != nullptr && !cleanup->empty()) {
+    // Only undo what actually went in: with sent == 0 the press never happened, and sending the
+    // release now would release a key or button the user is physically holding down.
+    if (sent > 0 && cleanup != nullptr && !cleanup->empty()) {
         const auto cleanupCount = static_cast<UINT>(cleanup->size());
         const UINT cleaned = ::SendInput(cleanupCount, cleanup->data(), static_cast<int>(sizeof(INPUT)));
         if (cleaned != cleanupCount) {
