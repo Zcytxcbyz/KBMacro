@@ -26,11 +26,18 @@ constexpr ModifierEntry kModifiers[] = {
 // left/right distinction, so every variant maps to the same plain name. Playback sends the
 // generic vk, which Windows resolves the usual way.
 constexpr KeyNameEntry kModifierNames[] = {
-    {VK_CONTROL, L"Ctrl"}, {VK_LCONTROL, L"Ctrl"}, {VK_RCONTROL, L"Ctrl"},
-    {VK_SHIFT, L"Shift"},  {VK_LSHIFT, L"Shift"},  {VK_RSHIFT, L"Shift"},
-    {VK_MENU, L"Alt"},     {VK_LMENU, L"Alt"},     {VK_RMENU, L"Alt"},
-    {VK_LWIN, L"Win"},     {VK_RWIN, L"Win"},
-    {VK_APPS, L"Menu"},
+        {VK_CONTROL, L"Ctrl"},
+        {VK_LCONTROL, L"Ctrl"},
+        {VK_RCONTROL, L"Ctrl"},
+        {VK_SHIFT, L"Shift"},
+        {VK_LSHIFT, L"Shift"},
+        {VK_RSHIFT, L"Shift"},
+        {VK_MENU, L"Alt"},
+        {VK_LMENU, L"Alt"},
+        {VK_RMENU, L"Alt"},
+        {VK_LWIN, L"Win"},
+        {VK_RWIN, L"Win"},
+        {VK_APPS, L"Menu"},
 };
 
 unsigned modifierBit(const std::wstring_view name) {
