@@ -92,9 +92,9 @@ void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool l
 // to do -- it exists only for the case where an exception unwinds past the loop.
 class StuckGuard {
 public:
-    StuckGuard(std::unordered_map<unsigned, HeldKey> &held,
-               std::unordered_map<MouseButton, int> &heldButtons) noexcept
-        : m_held(held), m_buttons(heldButtons) {}
+    StuckGuard(std::unordered_map<unsigned, HeldKey> &held, std::unordered_map<MouseButton, int> &heldButtons) noexcept
+        : m_held(held),
+          m_buttons(heldButtons) {}
 
     StuckGuard(const StuckGuard &) = delete;
     StuckGuard &operator=(const StuckGuard &) = delete;
@@ -108,7 +108,6 @@ private:
     std::unordered_map<unsigned, HeldKey> &m_held;
     std::unordered_map<MouseButton, int> &m_buttons;
 };
-
 
 // Move the cursor to the position given by the action:
 //   relative == true  -> offset from the current position (moveBy, no coordinate adaptation)
