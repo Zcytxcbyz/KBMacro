@@ -99,8 +99,8 @@ void from_json(const nlohmann::json &j, Config &c) {
         const auto &w = j["window"];
         c.window.x = w.value("x", -1);
         c.window.y = w.value("y", -1);
-        c.window.width = w.value("width", 650);
-        c.window.height = w.value("height", 720);
+        c.window.width = w.value("width", 800);
+        c.window.height = w.value("height", 850);
         c.window.maximized = w.value("maximized", false);
     }
 

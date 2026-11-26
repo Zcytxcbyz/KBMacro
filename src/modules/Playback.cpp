@@ -1,6 +1,7 @@
 #include "modules/Playback.hpp"
 
 #include <algorithm>
+#include <exception>
 #include <unordered_map>
 
 #include "common/Log.hpp"
@@ -32,7 +33,13 @@ void releaseHeldKeys(std::unordered_map<unsigned, HeldKey> &held, const bool lou
         auto &[hotkey, count] = val;
         if (count <= 0) continue;
 
-        input::keyUp(hotkey);
+        // A release must never throw: this also runs from StuckGuard's destructor, so an escaping
+        // exception would terminate the process; reaching the next key matters more than this one.
+        try {
+            input::keyUp(hotkey);
+        } catch (const std::exception &e) {
+            LOG_ERROR("playback: failed to release a stuck key: {}", e.what());
+        }
         count = 0;
         ++released;
     }
@@ -60,7 +67,11 @@ void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool l
     for (auto &[button, count] : held) {
         if (count <= 0) continue;
 
-        input::buttonUp(button);
+        try {
+            input::buttonUp(button);
+        } catch (const std::exception &e) {
+            LOG_ERROR("playback: failed to release a stuck mouse button: {}", e.what());
+        }
         count = 0;
         ++released;
     }
@@ -74,6 +85,30 @@ void releaseHeldButtons(std::unordered_map<MouseButton, int> &held, const bool l
         LOG_DEBUG("playback: released {} stuck mouse button(s) at round end", released);
     }
 }
+
+// Releases everything still held when the scope ends, including the exception path: an action that
+// throws halfway through a script must not leave a key or a mouse button pressed down.
+// The normal exit path below releases explicitly, so in the common case this guard finds nothing
+// to do -- it exists only for the case where an exception unwinds past the loop.
+class StuckGuard {
+public:
+    StuckGuard(std::unordered_map<unsigned, HeldKey> &held,
+               std::unordered_map<MouseButton, int> &heldButtons) noexcept
+        : m_held(held), m_buttons(heldButtons) {}
+
+    StuckGuard(const StuckGuard &) = delete;
+    StuckGuard &operator=(const StuckGuard &) = delete;
+
+    ~StuckGuard() {
+        releaseHeldKeys(m_held, /*loud=*/true);
+        releaseHeldButtons(m_buttons, /*loud=*/true);
+    }
+
+private:
+    std::unordered_map<unsigned, HeldKey> &m_held;
+    std::unordered_map<MouseButton, int> &m_buttons;
+};
+
 
 // Move the cursor to the position given by the action:
 //   relative == true  -> offset from the current position (moveBy, no coordinate adaptation)
@@ -173,6 +208,11 @@ int run(const std::vector<Action> &actions, const RunSpec &run, const ITimer &ti
 
     std::unordered_map<unsigned, HeldKey> held;
     std::unordered_map<MouseButton, int> heldButtons;
+
+    // exception-path safety net; the explicit exit release further down stays where it is so the
+    // log order does not change
+    [[maybe_unused]] StuckGuard guard{held, heldButtons};
+
     int executed = 0;
     bool interrupted = false;
 
