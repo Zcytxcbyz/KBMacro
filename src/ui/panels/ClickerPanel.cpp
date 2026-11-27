@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <filesystem>
 
 #include <wx/spinctrl.h>
@@ -25,6 +26,24 @@ constexpr int kRunModeCounted = 2;
 
 // Schema version of *.clicker.json
 constexpr int kClickerParamsVersion = 1;
+
+// Coordinates live in plain text boxes, so a paste can leave junk or an absurd number behind.
+// Clamp to the virtual-desktop range and say so; the effective value is written back before start.
+int coordFromText(const wxTextCtrl &ctrl, const char *name) {
+    long value = 0;
+    if (!ctrl.GetValue().ToLong(&value)) {
+        LOG_WARN("clicker: {} is not a number ('{}'), using 0", name, ctrl.GetValue().ToStdString());
+        return 0;
+    }
+    constexpr long kLimit = 32767;
+    if (value > kLimit || value < -kLimit) {
+        const long clamped = std::clamp(value, -kLimit, kLimit);
+        LOG_WARN("clicker: {} out of range ({}), clamped to {}", name, value, clamped);
+        return static_cast<int>(clamped);
+    }
+    return static_cast<int>(value);
+}
+
 } // namespace
 
 ClickerPanel::ClickerPanel(wxWindow *parent, ThreadManager &threadMgr)
@@ -202,10 +221,8 @@ ClickerParams ClickerPanel::collectParams() const {
 
     p.ignorePosition = m_chkIgnorePos->GetValue();
 
-    // Parse coordinates with ToLong; keep 0 on failure
-    long coord = 0;
-    if (m_x->GetValue().ToLong(&coord)) p.x = static_cast<int>(coord);
-    if (m_y->GetValue().ToLong(&coord)) p.y = static_cast<int>(coord);
+    p.x = coordFromText(*m_x, "x");
+    p.y = coordFromText(*m_y, "y");
 
     p.clickType = static_cast<ClickType>(m_choiceType->GetSelection());
     p.wheelSteps = m_spinWheelSteps->GetValue();
@@ -326,6 +343,10 @@ void ClickerPanel::onStop(wxCommandEvent &) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void ClickerPanel::startWithCurrentParams() {
     const ClickerParams p = collectParams();
+
+    // Show the value that will actually run: a rejected paste would otherwise stay visible
+    m_x->ChangeValue(wxString::Format("%d", p.x));
+    m_y->ChangeValue(wxString::Format("%d", p.y));
 
     LOG_INFO("clicker: start requested (interval={}ms, type={}, run={})",
              p.intervalMs,

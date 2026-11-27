@@ -632,15 +632,15 @@ void RecorderPanel::startPlayback() {
              runModeToString(run.mode),
              speed);
 
-    // ThreadManager ignores this request while already running (the same task must not run concurrently),
-    // so ignore the return value and flip the buttons to "started"; the callback flips them back on real exit
+    // Playback is refused while a recording runs (ThreadManager rejects the latecomer), so take the
+    // button state from the manager instead of assuming the start succeeded.
     m_threadMgr.StartPlayback(std::move(script), run, [this](const TaskResult &res) {
         setRunning(false);
         LOG_INFO("recorder: playback finished, reason={}, executed={}", // NOLINT(*-lambda-function-name)
                  static_cast<int>(res.reason),
                  res.executed);
     });
-    setRunning(true);
+    setRunning(m_threadMgr.IsRunning(TaskKind::Playback));
 }
 
 void RecorderPanel::stopPlayback() {

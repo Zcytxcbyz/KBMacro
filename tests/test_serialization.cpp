@@ -441,3 +441,20 @@ TEST(ConfigRoundTrip, PlaybackSpeedIsSnapped) {
     j.erase("playbackSpeed");
     EXPECT_DOUBLE_EQ(j.get<Config>().playbackSpeed, Config{}.playbackSpeed); // same for a missing field
 }
+
+TEST(ActionParse, ClampsOutOfRangeFields) {
+    const auto j = nlohmann::json::parse(
+            R"({"type":"MouseClick","button":"Left","x":999999999,"y":-999999999,"holdMs":-5,"delayMs":1e12})");
+    const auto a = j.get<Action>();
+    EXPECT_EQ(a.x, 32767);
+    EXPECT_EQ(a.y, -32767);
+    EXPECT_EQ(a.holdMs, 0);
+    EXPECT_EQ(a.delayMs, 3600000);
+}
+
+TEST(ActionParse, UnknownTypeBecomesNoop) {
+    const auto j = nlohmann::json::parse(R"({"type":"KeyboardPress","delayMs":42})");
+    const auto a = j.get<Action>();
+    EXPECT_EQ(a.type, ActionType::Delay);
+    EXPECT_EQ(a.delayMs, 0);
+}

@@ -211,7 +211,6 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     // advancing it in Stop too would not cover "timed task finished + user already started a new task".
     const unsigned gen = ++generation;
 
-    state = TaskState::Running;
     LOG_INFO("threadmanager: task {} started: gen={}", taskKindName(kind), gen);
 
     // cb goes into a shared_ptr: CallAfter copies the functor into the event object, avoid repeated closure copies
@@ -242,7 +241,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
     };
 
     // body exceptions must not escape the thread (std::terminate), nor leave the state stuck at Running forever
-    thread = std::jthread{[kind, body = std::move(body), notify = std::move(notify)](const std::stop_token &st) {
+    auto worker = [kind, body = std::move(body), notify = std::move(notify)](const std::stop_token &st) {
         TaskResult res;
 
         try {
@@ -262,7 +261,22 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
 
         // exactly once: one path for normal return, one for the exception
         notify(std::move(res));
-    }};
+    };
+
+    // Construction can fail (CreateThread / allocation). Nothing was started in that case, so the
+    // task must not look Running: report the failure to the panel instead of leaving its buttons
+    // disabled until restart. We are on the UI thread, so "cb runs on the UI thread" still holds.
+    try {
+        thread = std::jthread{std::move(worker)};
+    } catch (const std::exception &e) {
+        LOG_ERROR("threadmanager: task {} failed to start: {}", taskKindName(kind), e.what());
+        if (*cb) (*cb)(TaskResult{.reason = FinishReason::Failed});
+        return;
+    }
+
+    // Only a started task may report Running; setting it before the construction would leave
+    // IsRunning() true forever if the constructor throws.
+    state = TaskState::Running;
 }
 
 void ThreadManager::stopTask(const TaskKind kind) {
