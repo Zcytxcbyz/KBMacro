@@ -1,7 +1,7 @@
 #include "modules/RecorderNormalize.hpp"
 
-#include <optional>
 #include <cstdlib>
+#include <optional>
 #include <unordered_set>
 #include <utility>
 
@@ -245,8 +245,7 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
 
     // a waiting Down still goes out unchanged (it really happened); the missing Up is left to playback's
     // release stuck keys. Sub-notch wheel leftovers and a still-held button invent nothing.
-    if (opts.maxActions <= 0 || static_cast<int>(out.size()) < opts.maxActions)
-        flushPendingDown();
+    if (opts.maxActions <= 0 || static_cast<int>(out.size()) < opts.maxActions) flushPendingDown();
     return out;
 }
 
