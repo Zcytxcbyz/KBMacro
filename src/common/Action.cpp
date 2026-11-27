@@ -63,6 +63,11 @@ void to_json(nlohmann::json &j, const Action &a) {
             j["event"] = keyEventTypeToString(a.keyEvent);
             j["delayMs"] = a.delayMs;
             break;
+        case ActionType::KeyboardPress:
+            j["key"] = a.hotkey;
+            j["holdMs"] = a.holdMs;
+            j["delayMs"] = a.delayMs;
+            break;
         case ActionType::MouseDown:
         case ActionType::MouseUp:
             j["button"] = mouseButtonToString(a.button);
@@ -115,12 +120,20 @@ void from_json(const nlohmann::json &j, Action &a) {
             a.wheelSteps = intField(j, "steps", 1, kMaxWheelSteps, 1);
             break;
 
-        case ActionType::Keyboard:
+        case ActionType::Keyboard: {
             if (j.contains("key") && j["key"].is_object()) {
                 a.hotkey = j["key"].get<Hotkey>();
             }
             a.keyEvent = keyEventTypeFromString(j.value("event", std::string{"Down"}));
             break;
+        }
+        case ActionType::KeyboardPress: {
+            if (j.contains("key") && j["key"].is_object()) {
+                a.hotkey = j["key"].get<Hotkey>();
+            }
+            a.holdMs = intField(j, "holdMs", 0, kMaxDurationMs, 0);
+            break;
+        }
 
         case ActionType::MouseDown:
         case ActionType::MouseUp:
