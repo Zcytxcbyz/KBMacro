@@ -60,6 +60,16 @@ wxPGChoices makeKeyEventChoices() {
 [[nodiscard]] bool hasCoordinates(const ActionType t) noexcept {
     return t == ActionType::MouseMove || hasButton(t);
 }
+
+[[nodiscard]] bool hasKey(const ActionType t) noexcept {
+    return t == ActionType::Keyboard || t == ActionType::KeyboardPress;
+}
+
+// types that take a "hold" duration: a click holds the button, a key press holds the key
+[[nodiscard]] bool hasHold(const ActionType t) noexcept {
+    return t == ActionType::MouseClick || t == ActionType::KeyboardPress;
+}
+
 } // namespace
 
 ActionEditDialog::ActionEditDialog(wxWindow *parent, const wxString &title, const Action &action)
@@ -84,6 +94,7 @@ void ActionEditDialog::buildUi() {
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_DOWN));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_MOUSE_UP));
         m_choiceType->Append(TR(IDS_ACTION_TYPE_DELAY));
+        m_choiceType->Append(TR(IDS_ACTION_TYPE_KEY_PRESS));
         m_choiceType->SetSelection(static_cast<int>(m_action.type)); // order must match the enum
 
         row->Add(m_choiceType, 1, wxALIGN_CENTER_VERTICAL);
@@ -208,12 +219,14 @@ void ActionEditDialog::rebuildParamGrid() {
         m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_WHEEL_STEPS), kPropWheelSteps, m_action.wheelSteps));
     }
 
-    if (m_action.type == ActionType::Keyboard) {
+    if (hasKey(m_action.type)) {
         auto *keyProp = new wxStringProperty(
                 TR(IDS_ACTION_PARAM_KEY), kPropKey, wxString(utils::hotkeyToString(m_action.hotkey)));
         keyProp->ChangeFlag(wxPG_PROP_READONLY, true);
         m_grid->Append(keyProp);
+    }
 
+    if (m_action.type == ActionType::Keyboard) {
         wxPGChoices eventChoices = makeKeyEventChoices();
         m_grid->Append(new wxEnumProperty(
                 TR(IDS_ACTION_PARAM_KEY_EVENT), kPropKeyEvent, eventChoices, static_cast<int>(m_action.keyEvent)));
@@ -221,7 +234,7 @@ void ActionEditDialog::rebuildParamGrid() {
 
     m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_DELAY), kPropDelay, m_action.delayMs));
 
-    if (m_action.type == ActionType::MouseClick) {
+    if (hasHold(m_action.type)) {
         m_grid->Append(new wxIntProperty(TR(IDS_ACTION_PARAM_HOLD), kPropHold, m_action.holdMs));
     }
 }
@@ -258,7 +271,7 @@ void ActionEditDialog::collectFromGrid() {
 
     m_action.delayMs = get(kPropDelay);
 
-    if (m_action.type == ActionType::MouseClick) {
+    if (hasHold(m_action.type)) {
         m_action.holdMs = get(kPropHold);
     }
 }
@@ -276,7 +289,7 @@ void ActionEditDialog::refreshAuxButtons() {
 
     // position capture only makes sense for absolute coordinates (relative actions need an offset)
     m_btnCapturePos->Enable(absolute);
-    m_btnSetKey->Enable(m_action.type == ActionType::Keyboard);
+    m_btnSetKey->Enable(hasKey(m_action.type));
 }
 
 // ============================================================
