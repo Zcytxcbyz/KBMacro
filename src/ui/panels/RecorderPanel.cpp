@@ -43,6 +43,8 @@ wxString actionTypeText(const ActionType t) {
             return {TR(IDS_ACTION_TYPE_MOUSE_UP)};
         case ActionType::Delay:
             return {TR(IDS_ACTION_TYPE_DELAY)};
+        case ActionType::KeyboardPress:
+            return {TR(IDS_ACTION_TYPE_KEY_PRESS)};
     }
     return {};
 }
@@ -96,6 +98,9 @@ wxString actionParamText(const Action &a) {
                                                                 : wxString(TR(IDS_ACTION_KEY_UP));
             return wxString::Format("%s [%s]", key, evt);
         }
+        case ActionType::KeyboardPress:
+            // the hold column already shows the duration, so only the key name goes here
+            return wxString(utils::hotkeyToString(a.hotkey));
         case ActionType::MouseDown:
         case ActionType::MouseUp:
             // The type column already says "down/up"; only fill in the button and coordinates here
@@ -358,7 +363,7 @@ void RecorderPanel::refreshList() {
         m_listCtrl->SetItem(row, 1, actionTypeText(a.type));
         m_listCtrl->SetItem(row, 2, actionParamText(a));
         m_listCtrl->SetItem(row, 3, wxString::Format("%d", a.delayMs));
-        if (a.type == ActionType::MouseClick) {
+        if (a.type == ActionType::MouseClick || a.type == ActionType::KeyboardPress) {
             m_listCtrl->SetItem(row, 4, wxString::Format("%d", a.holdMs));
         } else {
             m_listCtrl->SetItem(row, 4, "-");
