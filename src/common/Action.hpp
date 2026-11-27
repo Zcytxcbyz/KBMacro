@@ -23,6 +23,10 @@ enum class ActionType {
     MouseUp,
     // pure wait: emits no input event, just pauses for delayMs (delayMs is a duration for this type)
     Delay,
+    // one press-and-release: down, hold for holdMs, up. Recording collapses a key down/up pair into
+    // this when nothing else happened in between; Keyboard/Down + Keyboard/Up stay for chords and holds.
+    // Always appended last: the type combo box indexes by enum value.
+    KeyboardPress,
 };
 
 // mouse buttons
@@ -65,6 +69,7 @@ inline constexpr ActionTypeEntry kActionTypeEntries[] = {
         {.value = ActionType::MouseDown, .name = "MouseDown"},
         {.value = ActionType::MouseUp, .name = "MouseUp"},
         {.value = ActionType::Delay, .name = "Delay"},
+        {.value = ActionType::KeyboardPress, .name = "KeyboardPress"},
 };
 
 struct MouseButtonEntry {
@@ -166,6 +171,7 @@ template<typename Entry, typename Enum>
 //   MouseDown  : button, x, y, delayMs
 //   MouseUp    : button, x, y, delayMs
 //   Delay      : delayMs (here delayMs is the wait duration, not the "pre-action interval")
+//   KeyboardPress: hotkey, holdMs, delayMs
 struct Action {
     ActionType type = ActionType::MouseMove;
 
@@ -177,7 +183,7 @@ struct Action {
     int y = 0;
     bool relative = false;
 
-    // MouseClick
+    // MouseClick / KeyboardPress
     MouseButton button = MouseButton::Left;
     int holdMs = 0;
 
