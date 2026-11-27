@@ -232,6 +232,7 @@ BEGIN
     L(IDS_ACTION_GROUP_PARAMS)                  "参数"
     L(IDS_ACTION_LABEL_TYPE)                    "动作类型："
     L(IDS_ACTION_TYPE_DELAY)                    "延迟"
+    L(IDS_ACTION_TYPE_KEY_PRESS)                "按键"
     L(IDS_ACTION_CHK_RELATIVE)                  "相对坐标（相对当前位置偏移）"
     L(IDS_ACTION_PARAM_X_REL)                   "X 偏移"
     L(IDS_ACTION_PARAM_Y_REL)                   "Y 偏移"

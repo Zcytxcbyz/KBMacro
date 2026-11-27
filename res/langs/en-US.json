@@ -179,6 +179,7 @@
   "10006": "Mouse Up",
   "10007": "Delay",
   "10008": "Relative (offset from cursor)",
+  "10009": "Key Press",
   "10010": "Button",
   "10011": "X",
   "10012": "Y",

@@ -234,6 +234,7 @@
 #define IDS_ACTION_TYPE_MOUSE_UP        10006
 #define IDS_ACTION_TYPE_DELAY           10007
 #define IDS_ACTION_CHK_RELATIVE         10008
+#define IDS_ACTION_TYPE_KEY_PRESS       10009
 
 #define IDS_ACTION_PARAM_BUTTON         10010
 #define IDS_ACTION_PARAM_X              10011

@@ -232,6 +232,7 @@ BEGIN
     L(IDS_ACTION_GROUP_PARAMS)                  "Parameters"
     L(IDS_ACTION_LABEL_TYPE)                    "Action type:"
     L(IDS_ACTION_TYPE_DELAY)                    "Delay"
+    L(IDS_ACTION_TYPE_KEY_PRESS)                "Key Press"
     L(IDS_ACTION_CHK_RELATIVE)                  "Relative (offset from cursor)"
     L(IDS_ACTION_PARAM_X_REL)                   "X offset"
     L(IDS_ACTION_PARAM_Y_REL)                   "Y offset"
