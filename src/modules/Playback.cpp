@@ -172,6 +172,12 @@ bool applyAction(const Action &action,
             return true;
         }
 
+        case ActionType::KeyboardPress:
+            // pressKey sends down, waits holdMs, then sends up; a stop request still produces the up,
+            // so the key cannot stay stuck and this action must NOT join `held` (releaseAll would double-release).
+            return input::pressKey(action.hotkey, action.holdMs, timer, st);
+
+
         case ActionType::Delay:
             // pure wait: the duration is delayMs, and delayMs was already performed as the
             // "pre-action wait" in the loop, so there is nothing to do here.
