@@ -19,7 +19,10 @@ configurable interval and hold time.
 **Recorder & playback** — capture mouse and keyboard input into an action list
 that you can edit, reorder, export to JSON and play back. Supports drag
 (`mouse down` → moves → `mouse up`), mouse moves, wheel, absolute and relative
-coordinates, and explicit delay actions.
+coordinates, explicit delay actions, and single key presses. A key down/up pair
+with nothing in between is stored as one `key press` action carrying its own
+hold time; chords such as Ctrl+C stay as separate down/up actions, so a key can
+be held across other events.
 
 **Shared**
 
