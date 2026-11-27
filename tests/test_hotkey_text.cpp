@@ -18,6 +18,9 @@
 #include <gtest/gtest.h>
 
 #include <windows.h>
+#include <map>
+#include <string>
+#include <vector>
 
 #include "common/Hotkey.hpp"
 #include "common/KeyNames.gen.hpp"
