@@ -1,7 +1,6 @@
 #include "common/Action.hpp"
 
 #include <algorithm>
-#include <cstdint>
 
 #include "common/Hotkey.hpp"
 #include "common/Log.hpp"

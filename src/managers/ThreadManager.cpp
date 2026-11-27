@@ -240,7 +240,7 @@ void ThreadManager::launch(TaskKind kind, FinishCallback userCb, ThreadBody body
         });
     };
 
-    // body exceptions must not escape the thread (std::terminate), nor leave the state stuck at Running forever
+    // body exceptions must not escape the thread (std::terminate)
     auto worker = [kind, body = std::move(body), notify = std::move(notify)](const std::stop_token &st) {
         TaskResult res;
 
