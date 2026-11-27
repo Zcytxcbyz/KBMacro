@@ -23,6 +23,52 @@
 #include "common/KeyNames.gen.hpp"
 #include "common/Utils.hpp"
 
+namespace {
+
+// Every key on a US 104-key layout, left and right modifiers both included.
+std::vector<unsigned> usKeyboardKeys() {
+    std::vector<unsigned> keys;
+    for (unsigned c = 'A'; c <= 'Z'; ++c)
+        keys.push_back(c);
+    for (unsigned c = '0'; c <= '9'; ++c)
+        keys.push_back(c);
+    for (unsigned vk = VK_F1; vk <= VK_F12; ++vk)
+        keys.push_back(vk);
+    for (unsigned vk = VK_NUMPAD0; vk <= VK_NUMPAD9; ++vk)
+        keys.push_back(vk);
+
+    keys.insert(keys.end(),
+                {VK_ESCAPE,   VK_TAB,      VK_CAPITAL,  VK_SPACE,    VK_BACK,      VK_RETURN,    VK_INSERT,
+                 VK_DELETE,   VK_HOME,     VK_END,      VK_PRIOR,    VK_NEXT,      VK_LEFT,      VK_UP,
+                 VK_RIGHT,    VK_DOWN,     VK_SNAPSHOT, VK_SCROLL,   VK_PAUSE,     VK_NUMLOCK,   VK_MULTIPLY,
+                 VK_ADD,      VK_SUBTRACT, VK_DECIMAL,  VK_DIVIDE,   VK_LSHIFT,    VK_RSHIFT,    VK_SHIFT,
+                 VK_LCONTROL, VK_RCONTROL, VK_CONTROL,  VK_LMENU,    VK_RMENU,     VK_MENU,      VK_LWIN,
+                 VK_RWIN,     VK_APPS,     VK_OEM_1,    VK_OEM_PLUS, VK_OEM_COMMA, VK_OEM_MINUS, VK_OEM_PERIOD,
+                 VK_OEM_2,    VK_OEM_3,    VK_OEM_4,    VK_OEM_5,    VK_OEM_6,     VK_OEM_7});
+    return keys;
+}
+
+// Right-hand modifiers fold into the generic (left) vk, because the app does not model sides.
+unsigned canonicalVk(const unsigned vk) {
+    switch (vk) {
+        case VK_LCONTROL:
+        case VK_RCONTROL:
+            return VK_CONTROL;
+        case VK_LSHIFT:
+        case VK_RSHIFT:
+            return VK_SHIFT;
+        case VK_LMENU:
+        case VK_RMENU:
+            return VK_MENU;
+        case VK_RWIN:
+            return VK_LWIN;
+        default:
+            return vk;
+    }
+}
+
+} // namespace
+
 // ---- vkToString ----
 
 TEST(VkToString, ZeroIsEmpty) {
@@ -85,6 +131,30 @@ TEST(VkFromString, WholeTableRoundTrip) {
         ASSERT_NE(name, nullptr);
         EXPECT_EQ(utils::vkFromString(name), vk) << "name=" << utils::ToUtf8(name);
         EXPECT_EQ(utils::ToUtf8(utils::vkToString(vk)), utils::ToUtf8(name)) << "vk=" << vk;
+    }
+}
+
+TEST(VkToString, UsKeyboardLayoutRoundTrips) {
+    for (const unsigned vk : usKeyboardKeys()) {
+        const auto name = utils::vkToString(vk);
+        ASSERT_FALSE(name.empty()) << "vk=" << vk;
+        ASSERT_NE(name, L"?") << "no display name for vk=" << vk;
+
+        // vk -> name -> vk: right-hand modifiers are expected to come back as the generic one
+        EXPECT_EQ(utils::vkFromString(name), canonicalVk(vk)) << "vk=" << vk << " name=" << utils::ToUtf8(name);
+    }
+}
+
+TEST(VkFromString, UsKeyboardNamesAreDistinct) {
+    std::map<std::wstring, unsigned> seen;
+    for (const unsigned vk : usKeyboardKeys()) {
+        const auto name = utils::vkToString(vk);
+        const auto [it, inserted] = seen.try_emplace(name, vk);
+        if (inserted) continue;
+
+        // only the left/right modifier variants may share a name
+        EXPECT_TRUE(utils::isModifierKey(vk) && utils::isModifierKey(it->second))
+                << "duplicate name " << utils::ToUtf8(name) << " for vk=" << vk << " and vk=" << it->second;
     }
 }
 

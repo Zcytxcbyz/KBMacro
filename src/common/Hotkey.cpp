@@ -21,11 +21,12 @@ constexpr ModifierEntry kModifiers[] = {
         {.name = L"Win", .bit = hk::kModWin},
 };
 
-// Modifier keys are missing from the generated table: GetKeyNameTextW returns an
-// empty string for them. The app models modifiers as four bits (see hk::kMod*), with no
-// left/right distinction, so every variant maps to the same plain name. Playback sends the
-// generic vk, which Windows resolves the usual way.
-constexpr KeyNameEntry kModifierNames[] = {
+// Keys the generated table cannot cover: GetKeyNameTextW returns an empty string for
+// modifiers and for a few layout-dependent keys, so the generator has nothing to record.
+// Modifiers also need a name in the other direction: the app models them as four bits
+// (see hk::kMod*), with no left/right distinction, so every variant maps to the same
+// plain name. Playback sends the generic vk, which Windows resolves the usual way.
+constexpr KeyNameEntry kExtraNames[] = {
         {VK_CONTROL, L"Ctrl"},
         {VK_LCONTROL, L"Ctrl"},
         {VK_RCONTROL, L"Ctrl"},
@@ -38,6 +39,10 @@ constexpr KeyNameEntry kModifierNames[] = {
         {VK_LWIN, L"Win"},
         {VK_RWIN, L"Win"},
         {VK_APPS, L"Menu"},
+        {VK_PAUSE, L"Pause"},
+        {VK_SEPARATOR, L"Num ,"},
+        {VK_OEM_8, L"OEM 8"},
+        {VK_OEM_102, L"OEM 102"},
 };
 
 unsigned modifierBit(const std::wstring_view name) {
@@ -94,7 +99,7 @@ unsigned modifierBitForVk(const unsigned vk) {
 
 std::wstring vkToString(const unsigned vk) {
     if (vk == 0) return {};
-    for (const auto &[v, name] : kModifierNames) {
+    for (const auto &[v, name] : kExtraNames) {
         if (v == vk) return name;
     }
     for (const auto &[v, name] : kKeyNames) {
@@ -105,7 +110,7 @@ std::wstring vkToString(const unsigned vk) {
 
 unsigned vkFromString(const std::wstring_view name) {
     if (name.empty()) return 0;
-    for (const auto &[vk, n] : kModifierNames) {
+    for (const auto &[vk, n] : kExtraNames) {
         if (name == n) return vk;
     }
     for (const auto &[vk, n] : kKeyNames) {
