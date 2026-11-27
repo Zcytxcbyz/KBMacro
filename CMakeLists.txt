@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 4.0)
-project(KBMacro VERSION 0.0.3 LANGUAGES CXX)
+project(KBMacro VERSION 0.1.0 LANGUAGES CXX)
 
 # ============================================================
 # Enable the C++20 standard
