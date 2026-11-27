@@ -283,6 +283,10 @@ text formatting, recording normalisation and speed scaling. UI, hooks and
 - Global hotkeys belong to one instance: a second copy registers none of them
   (error 1409) and shows “Failed to register 11 hotkey(s)” in the status bar,
   while the first copy keeps working.
+- When the foreground window runs at a higher integrity level (an elevated
+  application), Windows discards injected input through UIPI while `SendInput`
+  still reports success. Actions appear to execute in the list but have no
+  effect on screen, and nothing is logged as an error.
 
 ## Third-party components
 
