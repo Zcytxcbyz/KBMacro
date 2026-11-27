@@ -210,6 +210,8 @@ struct Action {
 //                 "delayMs":...}
 //   Keyboard   : {"type": "Keyboard", "key": {...}, "event": "Down",
 //                 "delayMs":...}
+//   KeyboardPress : {"type": "KeyboardPress", "key": {...},
+//                    "holdMs":..., "delayMs":...},
 //   MouseDown / MouseUp : {"type": ..., "button":..., "x":..., "y":...,
 //                          "delayMs":..., "relative": true(optional)}
 //   Delay      : {"type": "Delay", "delayMs":...}
