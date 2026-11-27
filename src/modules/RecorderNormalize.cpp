@@ -1,5 +1,6 @@
 #include "modules/RecorderNormalize.hpp"
 
+#include <optional>
 #include <cstdlib>
 #include <unordered_set>
 #include <utility>
@@ -13,6 +14,10 @@ constexpr int kDragThreshold = 2;
 
 // granularity of one wheel notch
 constexpr int kWheelDelta = 120;
+
+// a press longer than this is not folded: an hour is far beyond "typing", and folding it would hide a
+// genuinely long hold behind one row (keep the raw Down/Up pair instead of shortening the data)
+constexpr int kMaxFoldHoldMs = 3600000;
 
 // whether this event is "a modifier key of some hotkey"
 [[nodiscard]] bool isModifierEventOf(const recorder::RawEvent &e, const unsigned mask) noexcept {
@@ -46,11 +51,27 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
     bool haveLast = false;
     std::uint32_t lastTime = 0;
 
-    const auto push = [&](Action action, const std::uint32_t time) {
+    const auto emit = [&](Action action, const std::uint32_t time) {
         action.delayMs = haveLast ? static_cast<int>(time - lastTime) : 0;
         haveLast = true;
         lastTime = time;
         out.push_back(std::move(action)); // NOLINT(*-move-const-arg)
+    };
+
+    // a keyboard Down waiting for its Up: not emitted yet, so the pair can still fold into one press
+    std::optional<Action> pendingDown;
+    std::uint32_t pendingDownTime = 0;
+
+    const auto flushPendingDown = [&] {
+        if (!pendingDown) return;
+        emit(*pendingDown, pendingDownTime);
+        pendingDown.reset();
+    };
+
+    // anything else that reaches the output closes the fold window first, so the order stays chronological
+    const auto push = [&](Action action, const std::uint32_t time) {
+        flushPendingDown();
+        emit(std::move(action), time);
     };
 
     const auto limitReached = [&] { return opts.maxActions > 0 && static_cast<int>(out.size()) >= opts.maxActions; };
@@ -87,15 +108,40 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
             if (e.kind == RawKind::KeyDown) {
                 // auto-repeat: holding the key sends repeated Down, keep only the first
                 if (!keysDown.insert(e.vk).second) continue;
-            } else {
-                // an Up without a matching Down (e.g. held before recording started) is dropped outright,
-                // otherwise playback would release a key that was never pressed
-                if (keysDown.erase(e.vk) == 0) continue;
+
+                // a second Down (chord, or the same key again) ends the window: emit the old one unchanged
+                flushPendingDown();
+                pendingDown = Action{.type = ActionType::Keyboard,
+                                     .hotkey = Hotkey{.modifiers = 0, .vk = e.vk},
+                                     .keyEvent = KeyEventType::Down};
+                pendingDownTime = e.time;
+                continue;
             }
 
+            // an Up without a matching Down (e.g. held before recording started) is dropped outright,
+            // otherwise playback would release a key that was never pressed
+            if (keysDown.erase(e.vk) == 0) continue;
+
+            // nothing was emitted in between and the span is sane: one press instead of Down + Up
+            if (pendingDown && pendingDown->hotkey.vk == e.vk) {
+                const auto hold = static_cast<int>(e.time - pendingDownTime);
+                if (hold <= kMaxFoldHoldMs) {
+                    Action press = *pendingDown;
+                    press.type = ActionType::KeyboardPress;
+                    press.holdMs = hold;
+                    press.delayMs = haveLast ? static_cast<int>(pendingDownTime - lastTime) : 0;
+                    haveLast = true;
+                    lastTime = e.time; // the press covers the whole span
+                    pendingDown.reset();
+                    out.push_back(std::move(press));
+                    continue;
+                }
+            }
+
+            flushPendingDown();
             push(Action{.type = ActionType::Keyboard,
                         .hotkey = Hotkey{.modifiers = 0, .vk = e.vk},
-                        .keyEvent = (e.kind == RawKind::KeyDown) ? KeyEventType::Down : KeyEventType::Up},
+                        .keyEvent = KeyEventType::Up},
                  e.time);
             continue;
         }
@@ -197,8 +243,10 @@ std::vector<Action> normalize(const std::vector<RawEvent> &events, const Normali
         }
     }
 
-    // keys still down, a still-pending press, and sub-notch wheel leftovers emit nothing at the end:
-    // the recorder does not invent actions for the user, playback's release stuck keys handles the tail.
+    // a waiting Down still goes out unchanged (it really happened); the missing Up is left to playback's
+    // release stuck keys. Sub-notch wheel leftovers and a still-held button invent nothing.
+    if (opts.maxActions <= 0 || static_cast<int>(out.size()) < opts.maxActions)
+        flushPendingDown();
     return out;
 }
 
