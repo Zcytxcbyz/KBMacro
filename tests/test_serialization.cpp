@@ -453,8 +453,26 @@ TEST(ActionParse, ClampsOutOfRangeFields) {
 }
 
 TEST(ActionParse, UnknownTypeBecomesNoop) {
-    const auto j = nlohmann::json::parse(R"({"type":"KeyboardPress","delayMs":42})");
+    const auto j = nlohmann::json::parse(R"({"type":"SomeFutureType","delayMs":42})");
     const auto a = j.get<Action>();
     EXPECT_EQ(a.type, ActionType::Delay);
     EXPECT_EQ(a.delayMs, 0);
+}
+
+TEST(ActionJson, KeyboardPressRoundTrips) {
+    Action press{};
+    press.type = ActionType::KeyboardPress;
+    press.hotkey = Hotkey{.modifiers = 0, .vk = 67};
+    press.holdMs = 120;
+    press.delayMs = 30;
+
+    const auto j = nlohmann::json(press);
+    EXPECT_EQ(j.at("type"), "KeyboardPress");
+    EXPECT_EQ(j.at("holdMs"), 120);
+
+    const auto back = j.get<Action>();
+    EXPECT_EQ(back.type, ActionType::KeyboardPress);
+    EXPECT_EQ(back.hotkey.vk, 67u);
+    EXPECT_EQ(back.holdMs, 120);
+    EXPECT_EQ(back.delayMs, 30);
 }

@@ -58,22 +58,19 @@ TEST(Normalize, EmptyInputYieldsNothing) {
 
 // ---- keyboard ----
 
-TEST(Normalize, KeyPairBecomesDownThenUp) {
+TEST(Normalize, KeyPairBecomesPress) {
     const std::vector<RawEvent> events{
-            keyEvent(RawKind::KeyDown, 65, 0), // A
-            keyEvent(RawKind::KeyUp, 65, 30),
-    };
+        keyEvent(RawKind::KeyDown, 65, 0), // A
+        keyEvent(RawKind::KeyUp, 65, 30),
+};
 
     const auto actions = recorder::normalize(events, plainOpts());
-    ASSERT_EQ(actions.size(), 2u);
+    ASSERT_EQ(actions.size(), 1u);
 
-    EXPECT_EQ(actions[0].type, ActionType::Keyboard);
-    EXPECT_EQ(actions[0].keyEvent, KeyEventType::Down);
+    EXPECT_EQ(actions[0].type, ActionType::KeyboardPress);
     EXPECT_EQ(actions[0].hotkey.vk, 65u);
+    EXPECT_EQ(actions[0].holdMs, 30);
     EXPECT_EQ(actions[0].delayMs, 0);
-
-    EXPECT_EQ(actions[1].keyEvent, KeyEventType::Up);
-    EXPECT_EQ(actions[1].delayMs, 30);
 }
 
 TEST(Normalize, KeyboardActionsCarryNoModifiers) {
@@ -83,7 +80,7 @@ TEST(Normalize, KeyboardActionsCarryNoModifiers) {
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
-    ASSERT_EQ(actions.size(), 2u);
+    ASSERT_EQ(actions.size(), 1u);
 
     // chords are expressed by the event sequence, a single action's modifiers must always be 0
     EXPECT_EQ(actions[0].hotkey.modifiers, 0u);
@@ -99,8 +96,9 @@ TEST(Normalize, AutoRepeatIsMerged) {
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
-    ASSERT_EQ(actions.size(), 2u);
-    EXPECT_EQ(actions[1].delayMs, 40);
+    ASSERT_EQ(actions.size(), 1u);
+    EXPECT_EQ(actions[0].type, ActionType::KeyboardPress);
+    EXPECT_EQ(actions[0].holdMs, 40); // measured from the first Down, repeats are folded in
 }
 
 TEST(Normalize, StartAndStopMainKeysAreDropped) {
@@ -117,9 +115,9 @@ TEST(Normalize, StartAndStopMainKeysAreDropped) {
     };
 
     const auto actions = recorder::normalize(events, opts);
-    ASSERT_EQ(actions.size(), 2u);
+    ASSERT_EQ(actions.size(), 1u);
+    EXPECT_EQ(actions[0].type, ActionType::KeyboardPress);
     EXPECT_EQ(actions[0].hotkey.vk, 65u);
-    EXPECT_EQ(actions[1].hotkey.vk, 65u);
 }
 
 TEST(Normalize, HeadModifierReleaseIsTrimmed) {
@@ -133,7 +131,7 @@ TEST(Normalize, HeadModifierReleaseIsTrimmed) {
     };
 
     const auto actions = recorder::normalize(events, opts);
-    ASSERT_EQ(actions.size(), 2u);
+    ASSERT_EQ(actions.size(), 1u);
     EXPECT_EQ(actions[0].delayMs, 0); // reset to zero after trimming
 }
 
@@ -148,7 +146,7 @@ TEST(Normalize, TailModifierReleaseIsTrimmed) {
     };
 
     const auto actions = recorder::normalize(events, opts);
-    ASSERT_EQ(actions.size(), 2u);
+    ASSERT_EQ(actions.size(), 1u);
 }
 
 TEST(Normalize, TrimStopsAtFirstRealAction) {
@@ -164,8 +162,55 @@ TEST(Normalize, TrimStopsAtFirstRealAction) {
     };
 
     const auto actions = recorder::normalize(events, opts);
-    ASSERT_EQ(actions.size(), 4u);
-    EXPECT_EQ(actions[2].hotkey.vk, kVkControl);
+    ASSERT_EQ(actions.size(), 2u);
+    EXPECT_EQ(actions[0].type, ActionType::KeyboardPress); // A
+    EXPECT_EQ(actions[1].hotkey.vk, kVkControl);           // a real Ctrl press by the user, kept
+}
+
+TEST(Normalize, InterruptedPairIsNotFolded) {
+    const std::vector<RawEvent> events{
+        keyEvent(RawKind::KeyDown, 65, 0),
+        moveEvent(500, 500, 10), // anything emitted between Down and Up closes the fold window
+        keyEvent(RawKind::KeyUp, 65, 20),
+};
+
+    const auto actions = recorder::normalize(events, plainOpts());
+    ASSERT_EQ(actions.size(), 3u);
+    EXPECT_EQ(actions[0].type, ActionType::Keyboard);
+    EXPECT_EQ(actions[0].keyEvent, KeyEventType::Down);
+    EXPECT_EQ(actions[2].keyEvent, KeyEventType::Up);
+    EXPECT_EQ(actions[2].delayMs, 10);
+}
+
+TEST(Normalize, ChordIsNotFolded) {
+    const std::vector<RawEvent> events{
+        keyEvent(RawKind::KeyDown, kVkControl, 0),
+        keyEvent(RawKind::KeyDown, 67, 10), // C
+        keyEvent(RawKind::KeyUp, 67, 20),
+        keyEvent(RawKind::KeyUp, kVkControl, 30),
+};
+
+    const auto actions = recorder::normalize(events, plainOpts());
+    ASSERT_EQ(actions.size(), 3u);
+
+    EXPECT_EQ(actions[0].type, ActionType::Keyboard); // Ctrl is held across other events
+    EXPECT_EQ(actions[0].keyEvent, KeyEventType::Down);
+    EXPECT_EQ(actions[1].type, ActionType::KeyboardPress); // only the inner pair folds
+    EXPECT_EQ(actions[1].hotkey.vk, 67u);
+    EXPECT_EQ(actions[1].holdMs, 10);
+    EXPECT_EQ(actions[2].keyEvent, KeyEventType::Up);
+}
+
+TEST(Normalize, VeryLongHoldIsNotFolded) {
+    const std::vector<RawEvent> events{
+        keyEvent(RawKind::KeyDown, 65, 0),
+        keyEvent(RawKind::KeyUp, 65, 3600001), // beyond kMaxFoldHoldMs
+};
+
+    const auto actions = recorder::normalize(events, plainOpts());
+    ASSERT_EQ(actions.size(), 2u);
+    EXPECT_EQ(actions[0].type, ActionType::Keyboard);
+    EXPECT_EQ(actions[1].keyEvent, KeyEventType::Up);
 }
 
 // ---- mouse: click vs drag ----
@@ -278,10 +323,11 @@ TEST(Normalize, DelayIsRelativeToPreviousAction) {
     };
 
     const auto actions = recorder::normalize(events, plainOpts());
-    ASSERT_EQ(actions.size(), 3u);
+    ASSERT_EQ(actions.size(), 2u);
+    EXPECT_EQ(actions[0].type, ActionType::KeyboardPress);
     EXPECT_EQ(actions[0].delayMs, 0);
-    EXPECT_EQ(actions[1].delayMs, 40);
-    EXPECT_EQ(actions[2].delayMs, 60);
+    EXPECT_EQ(actions[1].type, ActionType::Keyboard); // B has no Up to fold with
+    EXPECT_EQ(actions[1].delayMs, 60);
 }
 
 TEST(Normalize, MaxActionsStopsEarly) {
